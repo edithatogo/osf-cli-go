@@ -8,9 +8,9 @@
 ## Phase 2: File And Folder Download
 
 - [x] Task: Implement streamed single-file download
-- [ ] Task: Implement folder-tree download with manifest output
+- [x] Task: Implement folder-tree download with manifest output
 
 ## Phase 3: Review
 
-- [ ] Task: Run quality gates and anti-stub scan
-- [ ] Task: Run `$conductor-review`, apply fixes, re-run review, and write phase review evidence
+- [x] Task: Run quality gates and anti-stub scan
+- [x] Task: Run `$conductor-review`, apply fixes, re-run review, and write phase review evidence

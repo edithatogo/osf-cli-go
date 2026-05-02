@@ -85,6 +85,34 @@ func TestGetNodeAndChildrenPagination(t *testing.T) {
 	}
 }
 
+func TestListCurrentUserProjects(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Path; got != "/v2/users/me/nodes/" {
+			t.Fatalf("path = %q", got)
+		}
+		if got := r.URL.RawQuery; got != "filter[category]=project" {
+			t.Fatalf("query = %q", got)
+		}
+		writeFixture(t, w, "node_children_page2.json")
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	projects, err := client.ListCurrentUserProjects(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(projects) != 1 || projects[0].ID != "child-3" {
+		t.Fatalf("unexpected projects: %+v", projects)
+	}
+}
+
 func TestListContributorsAndStorageFiles(t *testing.T) {
 	t.Parallel()
 

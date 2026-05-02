@@ -71,6 +71,11 @@ func (c *Client) CurrentUser(ctx context.Context) (User, error) {
 	return doc.Data, nil
 }
 
+// ListCurrentUserProjects loads all project-category nodes for the current user.
+func (c *Client) ListCurrentUserProjects(ctx context.Context) ([]Node, error) {
+	return collectPages[Node](ctx, c, "/v2/users/me/nodes/?filter[category]=project")
+}
+
 // GetNode loads a node/project by id.
 func (c *Client) GetNode(ctx context.Context, id string) (Node, error) {
 	var doc document[Node]

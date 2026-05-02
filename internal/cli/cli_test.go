@@ -2,9 +2,12 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
+
+	"osf-cli-go/internal/osfapi"
 )
 
 func TestRunPrintsHelpWithoutArgs(t *testing.T) {
@@ -159,4 +162,221 @@ func TestRunEmitsJSONContract(t *testing.T) {
 	if contract.ExitCodes["success"] != 0 || contract.ExitCodes["planned_command"] != 1 || contract.ExitCodes["usage_or_argument"] != 2 {
 		t.Fatalf("unexpected exit code contract: %#v", contract.ExitCodes)
 	}
+	if contract.Commands[1].Status != "implemented" || contract.Commands[0].Status != "pending" {
+		t.Fatalf("unexpected command statuses: %#v", contract.Commands)
+	}
+}
+
+func TestProjectsListOutputsTableAndJSON(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{
+		projects: []osfapi.Node{
+			{ID: "project-1", Attributes: osfapi.NodeAttributes{Title: "Alpha", Category: "project"}, Links: osfapi.Links{Self: "https://osf.io/project-1/"}},
+			{ID: "project-2", Attributes: osfapi.NodeAttributes{Title: "Beta", Category: "project"}, Links: osfapi.Links{Self: "https://osf.io/project-2/"}},
+		},
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"projects", "list"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("table Run returned %d, want 0", code)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr = %q, want empty", stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "project-1") || !strings.Contains(stdout.String(), "Alpha") {
+		t.Fatalf("table output missing project rows: %q", stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = runWithClient([]string{"projects", "list", "--json"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("json Run returned %d, want 0", code)
+	}
+	var got []projectRecord
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout is not valid JSON: %v\n%s", err, stdout.String())
+	}
+	if len(got) != 2 || got[0].ID != "project-1" || got[1].Title != "Beta" {
+		t.Fatalf("unexpected JSON payload: %#v", got)
+	}
+}
+
+func TestProjectsGetOutputsTableAndJSON(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{
+		node: osfapi.Node{ID: "project-1", Attributes: osfapi.NodeAttributes{Title: "Alpha", Category: "project", Description: "Example"}, Links: osfapi.Links{Self: "https://osf.io/project-1/"}},
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"projects", "get", "https://osf.io/project-1/"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("table Run returned %d, want 0", code)
+	}
+	if client.gotNodeID != "project-1" {
+		t.Fatalf("parsed node id = %q, want project-1", client.gotNodeID)
+	}
+	if !strings.Contains(stdout.String(), "Alpha") || !strings.Contains(stdout.String(), "Example") {
+		t.Fatalf("table output missing node details: %q", stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = runWithClient([]string{"projects", "get", "project-1", "--json"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("json Run returned %d, want 0", code)
+	}
+	var got projectRecord
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout is not valid JSON: %v\n%s", err, stdout.String())
+	}
+	if got.ID != "project-1" || got.Title != "Alpha" || got.Description != "Example" {
+		t.Fatalf("unexpected JSON payload: %#v", got)
+	}
+}
+
+func TestParseNodeIDOrURL(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{name: "guid", input: "abc12", want: "abc12"},
+		{name: "web root", input: "https://osf.io/abc12/", want: "abc12"},
+		{name: "web nested", input: "https://osf.io/abc12/files/osfstorage", want: "abc12"},
+		{name: "api node", input: "https://api.osf.io/v2/nodes/abc12/", want: "abc12"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := parseNodeIDOrURL(tc.input)
+			if err != nil {
+				t.Fatalf("parseNodeIDOrURL returned error: %v", err)
+			}
+			if got != tc.want {
+				t.Fatalf("parseNodeIDOrURL(%q) = %q, want %q", tc.input, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestComponentsListOutputsTableAndJSON(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{
+		children: []osfapi.Node{
+			{ID: "component-1", Attributes: osfapi.NodeAttributes{Title: "Comp A", Category: "component"}, Links: osfapi.Links{Self: "https://osf.io/component-1/"}},
+			{ID: "component-2", Attributes: osfapi.NodeAttributes{Title: "Comp B", Category: "component"}, Links: osfapi.Links{Self: "https://osf.io/component-2/"}},
+		},
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"components", "list", "https://osf.io/project-1/"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("table Run returned %d, want 0", code)
+	}
+	if client.gotChildrenID != "project-1" {
+		t.Fatalf("parsed component list id = %q, want project-1", client.gotChildrenID)
+	}
+	if !strings.Contains(stdout.String(), "component-1") || !strings.Contains(stdout.String(), "Comp B") {
+		t.Fatalf("table output missing component rows: %q", stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = runWithClient([]string{"components", "list", "project-1", "--json"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("json Run returned %d, want 0", code)
+	}
+	var got []projectRecord
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout is not valid JSON: %v\n%s", err, stdout.String())
+	}
+	if len(got) != 2 || got[0].ID != "component-1" || got[1].Title != "Comp B" {
+		t.Fatalf("unexpected JSON payload: %#v", got)
+	}
+}
+
+func TestFilesListOutputsTableAndJSON(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{
+		files: []osfapi.StorageFile{
+			{ID: "file-1", Attributes: osfapi.StorageFileAttributes{Name: "analysis.csv", Kind: "file", Size: 12}, Links: osfapi.Links{Download: "https://files.osf.io/file-1"}},
+			{ID: "folder-1", Attributes: osfapi.StorageFileAttributes{Name: "figures", Kind: "folder"}},
+		},
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"files", "list", "project-1"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("table Run returned %d, want 0", code)
+	}
+	if client.gotFilesID != "project-1" {
+		t.Fatalf("parsed file list id = %q, want project-1", client.gotFilesID)
+	}
+	if !strings.Contains(stdout.String(), "analysis.csv") || !strings.Contains(stdout.String(), "figures") {
+		t.Fatalf("table output missing file rows: %q", stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = runWithClient([]string{"files", "list", "project-1", "--json"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("json Run returned %d, want 0", code)
+	}
+	var got []fileRecord
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout is not valid JSON: %v\n%s", err, stdout.String())
+	}
+	if len(got) != 2 || got[0].ID != "file-1" || got[0].DownloadURL != "https://files.osf.io/file-1" {
+		t.Fatalf("unexpected JSON payload: %#v", got)
+	}
+}
+
+type fakeReadonlyClient struct {
+	projects      []osfapi.Node
+	node          osfapi.Node
+	children      []osfapi.Node
+	files         []osfapi.StorageFile
+	gotNodeID     string
+	gotChildrenID string
+	gotFilesID    string
+}
+
+func (f *fakeReadonlyClient) ListProjects(context.Context) ([]osfapi.Node, error) {
+	return append([]osfapi.Node(nil), f.projects...), nil
+}
+
+func (f *fakeReadonlyClient) GetNode(_ context.Context, id string) (osfapi.Node, error) {
+	f.gotNodeID = id
+	return f.node, nil
+}
+
+func (f *fakeReadonlyClient) ListNodeChildren(_ context.Context, id string) ([]osfapi.Node, error) {
+	f.gotChildrenID = id
+	return append([]osfapi.Node(nil), f.children...), nil
+}
+
+func (f *fakeReadonlyClient) ListStorageFiles(_ context.Context, id string) ([]osfapi.StorageFile, error) {
+	f.gotFilesID = id
+	return append([]osfapi.StorageFile(nil), f.files...), nil
+}
+
+func runWithClient(args []string, stdout, stderr *bytes.Buffer, client readonlyClient) int {
+	root := newRootCommandWithClient(stdout, stderr, client)
+	root.SetArgs(args)
+	if err := root.Execute(); err != nil {
+		return exitCodeForError(err)
+	}
+	return 0
 }

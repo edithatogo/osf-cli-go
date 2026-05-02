@@ -36,7 +36,7 @@ type contractEntry struct {
 
 // Run executes the osf CLI and returns a process exit code.
 func Run(args []string, stdout io.Writer, stderr io.Writer) int {
-	root := newRootCommand(stdout, stderr)
+	root := newRootCommandWithClient(stdout, stderr, nil)
 	root.SetArgs(args)
 
 	if err := root.Execute(); err != nil {
@@ -48,6 +48,14 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 }
 
 func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
+	return newRootCommandWithClient(stdout, stderr, nil)
+}
+
+func newRootCommandWithClient(stdout, stderr io.Writer, client readonlyClient) *cobra.Command {
+	if client == nil {
+		client = newDefaultReadonlyClient()
+	}
+
 	root := &cobra.Command{
 		Use:           "osf",
 		Short:         "A command-line client for the Open Science Framework.",
@@ -85,9 +93,9 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 
 	root.AddCommand(
 		newPlannedCommand("auth", "Manage OSF personal access tokens"),
-		newPlannedCommand("projects", "List and inspect OSF projects and components"),
-		newPlannedCommand("components", "List project components"),
-		newPlannedCommand("files", "List, download, and upload OSF Storage files"),
+		newProjectsCommand(client),
+		newComponentsCommand(client),
+		newFilesCommand(client),
 	)
 
 	return root
@@ -147,9 +155,9 @@ func writeRootContract(w io.Writer) error {
 		},
 		Commands: []contractEntry{
 			{Name: "auth", Status: "pending", Description: "Manage OSF personal access tokens"},
-			{Name: "projects", Status: "pending", Description: "List and inspect OSF projects and components"},
-			{Name: "components", Status: "pending", Description: "List project components"},
-			{Name: "files", Status: "pending", Description: "List, download, and upload OSF Storage files"},
+			{Name: "projects", Status: "implemented", Description: "List and inspect OSF projects and components"},
+			{Name: "components", Status: "implemented", Description: "List project components"},
+			{Name: "files", Status: "implemented", Description: "List OSF Storage files"},
 		},
 	})
 }
