@@ -3,16 +3,20 @@
 ## Language And Runtime
 
 - Go 1.26.x, matching the local toolchain currently available in this workspace.
-- Standard library first for the initial scaffold to avoid premature dependency and packaging decisions.
+- Cobra is the approved CLI router for nested commands, help output, command-specific flags, and future completions.
+- Keep dependencies deliberate and documented. Do not add a dependency unless it supports the CLI contract, OSF API integration, testing, release automation, or security/quality gates.
 - Public module path is currently local: `osf-cli-go`. Replace this with the canonical repository module path before the first public release.
 
 ## CLI Architecture
 
 - Entry point: `cmd/osf/main.go`.
 - Command orchestration: `internal/cli`.
+- Future Cobra command tree root: `internal/cli`.
 - Future API client package: `internal/osfapi`.
 - Future auth/token package: `internal/auth`.
 - Future output rendering package: `internal/output`.
+- Future download safety package: `internal/download`.
+- Future reusable core packages should begin under `internal/`. Promote public packages only after the CLI behavior stabilizes and an MCP server track proves the package boundary.
 
 ## API Direction
 
@@ -43,8 +47,13 @@
 
 - Format: `go fmt ./...`
 - Test: `go test ./...`
-- Static checks: add `go vet ./...` as the codebase grows.
+- Race tests: `go test -race ./...`
+- Static checks: `go vet ./...`
+- Lint: `golangci-lint run`
+- Vulnerability scan: `govulncheck ./...`
+- Anti-stub scan: `go run ./tools/checkstubs`
 - Release packaging: later use GoReleaser or a similarly conventional Go release pipeline once command behavior stabilizes.
+- Dependency updates: Renovate for Go modules and GitHub Actions, without automerge initially.
 
 ## Constraints
 

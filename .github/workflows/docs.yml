@@ -1,0 +1,24 @@
+name: docs
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - name: Verify CLI help stays runnable
+        run: go run ./cmd/osf --help
+      - name: Anti-stub scan
+        run: go run ./tools/checkstubs

@@ -1,32 +1,23 @@
-# Plan: MVP OSF Read-Only CLI
+# Plan: MVP OSF Read-Only CLI Roadmap
 
-## Phase 1: CLI Foundation
+This track is the parent roadmap. Implementation is split across subsystem tracks listed in `conductor/tracks.md` so multiple agents can work in parallel without colliding.
+
+## Phase 1: Foundation And Contracts
 
 - [x] Task: Create Go module and baseline `osf` command scaffold
-- [ ] Task: Add command router with help, version, and consistent error handling
-- [ ] Task: Add table and JSON output primitives
+- [ ] Task: Complete `cli-contract-routing_20260502`
+- [ ] Task: Complete `api-client-fixtures_20260502`
+- [ ] Task: Complete `repo-quality-automation_20260502`
+- [ ] Task: Complete `quality-review-automation_20260502`
 
-## Phase 2: OSF API Client
+## Phase 2: Read-Only MVP
 
-- [ ] Task: Implement typed OSF API client with base URL, auth header, context, and status-aware errors
-- [ ] Task: Implement JSON:API pagination traversal
-- [ ] Task: Add fixtures and offline tests for users, nodes, contributors, and files
+- [ ] Task: Complete `auth-public-access_20260502`
+- [ ] Task: Complete `readonly-commands_20260502`
+- [ ] Task: Complete `download-safety_20260502`
 
-## Phase 3: Read-Only Commands
+## Phase 3: Release Readiness
 
-- [ ] Task: Add `auth whoami` using `OSF_TOKEN`
-- [ ] Task: Add `projects list`
-- [ ] Task: Add `nodes get <guid-or-url>`
-- [ ] Task: Add `files list <node-guid>`
-
-## Phase 4: Download
-
-- [ ] Task: Resolve OSF Storage file and folder paths
-- [ ] Task: Download a single file with fail/skip/overwrite conflict policies
-- [ ] Task: Download a folder tree with manifest output
-
-## Phase 5: Documentation And Release Readiness
-
-- [ ] Task: Document install, auth, command examples, and safety defaults
-- [ ] Task: Add integration-test instructions gated by environment variables
-- [ ] Task: Add release checklist for Windows, macOS, and Linux binaries
+- [ ] Task: Complete `docs-release-readiness_20260502`
+- [ ] Task: Review package boundaries for `mcp-server-roadmap_20260502`
+- [ ] Task: Run final `$conductor-review`, apply fixes, re-run review, and write release review evidence
