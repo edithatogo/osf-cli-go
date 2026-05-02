@@ -13,6 +13,7 @@ import (
 const osfAPIBaseURL = "https://api.osf.io/v2/"
 
 type readonlyClient interface {
+	CurrentUser(context.Context) (osfapi.User, error)
 	ListProjects(context.Context) ([]osfapi.Node, error)
 	GetNode(context.Context, string) (osfapi.Node, error)
 	ListNodeChildren(context.Context, string) ([]osfapi.Node, error)
@@ -53,6 +54,14 @@ func (c *defaultReadonlyClient) ListProjects(ctx context.Context) ([]osfapi.Node
 	return c.api.ListCurrentUserProjects(ctx)
 }
 
+func (c *defaultReadonlyClient) CurrentUser(ctx context.Context) (osfapi.User, error) {
+	if !c.bearerToken {
+		return osfapi.User{}, auth.MissingTokenError{Env: auth.TokenEnv}
+	}
+
+	return c.api.CurrentUser(ctx)
+}
+
 func (c *defaultReadonlyClient) GetNode(ctx context.Context, id string) (osfapi.Node, error) {
 	return c.api.GetNode(ctx, id)
 }
@@ -77,15 +86,15 @@ func parseNodeIDOrURL(input string) (string, error) {
 		if len(parts) == 0 || parts[0] == "" {
 			return "", fmt.Errorf("could not find node id in %q", input)
 		}
+		if parsed.Host != "osf.io" && !strings.HasSuffix(parsed.Host, ".osf.io") {
+			return "", fmt.Errorf("node url host %q is not an OSF host", parsed.Host)
+		}
 		for i, part := range parts {
 			if part == "nodes" && i+1 < len(parts) {
 				return parts[i+1], nil
 			}
 		}
-		if parsed.Host == "osf.io" || strings.HasSuffix(parsed.Host, ".osf.io") {
-			return parts[0], nil
-		}
-		return parts[len(parts)-1], nil
+		return parts[0], nil
 	}
 
 	if strings.Contains(trimmed, "://") {

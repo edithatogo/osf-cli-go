@@ -1,3 +1,7 @@
+param(
+    [switch]$AllowRaceSkip
+)
+
 $ErrorActionPreference = "Stop"
 
 $env:GOTELEMETRY = "off"
@@ -10,9 +14,13 @@ if (Get-Command gcc -ErrorAction SilentlyContinue) {
     $env:CGO_ENABLED = "1"
     go test -race ./...
 } else {
-    Write-Warning "Skipping local race tests because gcc is not available. GitHub Actions still enforces race tests."
+    if (-not $AllowRaceSkip) {
+        throw "gcc is required for local race tests. Install gcc or rerun with -AllowRaceSkip for this Windows host. GitHub Actions still enforces race tests."
+    }
+    Write-Warning "Skipping local race tests because gcc is not available and -AllowRaceSkip was supplied. GitHub Actions still enforces race tests."
 }
 go vet ./...
 go run ./tools/checkstubs
+go run ./tools/checkreviews
 go test ./... "-coverprofile=coverage.out"
 go tool cover "-func=coverage.out"

@@ -31,12 +31,12 @@ git diff --check
 
 - Review command: `$conductor-review` protocol applied locally against the integrated phase.
 - Blocking findings: scanner initially flagged dependency cache and planned-command text.
-- Fixes applied: ignored repo-local module cache and changed CLI planned-command wording away from incomplete-work markers.
+- Fixes applied: ignored repo-local module cache, changed CLI planned-command wording away from incomplete-work markers, and added `tools/checkreviews` so fully completed tracks require review evidence.
 - Re-review result: no blocking findings after full local gate.
 
 ## Status
 
 - Completion claim: offline-tested.
 - Completion rule: anti-stub scan passed.
-- Residual risks: enforcement of phase-review presence is documented but not yet a dedicated CI validator.
-- Next phase: add CI validator for phase-review artifacts if track status automation becomes necessary.
+- Residual risks: phase-review presence is now checked by `go run ./tools/checkreviews` for tracks whose task lists are fully complete; richer semantic validation remains future work.
+- Next phase: add richer semantic validation for phase-review content if track status automation needs to go beyond artifact presence.

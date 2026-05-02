@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"osf-cli-go/internal/auth"
 )
 
 const version = "0.0.0-dev"
@@ -40,6 +41,7 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 	root.SetArgs(args)
 
 	if err := root.Execute(); err != nil {
+		err = auth.RedactError(err)
 		fmt.Fprintln(stderr, err)
 		return exitCodeForError(err)
 	}
@@ -92,7 +94,7 @@ func newRootCommandWithClient(stdout, stderr io.Writer, client readonlyClient) *
 	}
 
 	root.AddCommand(
-		newPlannedCommand("auth", "Manage OSF personal access tokens"),
+		newAuthCommand(client),
 		newProjectsCommand(client),
 		newComponentsCommand(client),
 		newFilesCommand(client),
@@ -154,7 +156,7 @@ func writeRootContract(w io.Writer) error {
 			"usage_or_argument": 2,
 		},
 		Commands: []contractEntry{
-			{Name: "auth", Status: "pending", Description: "Manage OSF personal access tokens"},
+			{Name: "auth", Status: "implemented", Description: "Manage OSF personal access tokens"},
 			{Name: "projects", Status: "implemented", Description: "List and inspect OSF projects and components"},
 			{Name: "components", Status: "implemented", Description: "List project components"},
 			{Name: "files", Status: "implemented", Description: "List OSF Storage files"},

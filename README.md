@@ -6,7 +6,7 @@ This project is being set up with Conductor so product intent, technical choices
 
 ## Current Status
 
-The repository is currently scaffolded. The binary supports `--help`, `-h`, and `--version`; read/write OSF commands are still planned in the Conductor tracks and are not yet all implemented.
+The CLI is offline-tested for help/version, token inspection, project/component/file listing, and download-safety package behavior. Live OSF validation remains opt-in and write/export commands are still planned in the Conductor tracks.
 
 ## Install
 
@@ -50,6 +50,11 @@ Current commands:
 ```powershell
 go run ./cmd/osf --help
 go run ./cmd/osf --version
+go run ./cmd/osf auth whoami
+go run ./cmd/osf projects list
+go run ./cmd/osf projects get <guid-or-url>
+go run ./cmd/osf components list <project-guid-or-url>
+go run ./cmd/osf files list <project-or-component-guid>
 ```
 
 After building or installing:
@@ -57,16 +62,12 @@ After building or installing:
 ```powershell
 osf --help
 osf --version
+osf auth whoami
 ```
 
 Planned commands, shown here only as planned examples:
 
 ```powershell
-osf auth whoami
-osf projects list
-osf projects get <guid-or-url>
-osf components list <project-guid-or-url>
-osf files list <project-or-component-guid>
 osf files download <path>
 osf export
 ```

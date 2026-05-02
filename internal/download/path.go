@@ -3,6 +3,7 @@ package download
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -86,6 +87,32 @@ func ResolveDestination(destRoot, remote string) (string, error) {
 }
 
 func withinBase(base, target string) (bool, error) {
+	baseAbs, err := filepath.Abs(base)
+	if err != nil {
+		return false, fmt.Errorf("normalize base path: %w", err)
+	}
+	targetAbs, err := filepath.Abs(target)
+	if err != nil {
+		return false, fmt.Errorf("normalize target path: %w", err)
+	}
+
+	ok, err := withinBaseLexical(baseAbs, targetAbs)
+	if err != nil || !ok {
+		return ok, err
+	}
+
+	baseReal, err := evalExistingPath(baseAbs)
+	if err != nil {
+		return false, err
+	}
+	targetParentReal, err := evalExistingPath(filepath.Dir(targetAbs))
+	if err != nil {
+		return false, err
+	}
+	return withinBaseLexical(baseReal, targetParentReal)
+}
+
+func withinBaseLexical(base, target string) (bool, error) {
 	rel, err := filepath.Rel(base, target)
 	if err != nil {
 		return false, fmt.Errorf("check destination path: %w", err)
@@ -99,4 +126,30 @@ func withinBase(base, target string) (bool, error) {
 		return false, nil
 	}
 	return true, nil
+}
+
+func evalExistingPath(path string) (string, error) {
+	current := path
+	for {
+		_, statErr := os.Stat(current)
+		if statErr == nil {
+			resolved, err := filepath.EvalSymlinks(current)
+			if err != nil {
+				return "", fmt.Errorf("resolve existing path %q: %w", current, err)
+			}
+			abs, err := filepath.Abs(resolved)
+			if err != nil {
+				return "", fmt.Errorf("normalize resolved path %q: %w", resolved, err)
+			}
+			return abs, nil
+		}
+		if !errors.Is(statErr, os.ErrNotExist) {
+			return "", fmt.Errorf("inspect existing path %q: %w", current, statErr)
+		}
+		parent := filepath.Dir(current)
+		if parent == current {
+			return "", fmt.Errorf("no existing parent found for %q", path)
+		}
+		current = parent
+	}
 }

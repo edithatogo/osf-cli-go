@@ -8,6 +8,14 @@ Run the same checks expected by CI before committing:
 .\scripts\check.ps1
 ```
 
+On Windows hosts without `gcc`, local race tests cannot run. For local development only, use:
+
+```powershell
+.\scripts\check.ps1 -AllowRaceSkip
+```
+
+GitHub Actions still runs `go test -race ./...` without that bypass.
+
 On systems with `make`:
 
 ```sh

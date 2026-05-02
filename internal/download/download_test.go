@@ -25,6 +25,20 @@ func TestResolveDestinationRejectsTraversal(t *testing.T) {
 	}
 }
 
+func TestResolveDestinationRejectsSymlinkEscape(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	link := filepath.Join(root, "link")
+
+	if err := os.Symlink(outside, link); err != nil {
+		t.Skipf("symlink creation unavailable on this platform: %v", err)
+	}
+
+	if _, err := ResolveDestination(root, "link/secret.txt"); !errors.Is(err, errPathTraversal) {
+		t.Fatalf("ResolveDestination error = %v, want traversal error", err)
+	}
+}
+
 func TestWriteStreamAtomicallyFailWhenDestinationExists(t *testing.T) {
 	dir := t.TempDir()
 	dst := filepath.Join(dir, "existing.txt")

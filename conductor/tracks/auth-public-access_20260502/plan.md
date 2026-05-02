@@ -7,10 +7,10 @@
 
 ## Phase 2: Auth Command
 
-- [ ] Task: Implement `auth whoami`
-- [ ] Task: Add JSON and human output tests for authenticated identity
+- [x] Task: Implement `auth whoami`
+- [x] Task: Add JSON and human output tests for authenticated identity
 
 ## Phase 3: Review
 
-- [ ] Task: Run quality gates and anti-stub scan
-- [ ] Task: Run `$conductor-review`, apply fixes, re-run review, and write phase review evidence
+- [x] Task: Run quality gates and anti-stub scan
+- [x] Task: Run `$conductor-review`, apply fixes, re-run review, and write phase review evidence

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"osf-cli-go/internal/auth"
 	"osf-cli-go/internal/osfapi"
 )
 
@@ -162,8 +163,75 @@ func TestRunEmitsJSONContract(t *testing.T) {
 	if contract.ExitCodes["success"] != 0 || contract.ExitCodes["planned_command"] != 1 || contract.ExitCodes["usage_or_argument"] != 2 {
 		t.Fatalf("unexpected exit code contract: %#v", contract.ExitCodes)
 	}
-	if contract.Commands[1].Status != "implemented" || contract.Commands[0].Status != "pending" {
+	if contract.Commands[0].Status != "implemented" || contract.Commands[1].Status != "implemented" {
 		t.Fatalf("unexpected command statuses: %#v", contract.Commands)
+	}
+}
+
+func TestAuthWhoamiOutputsTableAndJSON(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{
+		currentUser: osfapi.User{
+			ID:   "u1",
+			Type: "users",
+			Attributes: osfapi.UserAttributes{
+				FullName:   "Ada Lovelace",
+				GivenName:  "Ada",
+				FamilyName: "Lovelace",
+			},
+		},
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"auth", "whoami"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("table Run returned %d, want 0", code)
+	}
+	if client.gotCurrentUserCalls != 1 {
+		t.Fatalf("CurrentUser call count = %d, want 1", client.gotCurrentUserCalls)
+	}
+	if !strings.Contains(stdout.String(), "Ada Lovelace") || !strings.Contains(stdout.String(), "Full Name") {
+		t.Fatalf("table output missing user fields: %q", stdout.String())
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr = %q, want empty", stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = runWithClient([]string{"auth", "whoami", "--json"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("json Run returned %d, want 0", code)
+	}
+	var got authUserRecord
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout is not valid JSON: %v\n%s", err, stdout.String())
+	}
+	if got.ID != "u1" || got.FullName != "Ada Lovelace" || got.GivenName != "Ada" || got.FamilyName != "Lovelace" {
+		t.Fatalf("unexpected JSON payload: %#v", got)
+	}
+}
+
+func TestAuthWhoamiRequiresToken(t *testing.T) {
+	t.Parallel()
+
+	client := newDefaultReadonlyClientFromSource(auth.FuncSource(func(name string) (string, bool) {
+		return "", false
+	}))
+
+	defaultClient, ok := client.(*defaultReadonlyClient)
+	if !ok {
+		t.Fatalf("client type = %T, want *defaultReadonlyClient", client)
+	}
+
+	_, err := defaultClient.CurrentUser(context.Background())
+	if err == nil {
+		t.Fatal("CurrentUser returned nil error, want missing token error")
+	}
+	if !strings.Contains(err.Error(), auth.TokenEnv) {
+		t.Fatalf("error = %q, want token env mention", err.Error())
 	}
 }
 
@@ -267,6 +335,18 @@ func TestParseNodeIDOrURL(t *testing.T) {
 	}
 }
 
+func TestParseNodeIDOrURLRejectsNonOSFURL(t *testing.T) {
+	t.Parallel()
+
+	_, err := parseNodeIDOrURL("https://example.com/foo/bar")
+	if err == nil {
+		t.Fatal("parseNodeIDOrURL returned nil error, want non-OSF URL rejection")
+	}
+	if !strings.Contains(err.Error(), "not an OSF host") {
+		t.Fatalf("error = %q, want OSF host message", err.Error())
+	}
+}
+
 func TestComponentsListOutputsTableAndJSON(t *testing.T) {
 	t.Parallel()
 
@@ -344,13 +424,20 @@ func TestFilesListOutputsTableAndJSON(t *testing.T) {
 }
 
 type fakeReadonlyClient struct {
-	projects      []osfapi.Node
-	node          osfapi.Node
-	children      []osfapi.Node
-	files         []osfapi.StorageFile
-	gotNodeID     string
-	gotChildrenID string
-	gotFilesID    string
+	currentUser         osfapi.User
+	projects            []osfapi.Node
+	node                osfapi.Node
+	children            []osfapi.Node
+	files               []osfapi.StorageFile
+	gotCurrentUserCalls int
+	gotNodeID           string
+	gotChildrenID       string
+	gotFilesID          string
+}
+
+func (f *fakeReadonlyClient) CurrentUser(context.Context) (osfapi.User, error) {
+	f.gotCurrentUserCalls++
+	return f.currentUser, nil
 }
 
 func (f *fakeReadonlyClient) ListProjects(context.Context) ([]osfapi.Node, error) {

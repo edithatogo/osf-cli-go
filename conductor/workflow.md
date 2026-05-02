@@ -39,7 +39,7 @@ go vet ./...
 go run ./tools/checkstubs
 ```
 
-On Windows, `scripts/check.ps1` sets a repo-local Go build cache to avoid user-profile cache permission issues. Local race tests require a C compiler; GitHub Actions remains the strict race-test gate.
+On Windows, `scripts/check.ps1` sets repo-local Go build and module caches to avoid user-profile cache permission issues. Local race tests require a C compiler. The script fails when `gcc` is missing unless `-AllowRaceSkip` is explicitly supplied for local development. GitHub Actions remains the strict race-test gate.
 
 ## Task Workflow
 

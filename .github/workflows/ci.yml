@@ -30,6 +30,8 @@ jobs:
         run: go vet ./...
       - name: Anti-stub scan
         run: go run ./tools/checkstubs
+      - name: Conductor review evidence
+        run: go run ./tools/checkreviews
       - name: Coverage
         run: |
           go test ./... -coverprofile=coverage.out
