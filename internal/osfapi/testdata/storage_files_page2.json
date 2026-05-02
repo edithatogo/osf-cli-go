@@ -1,0 +1,16 @@
+{
+  "data": [
+    {
+      "id": "file-2",
+      "type": "files",
+      "attributes": {
+        "name": "results.txt",
+        "kind": "file",
+        "size": 20
+      },
+      "links": {
+        "download": "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-2?download=1"
+      }
+    }
+  ]
+}

@@ -59,16 +59,21 @@ func main() {
 func shouldSkipDir(path string) bool {
 	clean := filepath.ToSlash(path)
 	switch clean {
-	case ".git", ".gocache":
+	case ".git", ".gocache", ".gomodcache":
 		return true
-	default:
-		return strings.Contains(clean, "/testdata") || strings.Contains(clean, "/fixtures")
 	}
+	for _, part := range strings.Split(clean, "/") {
+		switch part {
+		case "testdata", "fixtures":
+			return true
+		}
+	}
+	return false
 }
 
 func isProductionGo(path string) bool {
 	clean := filepath.ToSlash(path)
-	return strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, "_test.go") && clean != "tools/checkstubs/main.go"
+	return strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, "_test.go") && !strings.HasPrefix(clean, "tools/checkstubs/")
 }
 
 func scanFile(path string) ([]string, error) {

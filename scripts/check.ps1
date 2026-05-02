@@ -2,6 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $env:GOTELEMETRY = "off"
 $env:GOCACHE = Join-Path (Get-Location) ".gocache"
+$env:GOMODCACHE = Join-Path (Get-Location) ".gomodcache"
 
 go fmt ./...
 go test ./...

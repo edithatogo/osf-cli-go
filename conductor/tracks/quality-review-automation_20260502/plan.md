@@ -8,9 +8,9 @@
 ## Phase 2: Enforcement
 
 - [x] Task: Add anti-stub scanner and CI integration
-- [ ] Task: Add track phase review artifacts as phases are completed
+- [x] Task: Add track phase review artifacts as phases are completed
 
 ## Phase 3: Review
 
-- [ ] Task: Run quality gates and anti-stub scan
-- [ ] Task: Run `$conductor-review`, apply fixes, re-run review, and write phase review evidence
+- [x] Task: Run quality gates and anti-stub scan
+- [x] Task: Run `$conductor-review`, apply fixes, re-run review, and write phase review evidence

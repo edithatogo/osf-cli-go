@@ -1,0 +1,11 @@
+{
+  "data": {
+    "id": "project-123",
+    "type": "nodes",
+    "attributes": {
+      "title": "Project Alpha",
+      "description": "Representative project fixture",
+      "category": "project"
+    }
+  }
+}

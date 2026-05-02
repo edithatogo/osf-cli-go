@@ -1,0 +1,12 @@
+{
+  "data": [
+    {
+      "id": "child-3",
+      "type": "nodes",
+      "attributes": {
+        "title": "Child Three",
+        "category": "component"
+      }
+    }
+  ]
+}

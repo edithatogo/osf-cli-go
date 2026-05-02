@@ -2,8 +2,8 @@
 
 ## Phase 1: Token Contract
 
-- [ ] Task: Define token loading, redaction, and missing-token errors
-- [ ] Task: Add tests for bearer header injection and redaction
+- [x] Task: Define token loading, redaction, and missing-token errors
+- [x] Task: Add tests for present token, missing token, whitespace handling, and redaction
 
 ## Phase 2: Auth Command
 

@@ -1,0 +1,25 @@
+{
+  "data": [
+    {
+      "id": "contrib-1",
+      "type": "contributors",
+      "attributes": {
+        "full_name": "Taylor Researcher",
+        "bibliographic": true,
+        "permission": "write"
+      }
+    },
+    {
+      "id": "contrib-2",
+      "type": "contributors",
+      "attributes": {
+        "full_name": "Jordan Analyst",
+        "bibliographic": false,
+        "permission": "read"
+      }
+    }
+  ],
+  "links": {
+    "next": "/v2/nodes/project-123/contributors/?page=2"
+  }
+}

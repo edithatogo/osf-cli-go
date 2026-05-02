@@ -14,3 +14,4 @@ Do not open public issues containing OSF tokens, private project identifiers, or
 - Do not write tokens to project-local config.
 - Redact tokens from logs, errors, and test output.
 - Keep live OSF tests opt-in through explicit environment variables.
+- Set `OSF_TOKEN` only in the shell session that needs it, and clear it afterward if you used a persistent profile or export command.

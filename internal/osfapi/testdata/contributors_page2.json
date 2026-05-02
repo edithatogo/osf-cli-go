@@ -1,0 +1,13 @@
+{
+  "data": [
+    {
+      "id": "contrib-3",
+      "type": "contributors",
+      "attributes": {
+        "full_name": "Casey Curator",
+        "bibliographic": true,
+        "permission": "admin"
+      }
+    }
+  ]
+}

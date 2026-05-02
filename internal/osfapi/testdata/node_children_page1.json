@@ -1,0 +1,23 @@
+{
+  "data": [
+    {
+      "id": "child-1",
+      "type": "nodes",
+      "attributes": {
+        "title": "Child One",
+        "category": "component"
+      }
+    },
+    {
+      "id": "child-2",
+      "type": "nodes",
+      "attributes": {
+        "title": "Child Two",
+        "category": "component"
+      }
+    }
+  ],
+  "links": {
+    "next": "/v2/nodes/project-123/children/?page=2"
+  }
+}

@@ -1,4 +1,5 @@
 .gocache/
+.gomodcache/
 *.exe
 *.test
 coverage.out

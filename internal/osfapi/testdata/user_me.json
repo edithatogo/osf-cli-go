@@ -1,0 +1,11 @@
+{
+  "data": {
+    "id": "u1",
+    "type": "users",
+    "attributes": {
+      "full_name": "Ada Lovelace",
+      "given_name": "Ada",
+      "family_name": "Lovelace"
+    }
+  }
+}

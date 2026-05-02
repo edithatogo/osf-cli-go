@@ -11,3 +11,28 @@ Adopt Cobra and define the stable CLI contract for command names, global flags, 
 - Unknown commands and invalid arguments return consistent non-zero exit codes.
 - User-facing commands prefer `projects`, `components`, `files`, and `auth`.
 - API-specific "node" terminology is kept internal unless an advanced command explicitly exposes it.
+
+## CLI Contract
+
+- Root command: `osf`
+- Global flags: `--help/-h`, `--version`, `--output table|json`, `--json`
+- Default output: human help in `table` mode
+- JSON mode: `osf --output json` emits a machine-readable contract for the root command and planned subcommands
+- Exit codes: `0` success, `1` not implemented, `2` usage or argument errors
+
+## Planned Commands
+
+- `auth` - Manage OSF personal access tokens
+- `projects` - List and inspect OSF projects and components
+- `components` - List project components
+- `files` - List, download, and upload OSF Storage files
+
+These commands are present in routing and help output as pending work, but they are not implemented yet.
+
+## Examples
+
+- `osf --help`
+- `osf -h`
+- `osf --version`
+- `osf --output json`
+- `osf nope` returns an unknown command error and a non-zero exit code

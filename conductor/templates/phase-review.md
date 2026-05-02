@@ -10,6 +10,14 @@
 
 - 
 
+## Anti-Stub Evidence
+
+- `go run ./tools/checkstubs` result:
+- Production markers found:
+- Ignored paths verified:
+- Self-scan exclusion verified:
+- Validation evidence link or location:
+
 ## Validation Commands
 
 ```powershell
@@ -32,5 +40,6 @@ go tool cover "-func=coverage.out"
 ## Status
 
 - Completion claim: scaffolded | offline-tested | integration-ready | live-validated
+- Completion rule: do not select a claim unless Anti-Stub Evidence is filled and the current branch passed `go run ./tools/checkstubs`.
 - Residual risks:
 - Next phase:
