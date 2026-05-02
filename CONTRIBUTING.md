@@ -26,7 +26,15 @@ For docs and release-readiness work, also run the CLI help path and the anti-stu
 
 ```powershell
 go run ./cmd/osf --help
+go run ./cmd/osf --version
+go run ./cmd/osf completion bash
 go run ./tools/checkstubs
+```
+
+For a local release-style binary build on Windows, run:
+
+```powershell
+.\scripts\build.ps1
 ```
 
 ## Conductor Workflow

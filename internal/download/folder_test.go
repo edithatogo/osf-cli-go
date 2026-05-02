@@ -20,6 +20,28 @@ func TestNewFolderDownloadPlanRejectsTraversal(t *testing.T) {
 	}
 }
 
+func TestNewFolderDownloadPlanRejectsNoReaderOrOpener(t *testing.T) {
+	dir := t.TempDir()
+	_, err := NewFolderDownloadPlan(dir, ConflictFail, []FolderDownloadFile{
+		{RemotePath: "no-source.txt"},
+	})
+	if err == nil {
+		t.Fatal("NewFolderDownloadPlan returned nil error, want error")
+	}
+	if !strings.Contains(err.Error(), "requires a reader or opener") {
+		t.Fatalf("error = %q, want reader or opener message", err.Error())
+	}
+}
+
+func TestNewFolderDownloadPlanRejectsEmptyDestRoot(t *testing.T) {
+	_, err := NewFolderDownloadPlan("", ConflictFail, []FolderDownloadFile{
+		{RemotePath: "file.txt", Reader: strings.NewReader("x")},
+	})
+	if err == nil {
+		t.Fatal("NewFolderDownloadPlan returned nil error, want error")
+	}
+}
+
 func TestFolderDownloadPlanWritesNestedPaths(t *testing.T) {
 	dir := t.TempDir()
 	expectedBytes := int64(len("beta"))
@@ -195,4 +217,182 @@ func TestFolderDownloadPlanRecordsFailureAndCleansTemp(t *testing.T) {
 	if _, statErr := os.Stat(failingDst); !errors.Is(statErr, os.ErrNotExist) {
 		t.Fatalf("fail.txt stat error = %v, want not exist", statErr)
 	}
+}
+
+func TestNewFolderDownloadPlanRejectsSymlinkEscape(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	link := filepath.Join(root, "link")
+
+	if err := os.Symlink(outside, link); err != nil {
+		t.Skipf("symlink creation unavailable on this platform: %v", err)
+	}
+
+	_, err := NewFolderDownloadPlan(root, ConflictFail, []FolderDownloadFile{
+		{RemotePath: "link/secret.txt", Reader: strings.NewReader("secret")},
+	})
+	if !errors.Is(err, errPathTraversal) {
+		t.Fatalf("NewFolderDownloadPlan error = %v, want traversal error", err)
+	}
+}
+
+func TestFolderDownloadPlanRecordsCloseFailure(t *testing.T) {
+	dir := t.TempDir()
+
+	plan, err := NewFolderDownloadPlan(dir, ConflictFail, []FolderDownloadFile{
+		{RemotePath: "close-fail.txt", Open: func() (io.ReadCloser, error) {
+			return closeErrorReadCloser{Reader: strings.NewReader("payload")}, nil
+		}},
+	})
+	if err != nil {
+		t.Fatalf("NewFolderDownloadPlan: %v", err)
+	}
+
+	manifest, execErr := plan.Execute()
+	if execErr == nil {
+		t.Fatal("Execute returned nil error, want close failure")
+	}
+	if len(manifest.Records) != 1 {
+		t.Fatalf("manifest records = %d, want 1", len(manifest.Records))
+	}
+	record := manifest.Records[0]
+	if record.Status != FolderDownloadFailed {
+		t.Fatalf("record status = %q, want failed", record.Status)
+	}
+	if !strings.Contains(record.Error, "close download source") {
+		t.Fatalf("record error = %q, want close failure message", record.Error)
+	}
+}
+
+func TestFolderDownloadPlanRejectsNilOpenerReader(t *testing.T) {
+	dir := t.TempDir()
+
+	plan, err := NewFolderDownloadPlan(dir, ConflictFail, []FolderDownloadFile{
+		{RemotePath: "nil.txt", Open: func() (io.ReadCloser, error) {
+			return nil, nil
+		}},
+	})
+	if err != nil {
+		t.Fatalf("NewFolderDownloadPlan: %v", err)
+	}
+
+	manifest, execErr := plan.Execute()
+	if execErr == nil {
+		t.Fatal("Execute returned nil error, want nil opener failure")
+	}
+	if len(manifest.Records) != 1 {
+		t.Fatalf("manifest records = %d, want 1", len(manifest.Records))
+	}
+	if manifest.Records[0].Status != FolderDownloadFailed {
+		t.Fatalf("record status = %q, want failed", manifest.Records[0].Status)
+	}
+}
+
+func TestExecuteWithNilPlan(t *testing.T) {
+	var p *FolderDownloadPlan
+	_, err := p.Execute()
+	if err == nil {
+		t.Fatal("Execute returned nil error for nil plan, want error")
+	}
+	if !strings.Contains(err.Error(), "folder download plan is required") {
+		t.Fatalf("error = %q, want plan required message", err.Error())
+	}
+}
+
+func TestOpenReaderWithReadCloserReader(t *testing.T) {
+	file := plannedFolderDownloadFile{
+		remotePath: "rc.txt",
+		reader:     io.NopCloser(strings.NewReader("data")),
+	}
+	src, closeFn, err := file.openReader()
+	if err != nil {
+		t.Fatalf("openReader returned error: %v", err)
+	}
+	if closeFn == nil {
+		t.Fatal("openReader returned nil closeFn, want non-nil")
+	}
+	body, err := io.ReadAll(src)
+	if err != nil {
+		t.Fatalf("ReadAll: %v", err)
+	}
+	if string(body) != "data" {
+		t.Fatalf("body = %q, want %q", string(body), "data")
+	}
+}
+
+func TestNormalizeRemotePathRejectsDotOnly(t *testing.T) {
+	for _, path := range []string{".", "/", "./", "/."} {
+		_, err := NormalizeRemotePath(path)
+		if err == nil {
+			t.Fatalf("NormalizeRemotePath(%q) returned nil error, want error", path)
+		}
+	}
+}
+
+func TestFolderExecuteWithOpenError(t *testing.T) {
+	dir := t.TempDir()
+	plan, err := NewFolderDownloadPlan(dir, ConflictFail, []FolderDownloadFile{
+		{RemotePath: "fail.bin", Open: func() (io.ReadCloser, error) {
+			return nil, io.ErrUnexpectedEOF
+		}},
+	})
+	if err != nil {
+		t.Fatalf("NewFolderDownloadPlan: %v", err)
+	}
+	manifest, execErr := plan.Execute()
+	if execErr == nil {
+		t.Fatal("Execute returned nil error, want open failure")
+	}
+	if len(manifest.Records) != 1 || manifest.Records[0].Status != FolderDownloadFailed {
+		t.Fatalf("manifest = %+v, want failed record", manifest)
+	}
+}
+
+func TestFolderDownloadPlanSkipsWhenNoOpenAndNoReader(t *testing.T) {
+	dir := t.TempDir()
+	file := plannedFolderDownloadFile{
+		remotePath: "orphan.txt",
+	}
+	_, _, err := file.openReader()
+	if err == nil {
+		t.Fatal("openReader returned nil error, want error for no reader or opener")
+	}
+	if !strings.Contains(err.Error(), "requires a reader or opener") {
+		t.Fatalf("error = %q, want reader or opener message", err.Error())
+	}
+
+	// Also test that the plan rejects an empty file list entry
+	_, planErr := NewFolderDownloadPlan(dir, ConflictFail, nil)
+	if planErr != nil {
+		t.Fatalf("NewFolderDownloadPlan with nil files returned error: %v", planErr)
+	}
+}
+
+func TestOpenReaderWithPlainReader(t *testing.T) {
+	file := plannedFolderDownloadFile{
+		remotePath: "plain.txt",
+		reader:     strings.NewReader("plain-data"),
+	}
+	src, closeFn, err := file.openReader()
+	if err != nil {
+		t.Fatalf("openReader returned error: %v", err)
+	}
+	if closeFn != nil {
+		t.Fatal("openReader returned non-nil closeFn for plain reader, want nil")
+	}
+	body, err := io.ReadAll(src)
+	if err != nil {
+		t.Fatalf("ReadAll: %v", err)
+	}
+	if string(body) != "plain-data" {
+		t.Fatalf("body = %q, want %q", string(body), "plain-data")
+	}
+}
+
+type closeErrorReadCloser struct {
+	io.Reader
+}
+
+func (closeErrorReadCloser) Close() error {
+	return io.ErrClosedPipe
 }

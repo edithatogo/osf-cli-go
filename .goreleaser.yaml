@@ -1,0 +1,42 @@
+version: 2
+
+project_name: osf
+
+before:
+  hooks:
+    - go test ./...
+
+builds:
+  - id: osf
+    main: ./cmd/osf
+    binary: osf
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X osf-cli-go/internal/cli.version={{.Version}}
+      - -X osf-cli-go/internal/cli.buildCommit={{.Commit}}
+      - -X osf-cli-go/internal/cli.buildDate={{.Date}}
+
+archives:
+  - id: osf
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    files:
+      - README.md
+      - CONTRIBUTING.md
+      - docs/release-checklist.md
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  disable: true
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+

@@ -1,0 +1,14 @@
+{
+  "data": {
+    "id": "file-1",
+    "type": "files",
+    "attributes": {
+      "name": "analysis.csv",
+      "kind": "file",
+      "size": 12
+    },
+    "links": {
+      "download": "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-1?download=1"
+    }
+  }
+}

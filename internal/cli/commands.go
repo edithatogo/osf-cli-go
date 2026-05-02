@@ -48,10 +48,11 @@ func newComponentsCommand(client readonlyClient) *cobra.Command {
 func newFilesCommand(client readonlyClient) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "files",
-		Short: "List OSF Storage files",
-		Long:  "List OSF Storage files.",
+		Short: "List and download OSF Storage files",
+		Long:  "List and download OSF Storage files.",
 	}
 	cmd.AddCommand(newFilesListCommand(client))
+	cmd.AddCommand(newFilesDownloadCommand(client))
 	return cmd
 }
 

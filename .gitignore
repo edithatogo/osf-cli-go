@@ -2,5 +2,6 @@
 .gomodcache/
 *.exe
 *.test
-coverage.out
+*.out
 coverage
+bin/

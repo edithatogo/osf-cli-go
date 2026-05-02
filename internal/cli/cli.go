@@ -11,7 +11,9 @@ import (
 	"osf-cli-go/internal/auth"
 )
 
-const version = "0.0.0-dev"
+var version = "0.0.0-dev"
+var buildCommit = ""
+var buildDate = ""
 
 const (
 	outputModeTable = "table"
@@ -42,15 +44,11 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 
 	if err := root.Execute(); err != nil {
 		err = auth.RedactError(err)
-		fmt.Fprintln(stderr, err)
+		_, _ = fmt.Fprintln(stderr, err)
 		return exitCodeForError(err)
 	}
 
 	return 0
-}
-
-func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
-	return newRootCommandWithClient(stdout, stderr, nil)
 }
 
 func newRootCommandWithClient(stdout, stderr io.Writer, client readonlyClient) *cobra.Command {
@@ -62,7 +60,7 @@ func newRootCommandWithClient(stdout, stderr io.Writer, client readonlyClient) *
 		Use:           "osf",
 		Short:         "A command-line client for the Open Science Framework.",
 		Long:          "osf is a command-line client for the Open Science Framework.\n\nThe root command prints human help by default and can emit a machine-readable contract with --output json.",
-		Version:       version,
+		Version:       versionString(),
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -98,20 +96,26 @@ func newRootCommandWithClient(stdout, stderr io.Writer, client readonlyClient) *
 		newProjectsCommand(client),
 		newComponentsCommand(client),
 		newFilesCommand(client),
+		newCompletionCommand(root),
 	)
 
 	return root
 }
 
-func newPlannedCommand(name, description string) *cobra.Command {
-	return &cobra.Command{
-		Use:   name,
-		Short: description + " (planned)",
-		Long:  description + "\n\nThis command is planned for a later track and is not available in this build.",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("%w: %s", errPlannedCommand, cmd.CommandPath())
-		},
+func versionString() string {
+	metadata := make([]string, 0, 2)
+	if buildCommit != "" {
+		metadata = append(metadata, "commit "+buildCommit)
 	}
+	if buildDate != "" {
+		metadata = append(metadata, "built "+buildDate)
+	}
+
+	if len(metadata) == 0 {
+		return version
+	}
+
+	return fmt.Sprintf("%s (%s)", version, strings.Join(metadata, ", "))
 }
 
 func resolveOutputMode(cmd *cobra.Command) (string, error) {
@@ -147,7 +151,7 @@ func resolveOutputMode(cmd *cobra.Command) (string, error) {
 func writeRootContract(w io.Writer) error {
 	return json.NewEncoder(w).Encode(rootContract{
 		Name:          "osf",
-		Version:       version,
+		Version:       versionString(),
 		DefaultOutput: outputModeTable,
 		OutputModes:   []string{outputModeTable, outputModeJSON},
 		ExitCodes: map[string]int{
@@ -160,6 +164,7 @@ func writeRootContract(w io.Writer) error {
 			{Name: "projects", Status: "implemented", Description: "List and inspect OSF projects and components"},
 			{Name: "components", Status: "implemented", Description: "List project components"},
 			{Name: "files", Status: "implemented", Description: "List OSF Storage files"},
+			{Name: "completion", Status: "implemented", Description: "Generate shell completion scripts"},
 		},
 	})
 }
@@ -183,12 +188,15 @@ func isUsageError(err error) bool {
 	if err == nil {
 		return false
 	}
-
 	message := err.Error()
 	return strings.Contains(message, "unknown command") ||
 		strings.Contains(message, "invalid output mode") ||
 		strings.Contains(message, "cannot combine --json") ||
+		strings.Contains(message, "cannot combine --file with --tree") ||
 		strings.Contains(message, "unknown flag") ||
 		strings.Contains(message, "flag needs an argument") ||
-		strings.Contains(message, "unknown shorthand flag")
+		strings.Contains(message, "unknown shorthand flag") ||
+		strings.Contains(message, "accepts") ||
+		strings.Contains(message, "unsupported conflict policy") ||
+		strings.Contains(message, "unsupported file source URL")
 }

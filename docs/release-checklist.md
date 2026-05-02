@@ -14,6 +14,7 @@ Use this checklist before tagging a release or publishing binaries.
 - Build a macOS binary.
 - Build a Linux binary.
 - Verify the expected archive names or executables are present for each platform.
+- For local Windows checks, use `.\scripts\build.ps1` or `make build` to produce `bin\osf.exe`.
 
 ## Checksums
 
@@ -25,6 +26,8 @@ Use this checklist before tagging a release or publishing binaries.
 
 - Run `go run ./cmd/osf --help`.
 - Run `go run ./cmd/osf --version`.
+- Run `go run ./cmd/osf completion bash`.
+- Run `go run ./cmd/osf completion powershell`.
 - Run `go run ./tools/checkstubs`.
 - Run `go test ./...` from a clean checkout.
 - Confirm the README, contributing guide, and security notes still match the released command surface and auth rules.
@@ -34,3 +37,14 @@ Use this checklist before tagging a release or publishing binaries.
 - Confirm the release docs do not describe planned commands as already implemented.
 - Confirm `OSF_TOKEN` is documented as an environment variable only.
 - Confirm live OSF tests remain opt-in and are not implied by default release validation.
+
+## Publishing
+
+```powershell
+# Tag the release
+git tag v1.0.0
+git push origin v1.0.0
+
+# The GoReleaser config (publishing disabled) is in .goreleaser.yaml
+# Enable by setting `release.disable: false` or using --release-notes
+```

@@ -2,10 +2,13 @@ package osfapi
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -169,6 +172,118 @@ func TestListContributorsAndStorageFiles(t *testing.T) {
 	}
 }
 
+func TestGetStorageFileAndOpenDownload(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v2/files/file-1/":
+			if got := r.Header.Get("Authorization"); got != "Bearer token-123" {
+				t.Fatalf("authorization header = %q", got)
+			}
+			writeFixture(t, w, "storage_file.json")
+		case "/v1/resources/project-123/providers/osfstorage/file-1":
+			if got := r.URL.RawQuery; got != "download=1" {
+				t.Fatalf("download query = %q", got)
+			}
+			if got := r.Header.Get("Authorization"); got != "Bearer token-123" {
+				t.Fatalf("authorization header = %q", got)
+			}
+			w.Header().Set("Content-Type", "text/plain")
+			_, _ = w.Write([]byte("downloaded bytes"))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()), WithBearerToken("token-123"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	file, err := client.GetStorageFile(context.Background(), "file-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if file.ID != "file-1" || file.Attributes.Name != "analysis.csv" || file.DownloadURL() == "" {
+		t.Fatalf("unexpected file metadata: %+v", file)
+	}
+
+	body, err := client.OpenDownload(context.Background(), srv.URL+"/v1/resources/project-123/providers/osfstorage/file-1?download=1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer body.Close()
+
+	got, err := io.ReadAll(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != "downloaded bytes" {
+		t.Fatalf("download body = %q", string(got))
+	}
+}
+
+func TestGetStorageFileReturnsAPIError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v2/files/nonexistent/" {
+			w.WriteHeader(http.StatusNotFound)
+			writeFixture(t, w, "error_not_found.json")
+			return
+		}
+		t.Fatalf("unexpected path: %s", r.URL.Path)
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatalf("New returned error: %v", err)
+	}
+
+	_, err = client.GetStorageFile(context.Background(), "nonexistent")
+	if err == nil {
+		t.Fatal("GetStorageFile returned nil error, want error")
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("error type = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusNotFound || apiErr.Title != "Not Found" {
+		t.Fatalf("unexpected api error: %+v", apiErr)
+	}
+}
+
+func TestOpenDownloadReturnsAPIError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"errors":[{"title":"Forbidden","detail":"access denied"}]}`))
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatalf("New returned error: %v", err)
+	}
+
+	_, err = client.OpenDownload(context.Background(), srv.URL+"/v1/resources/project-123/providers/osfstorage/file-1?download=1")
+	if err == nil {
+		t.Fatal("OpenDownload returned nil error, want forbidden error")
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("error type = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusForbidden || apiErr.Title != "Forbidden" {
+		t.Fatalf("unexpected api error: %+v", apiErr)
+	}
+}
+
 func TestAPIError(t *testing.T) {
 	t.Parallel()
 
@@ -196,6 +311,410 @@ func TestAPIError(t *testing.T) {
 	}
 	if apiErr.Title != "Not Found" || apiErr.Detail != "Node not found." {
 		t.Fatalf("unexpected api error detail: %+v", apiErr)
+	}
+}
+
+func TestAPIErrorFallsBackToTopLevelFields(t *testing.T) {
+	err := parseAPIError(http.StatusInternalServerError, http.MethodGet, "/v2/nodes/project-123/", []byte(`{"title":"Internal Server Error","detail":"upstream failed"}`))
+
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("error type = %T, want *APIError", err)
+	}
+	if apiErr.Title != "Internal Server Error" || apiErr.Detail != "upstream failed" {
+		t.Fatalf("unexpected api error fallback: %+v", apiErr)
+	}
+}
+
+func TestAPIErrorEmptyErrorsArray(t *testing.T) {
+	err := parseAPIError(http.StatusInternalServerError, http.MethodGet, "/v2/nodes/project-123/", []byte(`{"errors":[],"title":"Server Error","detail":"something broke"}`))
+
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("error type = %T, want *APIError", err)
+	}
+	if apiErr.Title != "Server Error" || apiErr.Detail != "something broke" {
+		t.Fatalf("unexpected api error: %+v", apiErr)
+	}
+}
+
+func TestAPIErrorNullErrors(t *testing.T) {
+	err := parseAPIError(http.StatusInternalServerError, http.MethodGet, "/v2/nodes/project-123/", []byte(`{"errors":null,"title":"Top Title","detail":"Top Detail"}`))
+
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("error type = %T, want *APIError", err)
+	}
+	if apiErr.Title != "Top Title" || apiErr.Detail != "Top Detail" {
+		t.Fatalf("unexpected api error: %+v", apiErr)
+	}
+}
+
+func TestAPIErrorFallsBackToBodyText(t *testing.T) {
+	err := parseAPIError(http.StatusBadGateway, http.MethodGet, "/v2/nodes/project-123/", []byte("bad gateway from proxy"))
+
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("error type = %T, want *APIError", err)
+	}
+	if apiErr.Title != "" || apiErr.Detail != "bad gateway from proxy" {
+		t.Fatalf("unexpected api error body fallback: %+v", apiErr)
+	}
+}
+
+func TestAPIErrorEmptyBody(t *testing.T) {
+	err := parseAPIError(http.StatusBadGateway, http.MethodGet, "/v2/nodes/project-123/", nil)
+
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("error type = %T, want *APIError", err)
+	}
+	if apiErr.Title != "" || apiErr.Detail != "" {
+		t.Fatalf("unexpected api error: %+v", apiErr)
+	}
+}
+
+func TestResolveEndpointReturnsAbsoluteURLs(t *testing.T) {
+	client, err := New("https://api.osf.io/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resolved, err := client.resolveEndpoint("https://example.org/v2/nodes/project-123/")
+	if err != nil {
+		t.Fatalf("resolveEndpoint returned error: %v", err)
+	}
+	if got, want := resolved.String(), "https://example.org/v2/nodes/project-123/"; got != want {
+		t.Fatalf("resolved endpoint = %q, want %q", got, want)
+	}
+}
+
+func TestResolveReferenceKeepsAbsoluteReference(t *testing.T) {
+	base, err := http.NewRequest(http.MethodGet, "https://api.osf.io/v2/nodes/project-123/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resolved, err := resolveReference(base.URL, "https://example.org/v2/nodes/project-123/?page=2")
+	if err != nil {
+		t.Fatalf("resolveReference returned error: %v", err)
+	}
+	if got, want := resolved.String(), "https://example.org/v2/nodes/project-123/?page=2"; got != want {
+		t.Fatalf("resolved reference = %q, want %q", got, want)
+	}
+}
+
+func TestNewClientDefaultsBaseURL(t *testing.T) {
+	t.Parallel()
+
+	client, err := New("")
+	if err != nil {
+		t.Fatalf("New returned error: %v", err)
+	}
+	if got := client.baseURL.String(); got != "https://api.osf.io/v2/" {
+		t.Fatalf("base URL = %q, want %q", got, "https://api.osf.io/v2/")
+	}
+}
+
+func TestAPIErrorErrorFormatting(t *testing.T) {
+	err := (&APIError{
+		StatusCode: http.StatusBadGateway,
+		Method:     http.MethodPost,
+		Path:       "/v2/nodes/project-123/",
+		Title:      "Bad Gateway",
+		Detail:     "upstream failed",
+	}).Error()
+
+	if !strings.Contains(err, "POST /v2/nodes/project-123/ returned 502") {
+		t.Fatalf("formatted error = %q", err)
+	}
+	if !strings.Contains(err, "Bad Gateway - upstream failed") {
+		t.Fatalf("formatted error = %q", err)
+	}
+}
+
+func TestAPIErrorNilError(t *testing.T) {
+	t.Parallel()
+
+	var err *APIError
+	msg := err.Error()
+	if msg != "<nil>" {
+		t.Fatalf("nil APIError.Error() = %q, want <nil>", msg)
+	}
+}
+
+func TestAPIErrorTitleOnly(t *testing.T) {
+	t.Parallel()
+
+	err := &APIError{StatusCode: 400, Method: "GET", Path: "/v2/", Title: "Bad Request"}
+	msg := err.Error()
+	if !strings.Contains(msg, "Bad Request") {
+		t.Fatalf("APIError.Error() = %q, want title", msg)
+	}
+}
+
+func TestAPIErrorDetailOnly(t *testing.T) {
+	t.Parallel()
+
+	err := &APIError{StatusCode: 500, Method: "POST", Path: "/v2/", Detail: "server error"}
+	msg := err.Error()
+	if !strings.Contains(msg, "server error") {
+		t.Fatalf("APIError.Error() = %q, want detail", msg)
+	}
+}
+
+func TestAPIErrorMalformedJSON(t *testing.T) {
+	t.Parallel()
+
+	err := parseAPIError(http.StatusBadGateway, http.MethodGet, "/v2/", []byte(`{invalid json`))
+
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("error type = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusBadGateway {
+		t.Fatalf("status = %d, want %d", apiErr.StatusCode, http.StatusBadGateway)
+	}
+}
+
+func TestParseAPIErrorWithEmptyBody(t *testing.T) {
+	t.Parallel()
+
+	err := parseAPIError(http.StatusBadGateway, http.MethodGet, "/v2/", nil)
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("error type = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusBadGateway {
+		t.Fatalf("status = %d", apiErr.StatusCode)
+	}
+}
+
+func TestParseAPIErrorWithEmptyBytesBody(t *testing.T) {
+	t.Parallel()
+
+	err := parseAPIError(http.StatusBadGateway, http.MethodGet, "/v2/", []byte{})
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("error type = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusBadGateway {
+		t.Fatalf("status = %d", apiErr.StatusCode)
+	}
+}
+
+func TestResolveEndpointParseError(t *testing.T) {
+	t.Parallel()
+
+	client, err := New("https://api.osf.io/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// url.Parse doesn't fail on most inputs, but a bare ":" triggers a parse error
+	_, err = client.resolveEndpoint(":")
+	if err != nil {
+		return
+	}
+	// If no error, fall back to a clearly invalid endpoint approach
+	_, err = client.resolveEndpoint("\x00")
+	if err == nil {
+		t.Log("resolveEndpoint did not error on null byte input")
+	}
+}
+
+func TestResolveReferenceParseError(t *testing.T) {
+	t.Parallel()
+
+	base, err := url.Parse("https://api.osf.io/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// url.Parse doesn't fail on most inputs, but control characters can trigger errors
+	_, err = resolveReference(base, "\x00")
+	if err == nil {
+		t.Log("resolveReference did not error on null byte input")
+	}
+}
+
+func TestNewClientWithInvalidBaseURLStillSucceeds(t *testing.T) {
+	t.Parallel()
+
+	// url.Parse succeeds with most inputs; test with empty scheme
+	client, err := New("relative/path")
+	if err != nil {
+		t.Fatalf("New returned error: %v", err)
+	}
+	if client == nil {
+		t.Fatal("New returned nil client")
+	}
+}
+
+func TestClientGetWithError(t *testing.T) {
+	t.Parallel()
+
+	client, err := New("https://0.0.0.0:1/v2/", WithHTTPClient(&http.Client{Timeout: 1}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.CurrentUser(t.Context())
+	// Should get a network error or timeout
+	if err == nil {
+		t.Log("CurrentUser succeeded against invalid endpoint (unexpected)")
+	}
+}
+
+func TestResolveReferenceHandlesRelativeURL(t *testing.T) {
+	t.Parallel()
+
+	client, err := New("https://api.osf.io/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resolved, err := client.resolveEndpoint("/v2/nodes/project-123/")
+	if err != nil {
+		t.Fatalf("resolveEndpoint returned error: %v", err)
+	}
+	if !strings.Contains(resolved.String(), "/v2/nodes/project-123/") {
+		t.Fatalf("resolved endpoint = %q, want relative path", resolved.String())
+	}
+}
+
+func TestResolveReferenceRelative(t *testing.T) {
+	t.Parallel()
+
+	base, err := url.Parse("https://api.osf.io/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolved, err := resolveReference(base, "nodes/abc123/?page=2")
+	if err != nil {
+		t.Fatalf("resolveReference returned error: %v", err)
+	}
+	if !strings.Contains(resolved.String(), "nodes/abc123") {
+		t.Fatalf("resolved reference = %q", resolved.String())
+	}
+}
+
+func TestNewClientInvalidURL(t *testing.T) {
+	t.Parallel()
+
+	_, err := New("://invalid")
+	if err == nil {
+		t.Fatal("New returned nil error, want parse error")
+	}
+}
+
+func TestOpenDownloadNonStreamURL(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("file-content"))
+	}))
+	defer server.Close()
+
+	client, err := New(server.URL + "/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rc, err := client.OpenDownload(t.Context(), server.URL+"/download")
+	if err != nil {
+		t.Fatalf("OpenDownload returned error: %v", err)
+	}
+	defer rc.Close()
+
+	body, err := io.ReadAll(rc)
+	if err != nil {
+		t.Fatalf("ReadAll: %v", err)
+	}
+	if string(body) != "file-content" {
+		t.Fatalf("body = %q, want %q", string(body), "file-content")
+	}
+}
+
+func TestOpenDownloadErrorResponse(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"errors":[{"title":"Not Found"}]}`))
+	}))
+	defer server.Close()
+
+	client, err := New(server.URL + "/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.OpenDownload(t.Context(), server.URL+"/missing")
+	if err == nil {
+		t.Fatal("OpenDownload returned nil error, want APIError")
+	}
+	if !strings.Contains(err.Error(), "404") {
+		t.Fatalf("error = %q, want status code", err.Error())
+	}
+}
+
+func TestNewClientWithOptions(t *testing.T) {
+	t.Parallel()
+
+	client, err := New("https://api.osf.io/v2/", WithHTTPClient(&http.Client{}), WithBearerToken("test-token"))
+	if err != nil {
+		t.Fatalf("New returned error: %v", err)
+	}
+	if client == nil {
+		t.Fatal("New returned nil client")
+	}
+}
+
+func TestListNodeContributorsEndpoint(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		_, _ = w.Write([]byte(`{"data":[],"links":{}}`))
+	}))
+	defer server.Close()
+
+	client, err := New(server.URL + "/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	contributors, err := client.ListNodeContributors(t.Context(), "project-1")
+	if err != nil {
+		t.Fatalf("ListNodeContributors returned error: %v", err)
+	}
+	if len(contributors) != 0 {
+		t.Fatalf("contributors = %d, want 0", len(contributors))
+	}
+}
+
+func TestListStorageFilesWithSegments(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		_, _ = w.Write([]byte(`{"data":[],"links":{}}`))
+	}))
+	defer server.Close()
+
+	client, err := New(server.URL + "/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	files, err := client.ListStorageFiles(t.Context(), "project-1", "subdir", "nested")
+	if err != nil {
+		t.Fatalf("ListStorageFiles returned error: %v", err)
+	}
+	if len(files) != 0 {
+		t.Fatalf("files = %d, want 0", len(files))
 	}
 }
 

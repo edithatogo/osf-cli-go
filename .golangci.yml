@@ -12,6 +12,23 @@ linters:
     - misspell
     - staticcheck
     - unused
+    - asciicheck
+    - copyloopvar
+    - decorder
+    - errorlint
+    - forbidigo
+    - gocritic
+    - gofmt
+    - gosec
+    - nilerr
+    - nolintlint
+    - prealloc
+    - predeclared
+    - revive
+    - tenv
+    - thelper
+    - tparallel
+    - usetesting
 
 issues:
   max-issues-per-linter: 0

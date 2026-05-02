@@ -94,3 +94,193 @@ func TestRedactError(t *testing.T) {
 		t.Fatalf("RedactError leaked token: %q", err.Error())
 	}
 }
+
+func TestRedactHandlesEmptyInput(t *testing.T) {
+	if got := Redact(""); got != "" {
+		t.Fatalf("Redact empty input = %q, want empty string", got)
+	}
+}
+
+func TestRedactWithEmptySecret(t *testing.T) {
+	got := Redact("token=secret", "")
+	if !strings.Contains(got, "token=secret") {
+		t.Fatalf("Redact removed content despite empty secret: %q", got)
+	}
+}
+
+func TestRedactEnvAssignment(t *testing.T) {
+	token := "osf_live_token_abc123def456ghi789"
+	raw := "export OSF_TOKEN=" + token
+
+	got := Redact(raw, token)
+
+	if strings.Contains(got, token) {
+		t.Fatalf("Redact leaked token: %q", got)
+	}
+	if !strings.Contains(got, redacted) {
+		t.Fatalf("Redact output = %q, want redaction marker", got)
+	}
+}
+
+func TestRedactBearerHeader(t *testing.T) {
+	got := Redact("Authorization: Bearer osf_live_token_abc123def456ghi789xyz")
+
+	if strings.Contains(got, "osf_live_token_abc123def456ghi789xyz") {
+		t.Fatalf("Redact leaked bearer token: %q", got)
+	}
+	if !strings.Contains(got, "Bearer "+redacted) {
+		t.Fatalf("Redact output = %q, want Bearer [REDACTED]", got)
+	}
+}
+
+func TestRedactErrorNil(t *testing.T) {
+	if got := RedactError(nil); got != nil {
+		t.Fatalf("RedactError(nil) = %v, want nil", got)
+	}
+}
+
+func TestMissingTokenErrorEmptyEnv(t *testing.T) {
+	err := MissingTokenError{Env: ""}
+	msg := err.Error()
+	if !strings.Contains(msg, TokenEnv) {
+		t.Fatalf("MissingTokenError.Error() = %q, want reference to %s", msg, TokenEnv)
+	}
+}
+
+func TestEnvSourceLookup(t *testing.T) {
+	t.Setenv(TokenEnv, "test-token-value-12345")
+	source := EnvSource{}
+	token, ok := source.Lookup(TokenEnv)
+	if !ok {
+		t.Fatal("EnvSource.Lookup returned false, want true")
+	}
+	if token != "test-token-value-12345" {
+		t.Fatalf("EnvSource.Lookup = %q, want %q", token, "test-token-value-12345")
+	}
+	_, ok = source.Lookup("NONEXISTENT_VAR_12345")
+	if ok {
+		t.Fatal("EnvSource.Lookup for nonexistent var returned true, want false")
+	}
+}
+
+func TestRedactRemovesURLEncodedToken(t *testing.T) {
+	token := "my_api_token_12345"
+	raw := "Bearer " + token + "&next=/v2/nodes/"
+	got := Redact(raw, token)
+	if strings.Contains(got, token) {
+		t.Fatalf("Redact leaked token: %q", got)
+	}
+	if !strings.Contains(got, redacted) {
+		t.Fatalf("Redact output = %q, want redaction marker", got)
+	}
+}
+
+func TestRedactRemovesMultilineToken(t *testing.T) {
+	token := "abc123def456ghi789jkl012"
+	raw := "line1\nBearer " + token + "\nline3"
+	got := Redact(raw, token)
+	if strings.Contains(got, token) {
+		t.Fatalf("Redact leaked token across lines: %q", got)
+	}
+	if !strings.Contains(got, redacted) {
+		t.Fatalf("Redact output = %q, want redaction marker", got)
+	}
+}
+
+func TestRedactWithPartialTokenMatch(t *testing.T) {
+	text := "OSF_TOKEN=super_secret_token_12345"
+	got := Redact(text)
+	if strings.Contains(got, "super_secret_token_12345") {
+		t.Fatalf("Redact leaked auto-detected token assignment: %q", got)
+	}
+	if !strings.Contains(got, redacted) {
+		t.Fatalf("Redact output = %q, want redaction marker", got)
+	}
+}
+
+func TestRedactErrorWithMultipleSecrets(t *testing.T) {
+	token1 := "tok_12345"
+	token2 := "sec_67890"
+	err := RedactError(errors.New(token1+" and "+token2), token1, token2)
+	if err == nil {
+		t.Fatal("RedactError returned nil")
+	}
+	msg := err.Error()
+	if strings.Contains(msg, token1) || strings.Contains(msg, token2) {
+		t.Fatalf("RedactError leaked secrets: %q", msg)
+	}
+}
+
+func TestLoadTokenEmptyEnvValue(t *testing.T) {
+	_, err := LoadToken(FuncSource(func(name string) (string, bool) {
+		return "", true
+	}))
+	if err == nil {
+		t.Fatal("LoadToken returned nil error, want missing-token error for empty value")
+	}
+}
+
+func TestRedactDoesNotCorruptNormalText(t *testing.T) {
+	got := Redact("hello world this is normal text")
+	if got != "hello world this is normal text" {
+		t.Fatalf("Redact corrupted normal text: %q", got)
+	}
+}
+
+func TestRedactWithShortSecret(t *testing.T) {
+	got := Redact("key=abc", "abc")
+	if !strings.Contains(got, "key=[REDACTED]") {
+		t.Fatalf("Redact = %q, want redacted short secret", got)
+	}
+}
+
+func TestLoadTokenWithNilSource(t *testing.T) {
+	t.Setenv("OSF_TOKEN", "nil-source-token-12345")
+	token, err := LoadToken(nil)
+	if err != nil {
+		t.Fatalf("LoadToken(nil) returned error: %v", err)
+	}
+	if token != "nil-source-token-12345" {
+		t.Fatalf("LoadToken(nil) = %q, want %q", token, "nil-source-token-12345")
+	}
+}
+
+func TestRedactCallbackWithAlreadyRedacted(t *testing.T) {
+	got := Redact(redacted + " and " + redacted)
+	if got != redacted+" and "+redacted {
+		t.Fatalf("Redact corrupted already redacted text: %q", got)
+	}
+}
+
+func TestRedactLongTokenLikeValue(t *testing.T) {
+	longToken := "abcdefghijklmnopqrstuvwx1234567890"
+	got := Redact("token is "+longToken, longToken)
+	if strings.Contains(got, longToken) {
+		t.Fatalf("Redact leaked long token: %q", got)
+	}
+}
+
+func TestAPIErrorFmt(t *testing.T) {
+	err := MissingTokenError{Env: TokenEnv}
+	msg := err.Error()
+	if !strings.Contains(msg, TokenEnv) {
+		t.Fatalf("MissingTokenError.Error() = %q, want %s", msg, TokenEnv)
+	}
+}
+
+func TestFuncSourceLookup(t *testing.T) {
+	source := FuncSource(func(name string) (string, bool) {
+		if name == "MY_KEY" {
+			return "my-value", true
+		}
+		return "", false
+	})
+	v, ok := source.Lookup("MY_KEY")
+	if !ok || v != "my-value" {
+		t.Fatalf("FuncSource.Lookup = %q, %v, want %q, true", v, ok, "my-value")
+	}
+	v, ok = source.Lookup("UNKNOWN")
+	if ok {
+		t.Fatalf("FuncSource.Lookup for unknown = %q, %v, want \"\", false", v, ok)
+	}
+}

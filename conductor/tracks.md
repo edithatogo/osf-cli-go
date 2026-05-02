@@ -4,13 +4,18 @@ This file tracks all major work items. Each track has its own spec and plan.
 
 ---
 
-- [mvp-osf-readonly-cli_20260502](tracks/mvp-osf-readonly-cli_20260502/spec.md) - MVP read-only OSF CLI foundation.
-- [cli-contract-routing_20260502](tracks/cli-contract-routing_20260502/spec.md) - Cobra command contract, global flags, exit codes, help, and output behavior.
-- [api-client-fixtures_20260502](tracks/api-client-fixtures_20260502/spec.md) - OSF API v2 client, JSON:API pagination, typed errors, and fixture contracts.
-- [auth-public-access_20260502](tracks/auth-public-access_20260502/spec.md) - Token handling, public unauthenticated behavior, redaction, and `auth whoami`.
-- [readonly-commands_20260502](tracks/readonly-commands_20260502/spec.md) - Project/component/file read-only commands.
-- [download-safety_20260502](tracks/download-safety_20260502/spec.md) - Safe streaming downloads, conflict policies, manifests, and path protection.
-- [docs-release-readiness_20260502](tracks/docs-release-readiness_20260502/spec.md) - User docs, integration-test docs, release checklist, and examples.
-- [repo-quality-automation_20260502](tracks/repo-quality-automation_20260502/spec.md) - CI, linting, formatting, coverage, Renovate, and repo management.
-- [quality-review-automation_20260502](tracks/quality-review-automation_20260502/spec.md) - Anti-stub policy, phase review artifacts, and review-fix-continue workflow.
-- [mcp-server-roadmap_20260502](tracks/mcp-server-roadmap_20260502/spec.md) - CLI-first package boundaries for future MCP support.
+- [x] [mvp-osf-readonly-cli](tracks/mvp-osf-readonly-cli_20260502/spec.md) — MVP read-only OSF CLI foundation.
+- [x] [cli-contract-routing](tracks/cli-contract-routing_20260502/spec.md) — Cobra command contract, global flags, exit codes, help, and output behavior.
+- [x] [api-client-fixtures](tracks/api-client-fixtures_20260502/spec.md) — OSF API v2 client, JSON:API pagination, typed errors, and fixture contracts.
+- [x] [auth-public-access](tracks/auth-public-access_20260502/spec.md) — Token handling, public unauthenticated behavior, redaction, and `auth whoami`.
+- [x] [readonly-commands](tracks/readonly-commands_20260502/spec.md) — Project/component/file read-only commands.
+- [x] [download-safety](tracks/download-safety_20260502/spec.md) — Safe streaming downloads, conflict policies, manifests, and path protection.
+- [x] [docs-release-readiness](tracks/docs-release-readiness_20260502/spec.md) — User docs, integration-test docs, release checklist, and examples.
+- [x] [repo-quality-automation](tracks/repo-quality-automation_20260502/spec.md) — CI, linting, formatting, coverage, Renovate, and repo management.
+- [x] [quality-review-automation](tracks/quality-review-automation_20260502/spec.md) — Anti-stub policy, phase review artifacts, and review-fix-continue workflow.
+- [x] [mcp-server-roadmap](tracks/mcp-server-roadmap_20260502/spec.md) — CLI-first package boundaries for future MCP support.
+- [x] [files-download-cli](tracks/files-download-cli_20260502/spec.md) — User-facing `files download` command backed by the safe download package.
+- [x] [live-osf-validation](tracks/live-osf-validation_20260502/spec.md) — Opt-in live OSF validation scripts and evidence capture.
+- [x] [release-packaging](tracks/release-packaging_20260502/spec.md) — Buildable release artifacts, version injection, completions, and release checks.
+- [x] [coverage-hardening](tracks/coverage-hardening_20260502/spec.md) — Focused coverage improvements for auth, API, CLI error paths, and download safety.
+- [x] [mcp-boundary-prep](tracks/mcp-boundary-prep_20260502/spec.md) — Minimal reusable boundaries for future MCP server development while keeping CLI-first delivery.

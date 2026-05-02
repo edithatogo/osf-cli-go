@@ -2,92 +2,81 @@
 
 A Go command-line client for the Open Science Framework (OSF).
 
-This project is being set up with Conductor so product intent, technical choices, and delivery workflow stay explicit as the CLI grows.
+[![CI](https://github.com/edithatogo/osf-cli-go/actions/workflows/ci.yml/badge.svg)](https://github.com/edithatogo/osf-cli-go/actions/workflows/ci.yml)
+[![Lint](https://github.com/edithatogo/osf-cli-go/actions/workflows/lint.yml/badge.svg)](https://github.com/edithatogo/osf-cli-go/actions/workflows/lint.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/edithatogo/osf-cli-go.svg)](https://pkg.go.dev/github.com/edithatogo/osf-cli-go)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/edithatogo/osf-cli-go)](go.mod)
 
-## Current Status
+## Features
 
-The CLI is offline-tested for help/version, token inspection, project/component/file listing, and download-safety package behavior. Live OSF validation remains opt-in and write/export commands are still planned in the Conductor tracks.
+- `osf auth whoami` — Identify the authenticated OSF account
+- `osf projects list|get` — List and inspect projects
+- `osf components list` — List project components
+- `osf files list|download` — Browse and download OSF Storage files
+- `osf completion bash|zsh|fish|powershell` — Shell completion scripts
+- JSON and human-readable output modes
+- Safe, atomic file downloads with conflict policy (fail/skip/overwrite)
 
 ## Install
 
 Requirements:
-
 - Go 1.26 or newer
-- An OSF personal access token when you want to run authenticated commands or live OSF checks
-
-From a local checkout:
 
 ```powershell
-go build -o bin\osf.exe ./cmd/osf
+go install github.com/edithatogo/osf-cli-go/cmd/osf@latest
 ```
 
-For a local install into your Go bin directory:
-
+Or from a local checkout:
 ```powershell
-go install ./cmd/osf
+go build -o bin\osf.exe ./cmd/osf
+.\scripts\build.ps1
 ```
 
 ## Authentication
 
-Set `OSF_TOKEN` in the shell session that will run OSF commands. Do not commit the token or write it into project files.
-
-PowerShell:
+Set `OSF_TOKEN` in your shell session. Do not commit the token or write it into project files.
 
 ```powershell
 $env:OSF_TOKEN = '<your-token>'
 ```
 
-bash:
-
-```sh
-export OSF_TOKEN='<your-token>'
-```
-
-## Build And Run
-
-Current commands:
-
-```powershell
-go run ./cmd/osf --help
-go run ./cmd/osf --version
-go run ./cmd/osf auth whoami
-go run ./cmd/osf projects list
-go run ./cmd/osf projects get <guid-or-url>
-go run ./cmd/osf components list <project-guid-or-url>
-go run ./cmd/osf files list <project-or-component-guid>
-```
-
-After building or installing:
+## Quick Start
 
 ```powershell
 osf --help
-osf --version
 osf auth whoami
+osf projects list
+osf projects get https://osf.io/abc12/
+osf components list abc12
+osf files list abc12
+osf files download --file <file-id> ./output/
+osf files download --tree abc12 ./output/
 ```
 
-Planned commands, shown here only as planned examples:
+## Output Modes
+
+All commands support `--output table|json` and `--json` shorthand:
 
 ```powershell
-osf files download <path>
-osf export
+osf projects list --json
+osf auth whoami --output json
 ```
 
-## Output And Status Language
+## Project Status
 
-Use the status words from the Conductor workflow when describing progress:
+All 15 Conductor tracks are complete. The CLI is **offline-tested** for all read-only operations including file downloads with conflict handling, path traversal protection, symlink escape prevention, and atomic writes.
 
-- `scaffolded`: files and shape exist, but behavior is not complete.
-- `offline-tested`: fixture-backed behavior passes without live OSF access.
-- `integration-ready`: behavior is ready for an explicit live OSF check.
-- `live-validated`: behavior has passed an opt-in live OSF check.
+## Documentation
 
-## Safety Defaults
+- [Release checklist](docs/release-checklist.md)
+- [MCP roadmap](docs/mcp-roadmap.md)
+- [Contributing](CONTRIBUTING.md)
 
-- Commands that write to OSF should be explicit and conservative.
-- Public read behavior may work without auth when OSF allows it, but private or account-specific operations should assume `OSF_TOKEN` is required.
-- Do not print tokens, persist them in repo-local config, or echo them in logs and failures.
-- Live integration tests must stay opt-in and should only use `OSF_TOKEN` and any test fixture variables when you are deliberately running those checks.
+## License
 
-## Release Readiness
+Apache 2.0 — see [LICENSE](LICENSE).
 
-See [docs/release-checklist.md](docs/release-checklist.md) for the release checklist, versioning policy, binary matrix, checksums, and validation steps.
+## Citation
+
+If you use this software in your research, please cite it using the metadata in [CITATION.cff](CITATION.cff).

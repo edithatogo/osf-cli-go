@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/url"
 	"strings"
 
@@ -17,7 +18,9 @@ type readonlyClient interface {
 	ListProjects(context.Context) ([]osfapi.Node, error)
 	GetNode(context.Context, string) (osfapi.Node, error)
 	ListNodeChildren(context.Context, string) ([]osfapi.Node, error)
-	ListStorageFiles(context.Context, string) ([]osfapi.StorageFile, error)
+	ListStorageFiles(context.Context, string, ...string) ([]osfapi.StorageFile, error)
+	GetStorageFile(context.Context, string) (osfapi.StorageFile, error)
+	OpenDownload(context.Context, string) (io.ReadCloser, error)
 }
 
 type defaultReadonlyClient struct {
@@ -70,8 +73,16 @@ func (c *defaultReadonlyClient) ListNodeChildren(ctx context.Context, id string)
 	return c.api.ListNodeChildren(ctx, id)
 }
 
-func (c *defaultReadonlyClient) ListStorageFiles(ctx context.Context, id string) ([]osfapi.StorageFile, error) {
-	return c.api.ListStorageFiles(ctx, id)
+func (c *defaultReadonlyClient) ListStorageFiles(ctx context.Context, id string, segments ...string) ([]osfapi.StorageFile, error) {
+	return c.api.ListStorageFiles(ctx, id, segments...)
+}
+
+func (c *defaultReadonlyClient) GetStorageFile(ctx context.Context, id string) (osfapi.StorageFile, error) {
+	return c.api.GetStorageFile(ctx, id)
+}
+
+func (c *defaultReadonlyClient) OpenDownload(ctx context.Context, downloadURL string) (io.ReadCloser, error) {
+	return c.api.OpenDownload(ctx, downloadURL)
 }
 
 func parseNodeIDOrURL(input string) (string, error) {

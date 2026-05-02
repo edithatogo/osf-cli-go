@@ -85,6 +85,15 @@ func (c *Client) GetNode(ctx context.Context, id string) (Node, error) {
 	return doc.Data, nil
 }
 
+// GetStorageFile loads a file metadata record by id.
+func (c *Client) GetStorageFile(ctx context.Context, id string) (StorageFile, error) {
+	var doc document[StorageFile]
+	if _, err := c.get(ctx, "/v2/files/"+url.PathEscape(id)+"/", &doc); err != nil {
+		return StorageFile{}, err
+	}
+	return doc.Data, nil
+}
+
 // ListNodeChildren loads all child components for a node.
 func (c *Client) ListNodeChildren(ctx context.Context, id string) ([]Node, error) {
 	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/children/")
@@ -149,7 +158,7 @@ func (c *Client) get(ctx context.Context, endpoint string, dst any) (*url.URL, e
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -164,6 +173,39 @@ func (c *Client) get(ctx context.Context, endpoint string, dst any) (*url.URL, e
 		return nil, fmt.Errorf("decode osf response from %s: %w", req.URL.RequestURI(), err)
 	}
 	return req.URL, nil
+}
+
+// OpenDownload opens a download URL and returns the response body stream.
+func (c *Client) OpenDownload(ctx context.Context, downloadURL string) (io.ReadCloser, error) {
+	reqURL, err := c.resolveEndpoint(downloadURL)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	if c.bearerToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
+	}
+	req.Header.Set("Accept", "*/*")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, readErr := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		if readErr != nil {
+			return nil, fmt.Errorf("read download error body: %w", readErr)
+		}
+		return nil, parseAPIError(resp.StatusCode, req.Method, req.URL.RequestURI(), body)
+	}
+
+	return resp.Body, nil
 }
 
 func (c *Client) resolveEndpoint(endpoint string) (*url.URL, error) {
