@@ -1,0 +1,27 @@
+{
+  "data": [
+    {
+      "id": "osfstorage",
+      "type": "files",
+      "attributes": {
+        "name": "osfstorage",
+        "full_name": "OSF Storage"
+      },
+      "links": {
+        "self": "https://files.osf.io/v1/providers/osfstorage/abc123"
+      }
+    },
+    {
+      "id": "github",
+      "type": "files",
+      "attributes": {
+        "name": "github",
+        "full_name": "GitHub"
+      },
+      "links": {
+        "self": "https://files.osf.io/v1/providers/github/repo1"
+      }
+    }
+  ],
+  "links": {}
+}

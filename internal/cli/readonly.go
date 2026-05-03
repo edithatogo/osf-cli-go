@@ -17,6 +17,7 @@ type readonlyClient interface {
 	CurrentUser(context.Context) (osfapi.User, error)
 	ListProjects(context.Context) ([]osfapi.Node, error)
 	GetNode(context.Context, string) (osfapi.Node, error)
+	ListNodeContributors(context.Context, string) ([]osfapi.Contributor, error)
 	ListNodeChildren(context.Context, string) ([]osfapi.Node, error)
 	ListStorageFiles(context.Context, string, ...string) ([]osfapi.StorageFile, error)
 	GetStorageFile(context.Context, string) (osfapi.StorageFile, error)
@@ -67,6 +68,10 @@ func (c *defaultReadonlyClient) CurrentUser(ctx context.Context) (osfapi.User, e
 
 func (c *defaultReadonlyClient) GetNode(ctx context.Context, id string) (osfapi.Node, error) {
 	return c.api.GetNode(ctx, id)
+}
+
+func (c *defaultReadonlyClient) ListNodeContributors(ctx context.Context, id string) ([]osfapi.Contributor, error) {
+	return c.api.ListNodeContributors(ctx, id)
 }
 
 func (c *defaultReadonlyClient) ListNodeChildren(ctx context.Context, id string) ([]osfapi.Node, error) {

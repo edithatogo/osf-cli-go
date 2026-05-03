@@ -96,6 +96,7 @@ func newRootCommandWithClient(stdout, stderr io.Writer, client readonlyClient) *
 		newProjectsCommand(client),
 		newComponentsCommand(client),
 		newFilesCommand(client),
+		newExportCommand(client),
 		newCompletionCommand(root),
 	)
 
@@ -164,6 +165,7 @@ func writeRootContract(w io.Writer) error {
 			{Name: "projects", Status: "implemented", Description: "List and inspect OSF projects and components"},
 			{Name: "components", Status: "implemented", Description: "List project components"},
 			{Name: "files", Status: "implemented", Description: "List OSF Storage files"},
+			{Name: "export", Status: "implemented", Description: "Export a node snapshot"},
 			{Name: "completion", Status: "implemented", Description: "Generate shell completion scripts"},
 		},
 	})

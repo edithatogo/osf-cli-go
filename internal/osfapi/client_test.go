@@ -1003,6 +1003,302 @@ func TestListStorageFilesWithSegments(t *testing.T) {
 	}
 }
 
+func TestUploadFile(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Method; got != http.MethodPut {
+			t.Fatalf("method = %q", got)
+		}
+		if got := r.Header.Get("Authorization"); got != "Bearer token-123" {
+			t.Fatalf("authorization header = %q", got)
+		}
+		if got := r.URL.Path; got != "/v1/providers/osfstorage/abc123/report.csv" {
+			t.Fatalf("path = %q", got)
+		}
+		if got := r.URL.Query().Get("kind"); got != "file" {
+			t.Fatalf("kind = %q", got)
+		}
+		if got := r.URL.Query().Get("conflict"); got != "overwrite" {
+			t.Fatalf("conflict = %q", got)
+		}
+		body, _ := io.ReadAll(r.Body)
+		if string(body) != "col1,col2\n1,2\n" {
+			t.Fatalf("body = %q", string(body))
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()), WithBearerToken("token-123"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	providerURL := srv.URL + "/v1/providers/osfstorage/abc123"
+	err = client.UploadFile(t.Context(), providerURL, "report.csv", strings.NewReader("col1,col2\n1,2\n"), "overwrite")
+	if err != nil {
+		t.Fatalf("UploadFile returned error: %v", err)
+	}
+}
+
+func TestUploadFileError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusConflict)
+		_, _ = w.Write([]byte("file already exists"))
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.UploadFile(t.Context(), srv.URL+"/v1/providers/osfstorage/abc123", "existing.txt", strings.NewReader("data"), "fail")
+	if err == nil {
+		t.Fatal("UploadFile returned nil error, want error")
+	}
+	if !strings.Contains(err.Error(), "file already exists") {
+		t.Fatalf("error = %q", err.Error())
+	}
+}
+
+func TestCreateFolder(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Method; got != http.MethodPut {
+			t.Fatalf("method = %q", got)
+		}
+		if got := r.Header.Get("Authorization"); got != "Bearer token-123" {
+			t.Fatalf("authorization header = %q", got)
+		}
+		if got := r.URL.Path; got != "/v1/providers/osfstorage/abc123/myfolder/" {
+			t.Fatalf("path = %q", got)
+		}
+		if got := r.URL.Query().Get("kind"); got != "folder" {
+			t.Fatalf("kind = %q", got)
+		}
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()), WithBearerToken("token-123"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.CreateFolder(t.Context(), srv.URL+"/v1/providers/osfstorage/abc123", "myfolder")
+	if err != nil {
+		t.Fatalf("CreateFolder returned error: %v", err)
+	}
+}
+
+func TestCreateFolderError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusConflict)
+		_, _ = w.Write([]byte("folder exists"))
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.CreateFolder(t.Context(), srv.URL+"/v1/providers/osfstorage/abc123", "existing")
+	if err == nil {
+		t.Fatal("CreateFolder returned nil error, want error")
+	}
+	if !strings.Contains(err.Error(), "folder exists") {
+		t.Fatalf("error = %q", err.Error())
+	}
+}
+
+func TestDeleteFile(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Method; got != http.MethodDelete {
+			t.Fatalf("method = %q", got)
+		}
+		if got := r.Header.Get("Authorization"); got != "Bearer token-123" {
+			t.Fatalf("authorization header = %q", got)
+		}
+		if got := r.URL.Path; got != "/v1/providers/osfstorage/abc123/old.csv" {
+			t.Fatalf("path = %q", got)
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()), WithBearerToken("token-123"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.DeleteFile(t.Context(), srv.URL+"/v1/providers/osfstorage/abc123", "old.csv")
+	if err != nil {
+		t.Fatalf("DeleteFile returned error: %v", err)
+	}
+}
+
+func TestDeleteFileError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte("file not found"))
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.DeleteFile(t.Context(), srv.URL+"/v1/providers/osfstorage/abc123", "missing.txt")
+	if err == nil {
+		t.Fatal("DeleteFile returned nil error, want error")
+	}
+	if !strings.Contains(err.Error(), "file not found") {
+		t.Fatalf("error = %q", err.Error())
+	}
+}
+
+func TestListPreprints(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Path; got != "/v2/preprints/" {
+			t.Fatalf("path = %q", got)
+		}
+		writeFixture(t, w, "node_list_page1.json")
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	preprints, err := client.ListPreprints(t.Context())
+	if err != nil {
+		t.Fatalf("ListPreprints returned error: %v", err)
+	}
+	if len(preprints) != 1 || preprints[0].ID != "item-1" {
+		t.Fatalf("preprints = %+v", preprints)
+	}
+}
+
+func TestSearchOSF(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Path; got != "/v2/search/" {
+			t.Fatalf("path = %q", got)
+		}
+		if got, want := r.URL.Query().Get("q"), "open science"; got != want {
+			t.Fatalf("q = %q, want %q", got, want)
+		}
+		if got := r.URL.Query().Get("filter[resource_type]"); got != "node" {
+			t.Fatalf("filter[resource_type] = %q", got)
+		}
+		writeFixture(t, w, "node_list_page1.json")
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results, err := client.SearchOSF(t.Context(), "open science")
+	if err != nil {
+		t.Fatalf("SearchOSF returned error: %v", err)
+	}
+	if len(results) != 1 || results[0].ID != "item-1" {
+		t.Fatalf("results = %+v", results)
+	}
+}
+
+func TestGetNodeFilesProvider(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Path; got != "/v2/nodes/project-123/files/" {
+			t.Fatalf("path = %q", got)
+		}
+		writeFixture(t, w, "files_provider.json")
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	providerURL, err := client.GetNodeFilesProvider(t.Context(), "project-123")
+	if err != nil {
+		t.Fatalf("GetNodeFilesProvider returned error: %v", err)
+	}
+	if providerURL != "https://files.osf.io/v1/providers/osfstorage/abc123" {
+		t.Fatalf("provider URL = %q", providerURL)
+	}
+}
+
+func TestGetNodeFilesProviderNotFound(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		_, _ = w.Write([]byte(`{"data":[{"id":"github","type":"files","attributes":{"name":"github","full_name":"GitHub"},"links":{"self":"https://files.osf.io/v1/providers/github/repo1"}}],"links":{}}`))
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.GetNodeFilesProvider(t.Context(), "node-without-osfstorage")
+	if err == nil {
+		t.Fatal("GetNodeFilesProvider returned nil error, want error")
+	}
+	if !strings.Contains(err.Error(), "no osfstorage provider") {
+		t.Fatalf("error = %q", err.Error())
+	}
+}
+
+func TestListNodeAddons(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Path; got != "/v2/nodes/project-123/addons/" {
+			t.Fatalf("path = %q", got)
+		}
+		writeFixture(t, w, "node_list_page1.json")
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	addons, err := client.ListNodeAddons(t.Context(), "project-123")
+	if err != nil {
+		t.Fatalf("ListNodeAddons returned error: %v", err)
+	}
+	if len(addons) != 1 || addons[0].ID != "item-1" {
+		t.Fatalf("addons = %+v", addons)
+	}
+}
+
 func writeFixture(t *testing.T, w http.ResponseWriter, name string) {
 	t.Helper()
 	body, err := os.ReadFile(filepath.Join("testdata", name))

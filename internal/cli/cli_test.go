@@ -607,8 +607,8 @@ func TestWriteRootContractWithJSON(t *testing.T) {
 	if err := json.Unmarshal(buf.Bytes(), &contract); err != nil {
 		t.Fatalf("stdout is not valid JSON: %v\n%s", err, buf.String())
 	}
-	if len(contract.Commands) != 5 {
-		t.Fatalf("command count = %d, want 5", len(contract.Commands))
+	if len(contract.Commands) != 6 {
+		t.Fatalf("command count = %d, want 6", len(contract.Commands))
 	}
 }
 
@@ -639,8 +639,8 @@ func TestRunEmitsJSONContract(t *testing.T) {
 	if contract.DefaultOutput != outputModeTable {
 		t.Fatalf("default output = %q, want %q", contract.DefaultOutput, outputModeTable)
 	}
-	if len(contract.Commands) != 5 {
-		t.Fatalf("command count = %d, want 5", len(contract.Commands))
+	if len(contract.Commands) != 6 {
+		t.Fatalf("command count = %d, want 6", len(contract.Commands))
 	}
 	if contract.ExitCodes["success"] != 0 || contract.ExitCodes["planned_command"] != 1 || contract.ExitCodes["usage_or_argument"] != 2 {
 		t.Fatalf("unexpected exit code contract: %#v", contract.ExitCodes)
@@ -1265,6 +1265,10 @@ func (f *fakeReadonlyClient) GetNode(_ context.Context, id string) (osfapi.Node,
 	return f.node, nil
 }
 
+func (f *fakeReadonlyClient) ListNodeContributors(_ context.Context, id string) ([]osfapi.Contributor, error) {
+	return nil, nil
+}
+
 func (f *fakeReadonlyClient) ListNodeChildren(_ context.Context, id string) ([]osfapi.Node, error) {
 	f.gotChildrenID = id
 	return append([]osfapi.Node(nil), f.children...), nil
@@ -1300,6 +1304,46 @@ func (f *fakeReadonlyClient) OpenDownload(_ context.Context, downloadURL string)
 		}
 	}
 	return nil, fmt.Errorf("missing download body %q", downloadURL)
+}
+
+func TestExportJSONOutput(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{
+		node: osfapi.Node{ID: "n1", Attributes: osfapi.NodeAttributes{Title: "Test", Category: "project"}, Links: osfapi.Links{Self: "https://osf.io/n1/"}},
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"export", "n1", "--json"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("export json returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	var data ExportData
+	if err := json.Unmarshal(stdout.Bytes(), &data); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	if data.Node.ID != "n1" || data.Node.Title != "Test" {
+		t.Fatalf("export data = %+v", data)
+	}
+}
+
+func TestExportTableOutput(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{
+		node: osfapi.Node{ID: "n1", Attributes: osfapi.NodeAttributes{Title: "Test", Category: "project"}, Links: osfapi.Links{Self: "https://osf.io/n1/"}},
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"export", "n1"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("export table returned %d, want 0", code)
+	}
+	if !strings.Contains(stdout.String(), "Test") || !strings.Contains(stdout.String(), "project") {
+		t.Fatalf("table output = %q, want Test and project", stdout.String())
+	}
 }
 
 func runWithClient(args []string, stdout, stderr *bytes.Buffer, client readonlyClient) int {

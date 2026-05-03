@@ -343,6 +343,134 @@ func (c *Client) OpenDownload(ctx context.Context, downloadURL string) (io.ReadC
 	return resp.Body, nil
 }
 
+// UploadFile uploads content to a storage provider via WaterButler.
+// The providerURL is typically obtained from GET /v2/nodes/{id}/files/osfstorage/
+// and looks like "https://files.osf.io/v1/providers/osfstorage/..."
+func (c *Client) UploadFile(ctx context.Context, providerURL, fileName string, content io.Reader, conflict string) error {
+	fullURL := strings.TrimRight(providerURL, "/") + "/" + url.PathEscape(fileName)
+	if conflict != "" {
+		parsed, _ := url.Parse(fullURL)
+		q := parsed.Query()
+		q.Set("kind", "file")
+		if conflict == "overwrite" {
+			q.Set("conflict", "overwrite")
+		} else {
+			q.Set("conflict", "fail")
+		}
+		parsed.RawQuery = q.Encode()
+		fullURL = parsed.String()
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, fullURL, content)
+	if err != nil {
+		return err
+	}
+	if c.bearerToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("upload failed: %s", strings.TrimSpace(string(body)))
+	}
+	return nil
+}
+
+// CreateFolder creates a folder via WaterButler.
+func (c *Client) CreateFolder(ctx context.Context, providerURL, folderName string) error {
+	fullURL := strings.TrimRight(providerURL, "/") + "/" + url.PathEscape(folderName) + "/?kind=folder"
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, fullURL, http.NoBody)
+	if err != nil {
+		return err
+	}
+	if c.bearerToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("create folder failed: %s", strings.TrimSpace(string(body)))
+	}
+	return nil
+}
+
+// DeleteFile deletes a file via WaterButler.
+func (c *Client) DeleteFile(ctx context.Context, providerURL, fileName string) error {
+	fullURL := strings.TrimRight(providerURL, "/") + "/" + url.PathEscape(fileName)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, fullURL, nil)
+	if err != nil {
+		return err
+	}
+	if c.bearerToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("delete file failed: %s", strings.TrimSpace(string(body)))
+	}
+	return nil
+}
+
+// ListPreprints loads all preprints.
+func (c *Client) ListPreprints(ctx context.Context) ([]Node, error) {
+	return collectPages[Node](ctx, c, "/v2/preprints/")
+}
+
+// SearchOSF performs a search across OSF content.
+func (c *Client) SearchOSF(ctx context.Context, query string) ([]Node, error) {
+	endpoint := "/v2/search/?q=" + url.QueryEscape(query) + "&filter[resource_type]=node"
+	return collectPages[Node](ctx, c, endpoint)
+}
+
+// ListNodeAddons lists all storage add-ons configured for a node.
+func (c *Client) ListNodeAddons(ctx context.Context, id string) ([]Node, error) {
+	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/addons/")
+}
+
+// GetNodeFilesProvider gets the files provider URL for a node's OSF Storage.
+// Returns the provider URL for use with WaterButler operations.
+func (c *Client) GetNodeFilesProvider(ctx context.Context, nodeID string) (string, error) {
+	var doc document[[]struct {
+		ID         string `json:"id"`
+		Type       string `json:"type"`
+		Attributes struct {
+			Name     string `json:"name"`
+			FullName string `json:"full_name"`
+		} `json:"attributes"`
+		Links Links `json:"links"`
+	}]
+	if _, err := c.get(ctx, "/v2/nodes/"+url.PathEscape(nodeID)+"/files/", &doc); err != nil {
+		return "", err
+	}
+	for _, provider := range doc.Data {
+		if provider.ID == "osfstorage" {
+			return provider.Links.Self, nil
+		}
+	}
+	return "", fmt.Errorf("no osfstorage provider found for node %q", nodeID)
+}
+
 func (c *Client) GetUser(ctx context.Context, id string) (User, error) {
 	var doc document[User]
 	if _, err := c.get(ctx, "/v2/users/"+url.PathEscape(id)+"/", &doc); err != nil {
