@@ -93,6 +93,69 @@ osf files download --tree abc123 ./output/
 osf files download --tree https://osf.io/abc123 ./output/
 ```
 
+### `osf files upload --node <guid> <local-path>`
+
+Upload a file to a node's OSF Storage.
+
+```bash
+osf files upload --node abc123 ./report.pdf
+osf files upload --node abc123 ./data.csv --conflict overwrite
+```
+
+The `--conflict` flag accepts `fail` (default) or `overwrite`.
+
+### `osf files mkdir --node <guid> <folder-name>`
+
+Create a folder in a node's OSF Storage.
+
+```bash
+osf files mkdir --node abc123 "My Folder"
+```
+
+### `osf files rm --node <guid> <file-name>`
+
+Delete a file from a node's OSF Storage.
+
+```bash
+osf files rm --node abc123 old-data.csv
+```
+
+### `osf search <query>`
+
+Search OSF projects and components by text query.
+
+```bash
+osf search "open science"
+osf search "reproducibility" --json
+```
+
+### `osf preprints list`
+
+List all preprints available on OSF.
+
+```bash
+osf preprints list
+osf preprints list --json
+```
+
+### `osf open <guid-or-url>`
+
+Open an OSF node in the default web browser.
+
+```bash
+osf open abc123
+osf open https://osf.io/abc123
+```
+
+### `osf whoami`
+
+Show the active authenticated OSF account (alias for `auth whoami`).
+
+```bash
+osf whoami
+osf whoami --json
+```
+
 ### `osf export <guid-or-url>`
 
 Export a full node snapshot including metadata, contributors, files, and components.

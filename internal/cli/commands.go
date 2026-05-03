@@ -2,7 +2,9 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 
@@ -87,6 +89,9 @@ func newFilesCommand(client readonlyClient) *cobra.Command {
 	}
 	cmd.AddCommand(newFilesListCommand(client))
 	cmd.AddCommand(newFilesDownloadCommand(client))
+	cmd.AddCommand(newFilesUploadCommand(client))
+	cmd.AddCommand(newFilesMkdirCommand(client))
+	cmd.AddCommand(newFilesRmCommand(client))
 	return cmd
 }
 
@@ -360,4 +365,104 @@ func formatInt64(v int64) string {
 		return ""
 	}
 	return strconv.FormatInt(v, 10)
+}
+
+func newFilesUploadCommand(client readonlyClient) *cobra.Command {
+	var nodeID string
+	var conflict string
+	cmd := &cobra.Command{
+		Use:   "upload --node <guid> <local-path>",
+		Short: "Upload a file to OSF Storage",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if nodeID == "" {
+				return fmt.Errorf("--node flag is required")
+			}
+			localPath := args[0]
+			fileName := filepath.Base(localPath)
+			f, err := os.Open(localPath)
+			if err != nil {
+				return fmt.Errorf("open file %q: %w", localPath, err)
+			}
+			defer func() { _ = f.Close() }()
+			providerURL, err := client.GetNodeFilesProvider(cmd.Context(), nodeID)
+			if err != nil {
+				return fmt.Errorf("get files provider: %w", err)
+			}
+			if conflict == "" {
+				conflict = "fail"
+			}
+			if err := client.UploadFile(cmd.Context(), providerURL, fileName, f, conflict); err != nil {
+				return err
+			}
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "uploaded %s to node %s\n", fileName, nodeID)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&nodeID, "node", "", "target node GUID")
+	cmd.Flags().StringVar(&conflict, "conflict", "fail", "conflict policy: fail or overwrite")
+	return cmd
+}
+
+func newFilesMkdirCommand(client readonlyClient) *cobra.Command {
+	var nodeID string
+	cmd := &cobra.Command{
+		Use:   "mkdir --node <guid> <folder-name>",
+		Short: "Create a folder in OSF Storage",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if nodeID == "" {
+				return fmt.Errorf("--node flag is required")
+			}
+			providerURL, err := client.GetNodeFilesProvider(cmd.Context(), nodeID)
+			if err != nil {
+				return fmt.Errorf("get files provider: %w", err)
+			}
+			if err := client.CreateFolder(cmd.Context(), providerURL, args[0]); err != nil {
+				return err
+			}
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "created folder %q in node %s\n", args[0], nodeID)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&nodeID, "node", "", "target node GUID")
+	_ = cmd.MarkFlagRequired("node")
+	return cmd
+}
+
+func newFilesRmCommand(client readonlyClient) *cobra.Command {
+	var nodeID string
+	cmd := &cobra.Command{
+		Use:   "rm --node <guid> <file-name>",
+		Short: "Delete a file from OSF Storage",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if nodeID == "" {
+				return fmt.Errorf("--node flag is required")
+			}
+			providerURL, err := client.GetNodeFilesProvider(cmd.Context(), nodeID)
+			if err != nil {
+				return fmt.Errorf("get files provider: %w", err)
+			}
+			if err := client.DeleteFile(cmd.Context(), providerURL, args[0]); err != nil {
+				return err
+			}
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "deleted %q from node %s\n", args[0], nodeID)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&nodeID, "node", "", "target node GUID")
+	_ = cmd.MarkFlagRequired("node")
+	return cmd
+}
+
+func newWhoamiCommand(client readonlyClient) *cobra.Command {
+	return &cobra.Command{
+		Use:   "whoami",
+		Short: "Show the active authenticated OSF account (alias for auth whoami)",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return newAuthWhoamiCommand(client).RunE(cmd, args)
+		},
+	}
 }

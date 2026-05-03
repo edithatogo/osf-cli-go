@@ -1,6 +1,9 @@
 package osfapi
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type document[T any] struct {
 	Data  T     `json:"data"`
@@ -103,4 +106,18 @@ type StorageFileAttributes struct {
 // DownloadURL returns the file download URL when OSF provides one.
 func (f StorageFile) DownloadURL() string {
 	return f.Links.Download
+}
+
+// FileVersion represents a version of an OSF storage file.
+type FileVersion struct {
+	ID         string                `json:"id"`
+	Type       string                `json:"type"`
+	Attributes FileVersionAttributes `json:"attributes"`
+	Links      Links                 `json:"links"`
+}
+
+type FileVersionAttributes struct {
+	Size         int64     `json:"size,omitempty"`
+	DateCreated  time.Time `json:"date_created,omitempty"`
+	DateModified time.Time `json:"date_modified,omitempty"`
 }

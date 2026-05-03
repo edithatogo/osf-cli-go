@@ -1299,6 +1299,29 @@ func TestListNodeAddons(t *testing.T) {
 	}
 }
 
+func TestListFileVersions(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		_, _ = w.Write([]byte(`{"data":[],"links":{}}`))
+	}))
+	defer server.Close()
+
+	client, err := New(server.URL + "/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	versions, err := client.ListFileVersions(t.Context(), "file-1")
+	if err != nil {
+		t.Fatalf("ListFileVersions returned error: %v", err)
+	}
+	if len(versions) != 0 {
+		t.Fatalf("versions = %d, want 0", len(versions))
+	}
+}
+
 func writeFixture(t *testing.T, w http.ResponseWriter, name string) {
 	t.Helper()
 	body, err := os.ReadFile(filepath.Join("testdata", name))

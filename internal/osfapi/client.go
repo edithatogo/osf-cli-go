@@ -100,6 +100,11 @@ func (c *Client) GetStorageFile(ctx context.Context, id string) (StorageFile, er
 	return doc.Data, nil
 }
 
+// ListFileVersions loads all versions for a file.
+func (c *Client) ListFileVersions(ctx context.Context, fileID string) ([]FileVersion, error) {
+	return collectPages[FileVersion](ctx, c, "/v2/files/"+url.PathEscape(fileID)+"/versions/")
+}
+
 // ListNodeChildren returns all immediate child components of the specified node.
 // Automatically follows pagination links.
 func (c *Client) ListNodeChildren(ctx context.Context, id string) ([]Node, error) {

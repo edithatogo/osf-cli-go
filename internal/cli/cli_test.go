@@ -607,8 +607,8 @@ func TestWriteRootContractWithJSON(t *testing.T) {
 	if err := json.Unmarshal(buf.Bytes(), &contract); err != nil {
 		t.Fatalf("stdout is not valid JSON: %v\n%s", err, buf.String())
 	}
-	if len(contract.Commands) != 9 {
-		t.Fatalf("command count = %d, want 9", len(contract.Commands))
+	if len(contract.Commands) != 10 {
+		t.Fatalf("command count = %d, want 10", len(contract.Commands))
 	}
 	if contract.Commands[0].Status != "implemented" || contract.Commands[1].Status != "implemented" {
 		t.Fatalf("unexpected command statuses: %#v", contract.Commands)
@@ -1367,6 +1367,68 @@ func TestSearchOutput(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	code := runWithClient([]string{"search", "open+science"}, &stdout, &stderr, &fakeReadonlyClient{})
+	if code != 0 {
+		t.Fatalf("search returned %d, want 0", code)
+	}
+}
+
+func TestWhoamiAlias(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{
+		currentUser: osfapi.User{
+			ID:   "u1",
+			Type: "users",
+			Attributes: osfapi.UserAttributes{
+				FullName:   "Test User",
+				GivenName:  "Test",
+				FamilyName: "User",
+			},
+		},
+	}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"whoami"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("whoami returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Test User") {
+		t.Fatalf("whoami output = %q, want Test User", stdout.String())
+	}
+}
+
+func TestOpenCommandHelp(t *testing.T) {
+	t.Parallel()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Run([]string{"open", "--help"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("open --help returned %d, want 0", code)
+	}
+	if !strings.Contains(stdout.String(), "guid-or-url") {
+		t.Fatalf("open help = %q, want guid-or-url", stdout.String())
+	}
+}
+
+func TestPreprintsListEmpty(t *testing.T) {
+	t.Parallel()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"preprints", "list"}, &stdout, &stderr, &fakeReadonlyClient{})
+	if code != 0 {
+		t.Fatalf("preprints list returned %d, want 0", code)
+	}
+}
+
+func TestSearchEmpty(t *testing.T) {
+	t.Parallel()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"search", "test"}, &stdout, &stderr, &fakeReadonlyClient{})
 	if code != 0 {
 		t.Fatalf("search returned %d, want 0", code)
 	}

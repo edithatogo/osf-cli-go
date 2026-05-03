@@ -100,6 +100,7 @@ func newRootCommandWithClient(stdout, stderr io.Writer, client readonlyClient) *
 		newSearchCommand(client),
 		newPreprintsCommand(client),
 		newOpenCommand(),
+		newWhoamiCommand(client),
 		newCompletionCommand(root),
 	)
 
@@ -172,6 +173,7 @@ func writeRootContract(w io.Writer) error {
 			{Name: "search", Status: "implemented", Description: "Search OSF projects and components"},
 			{Name: "preprints", Status: "implemented", Description: "List OSF preprints"},
 			{Name: "open", Status: "implemented", Description: "Open an OSF node in the default browser"},
+			{Name: "whoami", Status: "implemented", Description: "Show the active OSF account (alias for auth whoami)"},
 			{Name: "completion", Status: "implemented", Description: "Generate shell completion scripts"},
 		},
 	})
