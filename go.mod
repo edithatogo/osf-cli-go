@@ -1,4 +1,4 @@
-module osf-cli-go
+module github.com/edithatogo/osf-cli-go
 
 go 1.26
 

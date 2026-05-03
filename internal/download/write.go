@@ -12,6 +12,8 @@ import (
 var errDestinationExists = errors.New("destination already exists")
 
 // WriteStreamAtomically writes a single file to dst through a temporary file.
+// The temporary file is created alongside the destination and atomically renamed
+// on success to prevent partial writes.
 //
 // It returns written=false when the destination exists and ConflictSkip is used.
 func WriteStreamAtomically(dst string, src io.Reader, perm fs.FileMode, policy ConflictPolicy) (written bool, err error) {

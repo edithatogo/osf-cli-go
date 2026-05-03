@@ -25,6 +25,7 @@ type APIError struct {
 	Detail     string
 }
 
+// Error returns a human-readable summary of the OSF API error.
 func (e *APIError) Error() string {
 	if e == nil {
 		return "<nil>"

@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"osf-cli-go/internal/auth"
-	"osf-cli-go/internal/osfapi"
+	"github.com/edithatogo/osf-cli-go/internal/auth"
+	"github.com/edithatogo/osf-cli-go/internal/osfapi"
 )
 
 func TestRunPrintsHelpWithoutArgs(t *testing.T) {

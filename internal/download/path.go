@@ -11,7 +11,9 @@ import (
 
 var errPathTraversal = errors.New("remote path escapes destination root")
 
-// NormalizeDestination normalizes the user-selected destination directory.
+// NormalizeDestination cleans and resolves the user-selected destination
+// directory to an absolute path. Returns an error if the path is empty
+// or resolves to ".".
 func NormalizeDestination(dest string) (string, error) {
 	dest = strings.TrimSpace(dest)
 	if dest == "" {
@@ -31,6 +33,7 @@ func NormalizeDestination(dest string) (string, error) {
 }
 
 // NormalizeRemotePath cleans an OSF remote path into a relative forward-slash path.
+// It collapses redundant segments and rejects directory traversal attempts ("..").
 func NormalizeRemotePath(remote string) (string, error) {
 	remote = strings.TrimSpace(remote)
 	if remote == "" {
@@ -63,6 +66,8 @@ func NormalizeRemotePath(remote string) (string, error) {
 }
 
 // ResolveDestination joins the normalized destination root and remote path safely.
+// It validates that the resulting path stays within the destination root and
+// follows symlinks to prevent directory traversal attacks.
 func ResolveDestination(destRoot, remote string) (string, error) {
 	normalizedRoot, err := NormalizeDestination(destRoot)
 	if err != nil {

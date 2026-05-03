@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"osf-cli-go/internal/download"
-	"osf-cli-go/internal/osfapi"
-	"osf-cli-go/internal/output"
+	"github.com/edithatogo/osf-cli-go/internal/download"
+	"github.com/edithatogo/osf-cli-go/internal/osfapi"
+	"github.com/edithatogo/osf-cli-go/internal/output"
 
 	"github.com/spf13/cobra"
 )

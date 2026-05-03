@@ -43,9 +43,9 @@ if ($outputDir) {
 
 $ldflags = @(
     "-s -w",
-    "-X osf-cli-go/internal/cli.version=$Version",
-    "-X osf-cli-go/internal/cli.buildCommit=$Commit",
-    "-X osf-cli-go/internal/cli.buildDate=$BuildDate"
+    "-X github.com/edithatogo/osf-cli-go/internal/cli.version=$Version",
+    "-X github.com/edithatogo/osf-cli-go/internal/cli.buildCommit=$Commit",
+    "-X github.com/edithatogo/osf-cli-go/internal/cli.buildDate=$BuildDate"
 ) -join " "
 
 & go build -trimpath -ldflags $ldflags -o $Output ./cmd/osf

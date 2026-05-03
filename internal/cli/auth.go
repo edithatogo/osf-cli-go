@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"osf-cli-go/internal/output"
+	"github.com/edithatogo/osf-cli-go/internal/output"
 
 	"github.com/spf13/cobra"
 )

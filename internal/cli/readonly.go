@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"osf-cli-go/internal/auth"
-	"osf-cli-go/internal/osfapi"
+	"github.com/edithatogo/osf-cli-go/internal/auth"
+	"github.com/edithatogo/osf-cli-go/internal/osfapi"
 )
 
 const osfAPIBaseURL = "https://api.osf.io/v2/"

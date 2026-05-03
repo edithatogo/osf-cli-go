@@ -19,3 +19,6 @@ This file tracks all major work items. Each track has its own spec and plan.
 - [x] [release-packaging](tracks/release-packaging_20260502/spec.md) — Buildable release artifacts, version injection, completions, and release checks.
 - [x] [coverage-hardening](tracks/coverage-hardening_20260502/spec.md) — Focused coverage improvements for auth, API, CLI error paths, and download safety.
 - [x] [mcp-boundary-prep](tracks/mcp-boundary-prep_20260502/spec.md) — Minimal reusable boundaries for future MCP server development while keeping CLI-first delivery.
+- [x] [osf-api-coverage](tracks/osf-api-coverage_20260502/spec.md) — Extended OSF API coverage to 20+ endpoints including registrations, wikis, comments, logs, identifiers, write operations.
+- [x] [sota-repo-hardening](tracks/sota-repo-hardening_20260502/spec.md) — SOTA repo setup: issue templates, PR template, pre-commit hooks, dependabot, topics, license metadata.
+- [x] [docs-overhaul](tracks/docs-overhaul_20260502/spec.md) — Comprehensive Go doc comments, install/usage/architecture docs, and documentation CI integration.

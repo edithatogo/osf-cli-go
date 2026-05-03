@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"osf-cli-go/internal/auth"
+	"github.com/edithatogo/osf-cli-go/internal/auth"
 )
 
 type mapSource map[string]string

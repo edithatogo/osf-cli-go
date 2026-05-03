@@ -1,0 +1,13 @@
+{
+  "data": [
+    {
+      "id": "item-1",
+      "type": "nodes",
+      "attributes": {
+        "title": "List Item One",
+        "category": "component"
+      }
+    }
+  ],
+  "links": {}
+}

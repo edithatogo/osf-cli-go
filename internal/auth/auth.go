@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// TokenEnv is the environment variable that stores the OSF personal access token.
 const TokenEnv = "OSF_TOKEN"
 
 const redacted = "[REDACTED]"

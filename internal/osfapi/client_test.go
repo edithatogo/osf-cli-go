@@ -583,6 +583,291 @@ func TestResolveReferenceHandlesRelativeURL(t *testing.T) {
 	}
 }
 
+func TestGetUser(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Authorization"); got != "Bearer token-123" {
+			t.Fatalf("authorization header = %q", got)
+		}
+		if got := r.URL.Path; got != "/v2/users/u1/" {
+			t.Fatalf("path = %q", got)
+		}
+		writeFixture(t, w, "user_me.json")
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()), WithBearerToken("token-123"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	user, err := client.GetUser(context.Background(), "u1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if user.ID != "u1" || user.Attributes.FullName != "Ada Lovelace" {
+		t.Fatalf("unexpected user: %+v", user)
+	}
+}
+
+func TestListNodeCollectionEndpoints(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v2/nodes/project-123/registrations/":
+			writeFixture(t, w, "node_list_page1.json")
+		case "/v2/nodes/project-123/wikis/":
+			writeFixture(t, w, "node_list_page1.json")
+		case "/v2/nodes/project-123/comments/":
+			writeFixture(t, w, "node_list_page1.json")
+		case "/v2/nodes/project-123/logs/":
+			writeFixture(t, w, "node_list_page1.json")
+		case "/v2/nodes/project-123/identifiers/":
+			writeFixture(t, w, "node_list_page1.json")
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	registrations, err := client.ListNodeRegistrations(context.Background(), "project-123")
+	if err != nil {
+		t.Fatalf("ListNodeRegistrations: %v", err)
+	}
+	if len(registrations) != 1 || registrations[0].Attributes.Title != "List Item One" {
+		t.Fatalf("registrations = %+v", registrations)
+	}
+
+	wikis, err := client.ListWikiPages(context.Background(), "project-123")
+	if err != nil {
+		t.Fatalf("ListWikiPages: %v", err)
+	}
+	if len(wikis) != 1 {
+		t.Fatalf("wikis length = %d", len(wikis))
+	}
+
+	comments, err := client.ListNodeComments(context.Background(), "project-123")
+	if err != nil {
+		t.Fatalf("ListNodeComments: %v", err)
+	}
+	if len(comments) != 1 {
+		t.Fatalf("comments length = %d", len(comments))
+	}
+
+	logs, err := client.ListNodeLogs(context.Background(), "project-123")
+	if err != nil {
+		t.Fatalf("ListNodeLogs: %v", err)
+	}
+	if len(logs) != 1 {
+		t.Fatalf("logs length = %d", len(logs))
+	}
+
+	identifiers, err := client.ListNodeIdentifiers(context.Background(), "project-123")
+	if err != nil {
+		t.Fatalf("ListNodeIdentifiers: %v", err)
+	}
+	if len(identifiers) != 1 {
+		t.Fatalf("identifiers length = %d", len(identifiers))
+	}
+}
+
+func TestCreateNode(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Method; got != http.MethodPost {
+			t.Fatalf("method = %q", got)
+		}
+		if got := r.Header.Get("Authorization"); got != "Bearer token-123" {
+			t.Fatalf("authorization header = %q", got)
+		}
+		if got := r.Header.Get("Content-Type"); got != "application/vnd.api+json" {
+			t.Fatalf("content type = %q", got)
+		}
+		if got := r.URL.Path; got != "/v2/nodes/" {
+			t.Fatalf("path = %q", got)
+		}
+		body, _ := io.ReadAll(r.Body)
+		if !strings.Contains(string(body), `"New Project"`) {
+			t.Fatalf("request body = %q", string(body))
+		}
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"data":{"id":"new-project-1","type":"nodes","attributes":{"title":"New Project","category":"project","description":"A description"}}}`))
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()), WithBearerToken("token-123"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	node, err := client.CreateNode(context.Background(), "New Project", "project", "A description")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if node.ID != "new-project-1" || node.Attributes.Title != "New Project" {
+		t.Fatalf("unexpected node: %+v", node)
+	}
+}
+
+func TestUpdateNode(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Method; got != http.MethodPatch {
+			t.Fatalf("method = %q", got)
+		}
+		if got := r.Header.Get("Authorization"); got != "Bearer token-123" {
+			t.Fatalf("authorization header = %q", got)
+		}
+		if got := r.Header.Get("Content-Type"); got != "application/vnd.api+json" {
+			t.Fatalf("content type = %q", got)
+		}
+		if got := r.URL.Path; got != "/v2/nodes/project-123/" {
+			t.Fatalf("path = %q", got)
+		}
+		body, _ := io.ReadAll(r.Body)
+		if !strings.Contains(string(body), `"Updated Title"`) {
+			t.Fatalf("request body = %q", string(body))
+		}
+		writeFixture(t, w, "node_project.json")
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()), WithBearerToken("token-123"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	node, err := client.UpdateNode(context.Background(), "project-123", "Updated Title", "Updated description")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if node.ID != "project-123" || node.Attributes.Title != "Project Alpha" {
+		t.Fatalf("unexpected node: %+v", node)
+	}
+}
+
+func TestDeleteNode(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Method; got != http.MethodDelete {
+			t.Fatalf("method = %q", got)
+		}
+		if got := r.Header.Get("Authorization"); got != "Bearer token-123" {
+			t.Fatalf("authorization header = %q", got)
+		}
+		if got := r.URL.Path; got != "/v2/nodes/project-123/" {
+			t.Fatalf("path = %q", got)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()), WithBearerToken("token-123"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := client.DeleteNode(context.Background(), "project-123"); err != nil {
+		t.Fatalf("DeleteNode returned error: %v", err)
+	}
+}
+
+func TestDeleteNodeError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v2/nodes/nonexistent/" {
+			w.WriteHeader(http.StatusNotFound)
+			writeFixture(t, w, "error_not_found.json")
+			return
+		}
+		t.Fatalf("unexpected path: %s", r.URL.Path)
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.DeleteNode(context.Background(), "nonexistent")
+	if err == nil {
+		t.Fatal("DeleteNode returned nil error, want APIError")
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("error type = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusNotFound || apiErr.Title != "Not Found" {
+		t.Fatalf("unexpected api error: %+v", apiErr)
+	}
+}
+
+func TestCreateNodeAPIError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"errors":[{"title":"Bad Request","detail":"validation failed"}]}`))
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.CreateNode(context.Background(), "", "", "")
+	if err == nil {
+		t.Fatal("CreateNode returned nil error, want APIError")
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("error type = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusBadRequest || apiErr.Title != "Bad Request" {
+		t.Fatalf("unexpected api error: %+v", apiErr)
+	}
+}
+
+func TestUpdateNodeAPIError(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusConflict)
+		_, _ = w.Write([]byte(`{"errors":[{"title":"Conflict","detail":"resource modified"}]}`))
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = client.UpdateNode(context.Background(), "project-123", "title", "desc")
+	if err == nil {
+		t.Fatal("UpdateNode returned nil error, want APIError")
+	}
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		t.Fatalf("error type = %T, want *APIError", err)
+	}
+	if apiErr.StatusCode != http.StatusConflict || apiErr.Title != "Conflict" {
+		t.Fatalf("unexpected api error: %+v", apiErr)
+	}
+}
+
 func TestResolveReferenceRelative(t *testing.T) {
 	t.Parallel()
 

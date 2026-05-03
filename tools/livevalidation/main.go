@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"osf-cli-go/internal/auth"
+	"github.com/edithatogo/osf-cli-go/internal/auth"
 )
 
 const (

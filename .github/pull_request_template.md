@@ -1,19 +1,27 @@
-## Summary
+## Description of Changes
 
 -
 
-## Validation
+## Type of Change
 
-- [ ] `go fmt ./...`
-- [ ] `go test ./...`
-- [ ] `go test -race ./...`
-- [ ] `go vet ./...`
-- [ ] `go run ./tools/checkstubs`
-- [ ] `$conductor-review` run for completed phase or track
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Documentation update
+- [ ] Refactoring / code cleanup
+- [ ] Build / CI / dependency update
+- [ ] Other (please describe):
 
-## Completion Claim
+## Testing Done
 
-- [ ] Scaffolded only
-- [ ] Offline-tested
-- [ ] Integration-ready
-- [ ] Live-validated
+- [ ] Unit tests pass (`go test ./...`)
+- [ ] Race tests pass (`go test -race ./...`)
+- [ ] Manual testing performed (describe below)
+
+## Checklist
+
+- [ ] `go fmt ./...` has been run
+- [ ] `go vet ./...` passes
+- [ ] `go run ./tools/checkstubs` passes
+- [ ] Code has been reviewed by at least one other contributor
+- [ ] Documentation has been updated (if applicable)
+- [ ] No new lint warnings introduced

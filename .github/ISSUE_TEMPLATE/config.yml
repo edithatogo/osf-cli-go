@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Contributing Guidelines
+    url: https://github.com/edithatogo/osf-cli-go/blob/main/CONTRIBUTING.md
+    about: Please read our contributing guidelines before opening an issue.
+  - name: Security Policy
+    url: https://github.com/edithatogo/osf-cli-go/blob/main/SECURITY.md
+    about: Please report security vulnerabilities using our security policy.

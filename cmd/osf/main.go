@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"osf-cli-go/internal/cli"
+	"github.com/edithatogo/osf-cli-go/internal/cli"
 )
 
 func main() {

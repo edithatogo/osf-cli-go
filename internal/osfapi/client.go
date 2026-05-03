@@ -14,31 +14,35 @@ import (
 
 const defaultBaseURL = "https://api.osf.io/v2/"
 
-// Client talks to the OSF API v2 JSON:API surface.
+// Client is an HTTP client for the OSF API v2 JSON:API surface.
+// It handles authentication, pagination, and JSON deserialization.
 type Client struct {
 	baseURL     *url.URL
 	httpClient  *http.Client
 	bearerToken string
 }
 
-// Option configures a Client.
+// Option configures a Client using the functional options pattern.
 type Option func(*Client)
 
-// WithHTTPClient injects the HTTP client used for requests.
+// WithHTTPClient sets the HTTP client used for API requests.
+// If nil, http.DefaultClient is used.
 func WithHTTPClient(httpClient *http.Client) Option {
 	return func(c *Client) {
 		c.httpClient = httpClient
 	}
 }
 
-// WithBearerToken configures an Authorization bearer token.
+// WithBearerToken sets the Authorization header for API requests.
 func WithBearerToken(token string) Option {
 	return func(c *Client) {
 		c.bearerToken = token
 	}
 }
 
-// New creates a Client with the provided base URL.
+// New creates a Client that communicates with the given OSF API base URL.
+// If baseURL is empty, the default production URL (https://api.osf.io/v2/) is used.
+// Returns an error if the URL cannot be parsed.
 func New(baseURL string, opts ...Option) (*Client, error) {
 	if baseURL == "" {
 		baseURL = defaultBaseURL
@@ -62,7 +66,8 @@ func New(baseURL string, opts ...Option) (*Client, error) {
 	return c, nil
 }
 
-// CurrentUser loads the authenticated user resource.
+// CurrentUser returns the authenticated user's profile information.
+// Requires a valid bearer token; returns MissingTokenError otherwise.
 func (c *Client) CurrentUser(ctx context.Context) (User, error) {
 	var doc document[User]
 	if _, err := c.get(ctx, "/v2/users/me/", &doc); err != nil {
@@ -71,12 +76,13 @@ func (c *Client) CurrentUser(ctx context.Context) (User, error) {
 	return doc.Data, nil
 }
 
-// ListCurrentUserProjects loads all project-category nodes for the current user.
+// ListCurrentUserProjects returns all project-category nodes owned by the current user.
+// Automatically follows pagination links. Requires a bearer token.
 func (c *Client) ListCurrentUserProjects(ctx context.Context) ([]Node, error) {
 	return collectPages[Node](ctx, c, "/v2/users/me/nodes/?filter[category]=project")
 }
 
-// GetNode loads a node/project by id.
+// GetNode returns a single node (project or component) by its OSF GUID.
 func (c *Client) GetNode(ctx context.Context, id string) (Node, error) {
 	var doc document[Node]
 	if _, err := c.get(ctx, "/v2/nodes/"+url.PathEscape(id)+"/", &doc); err != nil {
@@ -85,7 +91,7 @@ func (c *Client) GetNode(ctx context.Context, id string) (Node, error) {
 	return doc.Data, nil
 }
 
-// GetStorageFile loads a file metadata record by id.
+// GetStorageFile returns a single storage file or folder metadata record by its OSF GUID.
 func (c *Client) GetStorageFile(ctx context.Context, id string) (StorageFile, error) {
 	var doc document[StorageFile]
 	if _, err := c.get(ctx, "/v2/files/"+url.PathEscape(id)+"/", &doc); err != nil {
@@ -94,17 +100,21 @@ func (c *Client) GetStorageFile(ctx context.Context, id string) (StorageFile, er
 	return doc.Data, nil
 }
 
-// ListNodeChildren loads all child components for a node.
+// ListNodeChildren returns all immediate child components of the specified node.
+// Automatically follows pagination links.
 func (c *Client) ListNodeChildren(ctx context.Context, id string) ([]Node, error) {
 	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/children/")
 }
 
-// ListNodeContributors loads all contributors for a node.
+// ListNodeContributors returns all contributors for the specified node.
+// Automatically follows pagination links.
 func (c *Client) ListNodeContributors(ctx context.Context, id string) ([]Contributor, error) {
 	return collectPages[Contributor](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/contributors/")
 }
 
-// ListStorageFiles loads all files from a node's OSF Storage root or subfolder.
+// ListStorageFiles returns all files and folders from a node's OSF Storage provider.
+// Additional path segments can be provided to navigate into subfolders.
+// Automatically follows pagination links.
 func (c *Client) ListStorageFiles(ctx context.Context, nodeID string, segments ...string) ([]StorageFile, error) {
 	escaped := []string{"/v2/nodes", url.PathEscape(nodeID), "files", "osfstorage"}
 	for _, segment := range segments {
@@ -175,7 +185,132 @@ func (c *Client) get(ctx context.Context, endpoint string, dst any) (*url.URL, e
 	return req.URL, nil
 }
 
-// OpenDownload opens a download URL and returns the response body stream.
+func (c *Client) post(ctx context.Context, endpoint string, body any, dst any) (*url.URL, error) {
+	reqURL, err := c.resolveEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	var reqBody io.Reader
+	if body != nil {
+		encoded, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("encode request body: %w", err)
+		}
+		reqBody = bytes.NewReader(encoded)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL.String(), reqBody)
+	if err != nil {
+		return nil, err
+	}
+	if c.bearerToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
+	}
+	req.Header.Set("Accept", "application/vnd.api+json")
+	req.Header.Set("Content-Type", "application/vnd.api+json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, parseAPIError(resp.StatusCode, req.Method, req.URL.RequestURI(), respBody)
+	}
+
+	if dst != nil {
+		if err := json.NewDecoder(bytes.NewReader(respBody)).Decode(dst); err != nil {
+			return nil, fmt.Errorf("decode osf response from %s: %w", req.URL.RequestURI(), err)
+		}
+	}
+	return req.URL, nil
+}
+
+func (c *Client) patch(ctx context.Context, endpoint string, body any, dst any) (*url.URL, error) {
+	reqURL, err := c.resolveEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	var reqBody io.Reader
+	if body != nil {
+		encoded, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("encode request body: %w", err)
+		}
+		reqBody = bytes.NewReader(encoded)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, reqURL.String(), reqBody)
+	if err != nil {
+		return nil, err
+	}
+	if c.bearerToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
+	}
+	req.Header.Set("Accept", "application/vnd.api+json")
+	req.Header.Set("Content-Type", "application/vnd.api+json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, parseAPIError(resp.StatusCode, req.Method, req.URL.RequestURI(), respBody)
+	}
+
+	if dst != nil {
+		if err := json.NewDecoder(bytes.NewReader(respBody)).Decode(dst); err != nil {
+			return nil, fmt.Errorf("decode osf response from %s: %w", req.URL.RequestURI(), err)
+		}
+	}
+	return req.URL, nil
+}
+
+func (c *Client) delete(ctx context.Context, endpoint string) error {
+	reqURL, err := c.resolveEndpoint(endpoint)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, reqURL.String(), nil)
+	if err != nil {
+		return err
+	}
+	if c.bearerToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
+	}
+	req.Header.Set("Accept", "application/vnd.api+json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return parseAPIError(resp.StatusCode, req.Method, req.URL.RequestURI(), respBody)
+	}
+	return nil
+}
+
+// OpenDownload opens the given download URL and returns the response body.
+// The caller is responsible for closing the returned io.ReadCloser.
 func (c *Client) OpenDownload(ctx context.Context, downloadURL string) (io.ReadCloser, error) {
 	reqURL, err := c.resolveEndpoint(downloadURL)
 	if err != nil {
@@ -206,6 +341,75 @@ func (c *Client) OpenDownload(ctx context.Context, downloadURL string) (io.ReadC
 	}
 
 	return resp.Body, nil
+}
+
+func (c *Client) GetUser(ctx context.Context, id string) (User, error) {
+	var doc document[User]
+	if _, err := c.get(ctx, "/v2/users/"+url.PathEscape(id)+"/", &doc); err != nil {
+		return User{}, err
+	}
+	return doc.Data, nil
+}
+
+func (c *Client) ListNodeRegistrations(ctx context.Context, id string) ([]Node, error) {
+	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/registrations/")
+}
+
+func (c *Client) ListWikiPages(ctx context.Context, id string) ([]Node, error) {
+	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/wikis/")
+}
+
+func (c *Client) ListNodeComments(ctx context.Context, id string) ([]Node, error) {
+	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/comments/")
+}
+
+func (c *Client) ListNodeLogs(ctx context.Context, id string) ([]Node, error) {
+	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/logs/")
+}
+
+func (c *Client) ListNodeIdentifiers(ctx context.Context, id string) ([]Node, error) {
+	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/identifiers/")
+}
+
+func (c *Client) CreateNode(ctx context.Context, title, category, description string) (Node, error) {
+	var doc document[Node]
+	_, err := c.post(ctx, "/v2/nodes/", map[string]any{
+		"data": map[string]any{
+			"type": "nodes",
+			"attributes": map[string]string{
+				"title":       title,
+				"category":    category,
+				"description": description,
+			},
+		},
+	}, &doc)
+	if err != nil {
+		return Node{}, err
+	}
+	return doc.Data, nil
+}
+
+func (c *Client) UpdateNode(ctx context.Context, id, title, description string) (Node, error) {
+	var doc document[Node]
+	body := map[string]any{
+		"data": map[string]any{
+			"id":   id,
+			"type": "nodes",
+			"attributes": map[string]string{
+				"title":       title,
+				"description": description,
+			},
+		},
+	}
+	_, err := c.patch(ctx, "/v2/nodes/"+url.PathEscape(id)+"/", body, &doc)
+	if err != nil {
+		return Node{}, err
+	}
+	return doc.Data, nil
+}
+
+func (c *Client) DeleteNode(ctx context.Context, id string) error {
+	return c.delete(ctx, "/v2/nodes/"+url.PathEscape(id)+"/")
 }
 
 func (c *Client) resolveEndpoint(endpoint string) (*url.URL, error) {
