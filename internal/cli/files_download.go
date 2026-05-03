@@ -145,7 +145,7 @@ func downloadSingleFile(ctx context.Context, client readonlyClient, source, dest
 			Records:        []filesDownloadRecord{record},
 		}, err
 	}
-	defer src.Close()
+	defer func() { _ = src.Close() }()
 
 	counting := &countingReader{reader: src}
 	written, err := download.WriteStreamAtomically(localPath, counting, 0o644, policy)

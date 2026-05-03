@@ -72,12 +72,12 @@ func main() {
 	}
 
 	if report.Skipped {
-		fmt.Fprintln(os.Stdout, report.SkipReason)
+		_, _ = fmt.Fprintln(os.Stdout, report.SkipReason)
 		return
 	}
 
 	if report.Mode == "dry-run" {
-		fmt.Fprintln(os.Stdout, "dry-run validation report written")
+		_, _ = fmt.Fprintln(os.Stdout, "dry-run validation report written")
 		return
 	}
 
@@ -278,27 +278,27 @@ func writeEvidence(path string, report validationReport) error {
 
 	var builder strings.Builder
 	builder.WriteString("# Live OSF Validation Evidence\n\n")
-	builder.WriteString(fmt.Sprintf("- Generated: %s\n", report.GeneratedAt.Format(time.RFC3339)))
-	builder.WriteString(fmt.Sprintf("- Mode: %s\n", report.Mode))
+	fmt.Fprintf(&builder, "- Generated: %s\n", report.GeneratedAt.Format(time.RFC3339))
+	fmt.Fprintf(&builder, "- Mode: %s\n", report.Mode)
 	if report.Skipped {
-		builder.WriteString(fmt.Sprintf("- Skip reason: %s\n", report.SkipReason))
+		fmt.Fprintf(&builder, "- Skip reason: %s\n", report.SkipReason)
 	}
 	builder.WriteString("- Environment:\n")
-	builder.WriteString(fmt.Sprintf("  - %s: %s\n", auth.TokenEnv, presence(report.Env.token)))
-	builder.WriteString(fmt.Sprintf("  - OSF_VALIDATE_PROJECT: %s\n", presence(report.Env.projectRef)))
-	builder.WriteString(fmt.Sprintf("  - OSF_LIVE_VALIDATION: %t\n", report.Env.liveEnabled))
+	fmt.Fprintf(&builder, "  - %s: %s\n", auth.TokenEnv, presence(report.Env.token))
+	fmt.Fprintf(&builder, "  - OSF_VALIDATE_PROJECT: %s\n", presence(report.Env.projectRef))
+	fmt.Fprintf(&builder, "  - OSF_LIVE_VALIDATION: %t\n", report.Env.liveEnabled)
 	builder.WriteString("- Planned coverage:\n")
 	for _, step := range plannedSteps(report.Env) {
-		builder.WriteString(fmt.Sprintf("  - %s: %s\n", step.Step.Name, step.Status))
+		fmt.Fprintf(&builder, "  - %s: %s\n", step.Step.Name, step.Status)
 	}
 	builder.WriteString("- Results:\n")
 	for _, result := range report.Steps {
-		builder.WriteString(fmt.Sprintf("  - %s: %s\n", result.Step.Name, result.Status))
+		fmt.Fprintf(&builder, "  - %s: %s\n", result.Step.Name, result.Status)
 		if result.Output != "" {
-			builder.WriteString(fmt.Sprintf("    - Output: %s\n", sanitizeOutput(result.Output)))
+			fmt.Fprintf(&builder, "    - Output: %s\n", sanitizeOutput(result.Output))
 		}
 		if result.Elapsed > 0 {
-			builder.WriteString(fmt.Sprintf("    - Elapsed: %s\n", result.Elapsed.Round(time.Millisecond)))
+			fmt.Fprintf(&builder, "    - Elapsed: %s\n", result.Elapsed.Round(time.Millisecond))
 		}
 	}
 	if !containsStep(report.Steps, "files download") {

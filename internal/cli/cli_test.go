@@ -1177,7 +1177,7 @@ func TestDefaultReadonlyClientOpenDownload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenDownload returned error: %v", err)
 	}
-	rc.Close()
+	_ = rc.Close()
 }
 
 func TestDefaultReadonlyClientNewFromSourceWithToken(t *testing.T) {

@@ -214,7 +214,7 @@ func TestGetStorageFileAndOpenDownload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 
 	got, err := io.ReadAll(body)
 	if err != nil {
@@ -911,7 +911,7 @@ func TestOpenDownloadNonStreamURL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenDownload returned error: %v", err)
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 
 	body, err := io.ReadAll(rc)
 	if err != nil {
