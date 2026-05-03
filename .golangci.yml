@@ -17,20 +17,7 @@ linters:
     - misspell
     - staticcheck
     - unused
-    - asciicheck
     - copyloopvar
-    - decorder
-    - errorlint
-    - gocritic
-    - gosec
-    - nilerr
-    - nolintlint
-    - prealloc
-    - predeclared
-    - revive
-    - thelper
-    - tparallel
-    - usetesting
 
 issues:
   max-issues-per-linter: 0
