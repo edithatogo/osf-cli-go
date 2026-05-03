@@ -7,8 +7,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/edithatogo/osf-cli-go/internal/auth"
+	"github.com/spf13/cobra"
 )
 
 var version = "0.0.0-dev"

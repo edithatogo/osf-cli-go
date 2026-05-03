@@ -28,7 +28,6 @@ linters:
     - prealloc
     - predeclared
     - revive
-    - tenv
     - thelper
     - tparallel
     - usetesting
