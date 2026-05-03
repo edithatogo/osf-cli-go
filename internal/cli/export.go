@@ -9,10 +9,10 @@ import (
 
 // ExportData holds a full snapshot of a node's data.
 type ExportData struct {
-	Node               projectRecord   `json:"node"`
-	Contributors       []projectRecord `json:"contributors,omitempty"`
-	Files              []fileRecord    `json:"files,omitempty"`
-	Components         []projectRecord `json:"components,omitempty"`
+	Node         projectRecord   `json:"node"`
+	Contributors []projectRecord `json:"contributors,omitempty"`
+	Files        []fileRecord    `json:"files,omitempty"`
+	Components   []projectRecord `json:"components,omitempty"`
 }
 
 func newExportCommand(client readonlyClient) *cobra.Command {
