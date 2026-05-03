@@ -93,6 +93,16 @@ osf files download --tree abc123 ./output/
 osf files download --tree https://osf.io/abc123 ./output/
 ```
 
+### `osf export <guid-or-url>`
+
+Export a full node snapshot including metadata, contributors, files, and components.
+
+```bash
+osf export abc123
+osf export abc123 --json
+osf export https://osf.io/abc123 --json
+```
+
 ### `osf completion <bash|zsh|fish|powershell>`
 
 Generate shell completion scripts.

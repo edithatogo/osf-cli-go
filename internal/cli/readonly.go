@@ -22,6 +22,13 @@ type readonlyClient interface {
 	ListStorageFiles(context.Context, string, ...string) ([]osfapi.StorageFile, error)
 	GetStorageFile(context.Context, string) (osfapi.StorageFile, error)
 	OpenDownload(context.Context, string) (io.ReadCloser, error)
+	GetNodeFilesProvider(context.Context, string) (string, error)
+	UploadFile(context.Context, string, string, io.Reader, string) error
+	CreateFolder(context.Context, string, string) error
+	DeleteFile(context.Context, string, string) error
+	ListPreprints(context.Context) ([]osfapi.Node, error)
+	SearchOSF(context.Context, string) ([]osfapi.Node, error)
+	ListNodeAddons(context.Context, string) ([]osfapi.Node, error)
 }
 
 type defaultReadonlyClient struct {
@@ -88,6 +95,34 @@ func (c *defaultReadonlyClient) GetStorageFile(ctx context.Context, id string) (
 
 func (c *defaultReadonlyClient) OpenDownload(ctx context.Context, downloadURL string) (io.ReadCloser, error) {
 	return c.api.OpenDownload(ctx, downloadURL)
+}
+
+func (c *defaultReadonlyClient) GetNodeFilesProvider(ctx context.Context, id string) (string, error) {
+	return c.api.GetNodeFilesProvider(ctx, id)
+}
+
+func (c *defaultReadonlyClient) UploadFile(ctx context.Context, providerURL, name string, content io.Reader, conflict string) error {
+	return c.api.UploadFile(ctx, providerURL, name, content, conflict)
+}
+
+func (c *defaultReadonlyClient) CreateFolder(ctx context.Context, providerURL, folderName string) error {
+	return c.api.CreateFolder(ctx, providerURL, folderName)
+}
+
+func (c *defaultReadonlyClient) DeleteFile(ctx context.Context, providerURL, fileName string) error {
+	return c.api.DeleteFile(ctx, providerURL, fileName)
+}
+
+func (c *defaultReadonlyClient) ListPreprints(ctx context.Context) ([]osfapi.Node, error) {
+	return c.api.ListPreprints(ctx)
+}
+
+func (c *defaultReadonlyClient) SearchOSF(ctx context.Context, query string) ([]osfapi.Node, error) {
+	return c.api.SearchOSF(ctx, query)
+}
+
+func (c *defaultReadonlyClient) ListNodeAddons(ctx context.Context, id string) ([]osfapi.Node, error) {
+	return c.api.ListNodeAddons(ctx, id)
 }
 
 func parseNodeIDOrURL(input string) (string, error) {

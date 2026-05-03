@@ -97,6 +97,9 @@ func newRootCommandWithClient(stdout, stderr io.Writer, client readonlyClient) *
 		newComponentsCommand(client),
 		newFilesCommand(client),
 		newExportCommand(client),
+		newSearchCommand(client),
+		newPreprintsCommand(client),
+		newOpenCommand(),
 		newCompletionCommand(root),
 	)
 
@@ -164,8 +167,11 @@ func writeRootContract(w io.Writer) error {
 			{Name: "auth", Status: "implemented", Description: "Manage OSF personal access tokens"},
 			{Name: "projects", Status: "implemented", Description: "List and inspect OSF projects and components"},
 			{Name: "components", Status: "implemented", Description: "List project components"},
-			{Name: "files", Status: "implemented", Description: "List OSF Storage files"},
+			{Name: "files", Status: "implemented", Description: "List and download OSF Storage files"},
 			{Name: "export", Status: "implemented", Description: "Export a node snapshot"},
+			{Name: "search", Status: "implemented", Description: "Search OSF projects and components"},
+			{Name: "preprints", Status: "implemented", Description: "List OSF preprints"},
+			{Name: "open", Status: "implemented", Description: "Open an OSF node in the default browser"},
 			{Name: "completion", Status: "implemented", Description: "Generate shell completion scripts"},
 		},
 	})

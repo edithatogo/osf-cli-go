@@ -22,6 +22,6 @@ This file tracks all major work items. Each track has its own spec and plan.
 - [x] [osf-api-coverage](tracks/osf-api-coverage_20260502/spec.md) — Extended OSF API coverage to 20+ endpoints including registrations, wikis, comments, logs, identifiers, write operations.
 - [x] [sota-repo-hardening](tracks/sota-repo-hardening_20260502/spec.md) — SOTA repo setup: issue templates, PR template, pre-commit hooks, dependabot, topics, license metadata.
 - [x] [docs-overhaul](tracks/docs-overhaul_20260502/spec.md) — Comprehensive Go doc comments, install/usage/architecture docs, and documentation CI integration.
-- [ ] [waterbutler-write-operations](tracks/waterbutler-write-operations_20260502/spec.md) — File upload, folder creation, and file deletion via WaterButler storage API.
-- [ ] [preprints-search-registrations](tracks/preprints-search-registrations_20260502/spec.md) — Preprint listing, OSF search, registration creation, and add-on listing endpoints.
-- [ ] [node-export-commands](tracks/node-export-commands_20260502/spec.md) — `osf export` command with full node snapshot including metadata, contributors, files, and components.
+- [~] [waterbutler-write-operations](tracks/waterbutler-write-operations_20260502/spec.md) — API endpoints done; CLI commands pending.
+- [x] [preprints-search-registrations](tracks/preprints-search-registrations_20260502/spec.md) — Preprint listing, search, and add-on listing endpoints with CLI commands.
+- [x] [node-export-commands](tracks/node-export-commands_20260502/spec.md) — `osf export` command with full node snapshot.

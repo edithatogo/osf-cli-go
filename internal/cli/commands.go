@@ -1,6 +1,9 @@
 package cli
 
 import (
+	"fmt"
+	"os/exec"
+	"runtime"
 	"strconv"
 
 	"github.com/edithatogo/osf-cli-go/internal/output"
@@ -43,6 +46,37 @@ func newComponentsCommand(client readonlyClient) *cobra.Command {
 	}
 	cmd.AddCommand(newComponentsListCommand(client))
 	return cmd
+}
+
+func newOpenCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "open <guid-or-url>",
+		Short: "Open an OSF node in the default browser",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			id, err := parseNodeIDOrURL(args[0])
+			if err != nil {
+				return err
+			}
+			url := "https://osf.io/" + id + "/"
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Opening %s ...\n", url)
+
+			var openCmd string
+			var openArgs []string
+			switch runtime.GOOS {
+			case "darwin":
+				openCmd = "open"
+				openArgs = []string{url}
+			case "windows":
+				openCmd = "cmd"
+				openArgs = []string{"/c", "start", url}
+			default:
+				openCmd = "xdg-open"
+				openArgs = []string{url}
+			}
+			return exec.Command(openCmd, openArgs...).Start()
+		},
+	}
 }
 
 func newFilesCommand(client readonlyClient) *cobra.Command {
@@ -227,6 +261,96 @@ func newFilesListCommand(client readonlyClient) *cobra.Command {
 				tableRows = append(tableRows, []string{row.ID, row.Name, row.Kind, formatInt64(row.Size), row.DownloadURL})
 			}
 			return output.WriteTable(cmd.OutOrStdout(), []string{"ID", "NAME", "KIND", "SIZE", "DOWNLOAD_URL"}, tableRows)
+		},
+	}
+}
+
+func newPreprintsCommand(client readonlyClient) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "preprints",
+		Short: "List OSF preprints",
+		Long:  "List OSF preprints.",
+	}
+	cmd.AddCommand(newPreprintsListCommand(client))
+	return cmd
+}
+
+func newPreprintsListCommand(client readonlyClient) *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List all preprints",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			outputMode, err := resolveOutputMode(cmd)
+			if err != nil {
+				return err
+			}
+
+			nodes, err := client.ListPreprints(cmd.Context())
+			if err != nil {
+				return err
+			}
+
+			rows := make([]projectRecord, 0, len(nodes))
+			for _, n := range nodes {
+				rows = append(rows, projectRecord{
+					ID:          n.ID,
+					Title:       n.Attributes.Title,
+					Category:    n.Attributes.Category,
+					Description: n.Attributes.Description,
+					URL:         n.Links.Self,
+				})
+			}
+
+			if outputMode == outputModeJSON {
+				return output.WriteJSON(cmd.OutOrStdout(), rows)
+			}
+
+			tableRows := make([][]string, 0, len(rows))
+			for _, row := range rows {
+				tableRows = append(tableRows, []string{row.ID, row.Title, row.Category, row.URL})
+			}
+			return output.WriteTable(cmd.OutOrStdout(), []string{"ID", "TITLE", "CATEGORY", "URL"}, tableRows)
+		},
+	}
+}
+
+func newSearchCommand(client readonlyClient) *cobra.Command {
+	return &cobra.Command{
+		Use:   "search <query>",
+		Short: "Search OSF projects and components",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			outputMode, err := resolveOutputMode(cmd)
+			if err != nil {
+				return err
+			}
+
+			nodes, err := client.SearchOSF(cmd.Context(), args[0])
+			if err != nil {
+				return err
+			}
+
+			rows := make([]projectRecord, 0, len(nodes))
+			for _, n := range nodes {
+				rows = append(rows, projectRecord{
+					ID:          n.ID,
+					Title:       n.Attributes.Title,
+					Category:    n.Attributes.Category,
+					Description: n.Attributes.Description,
+					URL:         n.Links.Self,
+				})
+			}
+
+			if outputMode == outputModeJSON {
+				return output.WriteJSON(cmd.OutOrStdout(), rows)
+			}
+
+			tableRows := make([][]string, 0, len(rows))
+			for _, row := range rows {
+				tableRows = append(tableRows, []string{row.ID, row.Title, row.Category, row.URL})
+			}
+			return output.WriteTable(cmd.OutOrStdout(), []string{"ID", "TITLE", "CATEGORY", "URL"}, tableRows)
 		},
 	}
 }

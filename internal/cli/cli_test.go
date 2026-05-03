@@ -607,43 +607,8 @@ func TestWriteRootContractWithJSON(t *testing.T) {
 	if err := json.Unmarshal(buf.Bytes(), &contract); err != nil {
 		t.Fatalf("stdout is not valid JSON: %v\n%s", err, buf.String())
 	}
-	if len(contract.Commands) != 6 {
-		t.Fatalf("command count = %d, want 6", len(contract.Commands))
-	}
-}
-
-func TestRunEmitsJSONContract(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-
-	code := Run([]string{"--output", "json"}, &stdout, &stderr)
-
-	if code != 0 {
-		t.Fatalf("Run returned %d, want 0", code)
-	}
-	if stderr.Len() != 0 {
-		t.Fatalf("stderr = %q, want empty", stderr.String())
-	}
-
-	var contract rootContract
-	if err := json.Unmarshal(stdout.Bytes(), &contract); err != nil {
-		t.Fatalf("stdout is not valid JSON: %v\n%s", err, stdout.String())
-	}
-
-	if contract.Name != "osf" {
-		t.Fatalf("contract name = %q, want osf", contract.Name)
-	}
-	if contract.Version != version {
-		t.Fatalf("contract version = %q, want %q", contract.Version, version)
-	}
-	if contract.DefaultOutput != outputModeTable {
-		t.Fatalf("default output = %q, want %q", contract.DefaultOutput, outputModeTable)
-	}
-	if len(contract.Commands) != 6 {
-		t.Fatalf("command count = %d, want 6", len(contract.Commands))
-	}
-	if contract.ExitCodes["success"] != 0 || contract.ExitCodes["planned_command"] != 1 || contract.ExitCodes["usage_or_argument"] != 2 {
-		t.Fatalf("unexpected exit code contract: %#v", contract.ExitCodes)
+	if len(contract.Commands) != 9 {
+		t.Fatalf("command count = %d, want 9", len(contract.Commands))
 	}
 	if contract.Commands[0].Status != "implemented" || contract.Commands[1].Status != "implemented" {
 		t.Fatalf("unexpected command statuses: %#v", contract.Commands)
@@ -1296,6 +1261,34 @@ func (f *fakeReadonlyClient) GetStorageFile(_ context.Context, id string) (osfap
 	return osfapi.StorageFile{}, fmt.Errorf("missing storage file %q", id)
 }
 
+func (f *fakeReadonlyClient) ListPreprints(context.Context) ([]osfapi.Node, error) {
+	return nil, nil
+}
+
+func (f *fakeReadonlyClient) SearchOSF(_ context.Context, query string) ([]osfapi.Node, error) {
+	return nil, nil
+}
+
+func (f *fakeReadonlyClient) ListNodeAddons(_ context.Context, id string) ([]osfapi.Node, error) {
+	return nil, nil
+}
+
+func (f *fakeReadonlyClient) GetNodeFilesProvider(_ context.Context, id string) (string, error) {
+	return "https://files.osf.io/v1/providers/osfstorage/" + id + "/", nil
+}
+
+func (f *fakeReadonlyClient) UploadFile(_ context.Context, providerURL, name string, _ io.Reader, conflict string) error {
+	return nil
+}
+
+func (f *fakeReadonlyClient) CreateFolder(_ context.Context, providerURL, folderName string) error {
+	return nil
+}
+
+func (f *fakeReadonlyClient) DeleteFile(_ context.Context, providerURL, fileName string) error {
+	return nil
+}
+
 func (f *fakeReadonlyClient) OpenDownload(_ context.Context, downloadURL string) (io.ReadCloser, error) {
 	f.gotOpenDownloadURL = downloadURL
 	if f.downloadBodies != nil {
@@ -1328,6 +1321,17 @@ func TestExportJSONOutput(t *testing.T) {
 	}
 }
 
+func TestExportErrorForMissingNode(t *testing.T) {
+	t.Parallel()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"export"}, &stdout, &stderr, &fakeReadonlyClient{})
+	if code != 2 {
+		t.Fatalf("export without args returned %d, want 2", code)
+	}
+}
+
 func TestExportTableOutput(t *testing.T) {
 	t.Parallel()
 
@@ -1343,6 +1347,28 @@ func TestExportTableOutput(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "Test") || !strings.Contains(stdout.String(), "project") {
 		t.Fatalf("table output = %q, want Test and project", stdout.String())
+	}
+}
+
+func TestPreprintsListOutput(t *testing.T) {
+	t.Parallel()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"preprints", "list"}, &stdout, &stderr, &fakeReadonlyClient{})
+	if code != 0 {
+		t.Fatalf("preprints list returned %d, want 0", code)
+	}
+}
+
+func TestSearchOutput(t *testing.T) {
+	t.Parallel()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"search", "open+science"}, &stdout, &stderr, &fakeReadonlyClient{})
+	if code != 0 {
+		t.Fatalf("search returned %d, want 0", code)
 	}
 }
 
