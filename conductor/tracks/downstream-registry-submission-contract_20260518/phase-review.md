@@ -41,6 +41,10 @@ Date: 2026-05-18
   pass
 - `scripts/build-mcpb.ps1`: pass locally, produced Windows `.mcpb`
 - `scripts/build-plugin-archives.ps1`: pass locally, produced four Windows ZIPs
+- `MCPB Bundles` workflow: pass on Linux, macOS, and Windows
+  (`https://github.com/edithatogo/osf-cli-go/actions/runs/26031259828`)
+- `Plugin Archives` workflow: pass on Linux, macOS, and Windows
+  (`https://github.com/edithatogo/osf-cli-go/actions/runs/26031263119`)
 
 Generated `dist/` output was removed after validation and is intentionally not
 committed.

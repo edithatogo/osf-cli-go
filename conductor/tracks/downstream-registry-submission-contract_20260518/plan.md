@@ -30,13 +30,13 @@
 
 ## Phase 4: Submission Attempts And Evidence
 
-- [ ] Task: Submit or trigger every non-interactive registry/API/CI path that is
+- [x] Task: Submit or trigger every non-interactive registry/API/CI path that is
   safe and available.
 - [x] Task: Record manual web-form submission blockers and exact next actions.
-- [~] Task: Record final receipts, workflow run URLs, and verification outputs.
+- [x] Task: Record final receipts, workflow run URLs, and verification outputs.
 
 ## Phase 5: Review
 
-- [ ] Task: Run JSON/YAML/script validation plus Go checks affected by the new
+- [x] Task: Run JSON/YAML/script validation plus Go checks affected by the new
   packaging work.
-- [ ] Task: Update phase-review evidence and reconcile any stale track text.
+- [x] Task: Update phase-review evidence and reconcile any stale track text.
