@@ -38,5 +38,9 @@ git diff --check
 
 - Completion claim: offline-tested.
 - Completion rule: anti-stub scan passed.
-- Residual risks: `auth whoami` remains pending and is not claimed complete.
-- Next phase: implement `auth whoami` against the CLI and OSF API client contracts.
+- Supersession note: this phase originally stopped before `auth whoami`; later
+  phases completed `auth whoami` and recorded current evidence in this track's
+  plan and follow-on phase reviews.
+- Residual risks: none for the original token-contract phase.
+- Next phase: superseded by completed `auth whoami` and username/password auth
+  follow-on work.

@@ -39,5 +39,8 @@ git diff --check
 
 - Completion claim: offline-tested.
 - Completion rule: anti-stub scan passed.
+- Supersession note: later tracks completed `auth whoami` and live validation
+  instructions; this review remains historical evidence for the read-only
+  command phase.
 - Residual risks: live OSF behavior remains opt-in integration validation.
-- Next phase: implement `auth whoami` and live integration test instructions.
+- Next phase: none for this historical read-only command phase.

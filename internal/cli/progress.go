@@ -10,7 +10,6 @@ type ProgressWriter struct {
 	mu      sync.Mutex
 	out     io.Writer
 	enabled bool
-	total   int64
 	written int64
 }
 

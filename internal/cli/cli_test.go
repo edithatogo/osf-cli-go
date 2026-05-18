@@ -188,7 +188,6 @@ func TestExitCodeForError(t *testing.T) {
 		want int
 	}{
 		{"usage error", fmt.Errorf("unknown command"), 2},
-		{"planned command", fmt.Errorf("%w: osf files upload", errPlannedCommand), 1},
 		{"general error", fmt.Errorf("network failure"), 1},
 	}
 
@@ -659,7 +658,6 @@ func TestIsUsageError(t *testing.T) {
 		{"unsupported conflict", fmt.Errorf("unsupported conflict policy"), true},
 		{"cannot combine file tree", fmt.Errorf("cannot combine --file with --tree"), true},
 		{"general error", fmt.Errorf("network error"), false},
-		{"planned command", fmt.Errorf("planned command: osf files upload"), false},
 	}
 
 	for _, tc := range cases {

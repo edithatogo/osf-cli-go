@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -20,8 +19,6 @@ const (
 	outputModeTable = "table"
 	outputModeJSON  = "json"
 )
-
-var errPlannedCommand = errors.New("planned command")
 
 type rootContract struct {
 	Name          string          `json:"name"`
@@ -165,7 +162,7 @@ func writeRootContract(w io.Writer) error {
 		OutputModes:   []string{outputModeTable, outputModeJSON},
 		ExitCodes: map[string]int{
 			"success":           0,
-			"planned_command":   1,
+			"runtime_error":     1,
 			"usage_or_argument": 2,
 		},
 		Commands: []contractEntry{
@@ -189,14 +186,10 @@ func unknownCommandError(commandPath, name string) error {
 }
 
 func exitCodeForError(err error) int {
-	switch {
-	case errors.Is(err, errPlannedCommand):
-		return 1
-	case isUsageError(err):
+	if isUsageError(err) {
 		return 2
-	default:
-		return 1
 	}
+	return 1
 }
 
 func isUsageError(err error) bool {

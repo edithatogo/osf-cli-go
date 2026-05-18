@@ -17,17 +17,22 @@ Adopt Cobra and define the stable CLI contract for command names, global flags, 
 - Root command: `osf`
 - Global flags: `--help/-h`, `--version`, `--output table|json`, `--json`
 - Default output: human help in `table` mode
-- JSON mode: `osf --output json` emits a machine-readable contract for the root command and planned subcommands
-- Exit codes: `0` success, `1` not implemented, `2` usage or argument errors
+- JSON mode: `osf --output json` emits a machine-readable contract for the root command and implemented subcommands
+- Exit codes: `0` success, `1` runtime or API errors, `2` usage or argument errors
 
-## Planned Commands
+## Implemented Commands
 
-- `auth` - Manage OSF personal access tokens
-- `projects` - List and inspect OSF projects and components
+- `auth` - Manage OSF authentication and token bootstrap guidance
+- `projects` - List, inspect, create, update, and delete OSF projects and components
 - `components` - List project components
-- `files` - List, download, and upload OSF Storage files
-
-These commands are present in routing and help output as pending work, but they are not implemented yet.
+- `files` - List, download, upload, create folders, and delete OSF Storage files
+- `export` - Export node snapshots
+- `search` - Search OSF content
+- `preprints` - List OSF preprints
+- `registrations` - Create draft registrations
+- `open` - Open OSF nodes in the default browser
+- `whoami` - Show the active OSF account
+- `completion` - Generate shell completion scripts
 
 ## Examples
 

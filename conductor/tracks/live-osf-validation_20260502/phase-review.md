@@ -12,7 +12,7 @@
 - The validator checks `OSF_LIVE_VALIDATION`, `OSF_TOKEN`, and `OSF_VALIDATE_PROJECT` before attempting live execution, and it skips cleanly when the required variables are absent.
 - Evidence generation is redacted by default and avoids echoing token or project values into the report.
 - Dry-run and evidence-writing behavior are covered by unit tests, including an assertion that the report file does not leak the token or project identifier.
-- The validation plan includes `auth whoami`, `projects list`, `projects get`, `components list`, and `files list`; `files download` remains documented as pending until the download command lands.
+- Historical note: the original validation plan covered `auth whoami`, `projects list`, `projects get`, `components list`, and `files list` before the download command landed. Later closeout evidence added current `files download` coverage.
 
 ## Anti-Stub Evidence
 
