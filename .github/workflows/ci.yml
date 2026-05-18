@@ -36,3 +36,14 @@ jobs:
         run: |
           go test ./... -coverprofile=coverage.out
           go tool cover -func=coverage.out
+      - name: Coverage summary
+        run: |
+          echo "## Coverage" >> "$GITHUB_STEP_SUMMARY"
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          go tool cover -func=coverage.out >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload coverage profile
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage.out
+          path: coverage.out

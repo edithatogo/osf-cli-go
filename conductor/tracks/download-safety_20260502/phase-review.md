@@ -42,5 +42,7 @@ $env:GOTELEMETRY='off'; $env:GOCACHE='C:\Users\60217257\repos\osf-cli-go\.gocach
 
 - Completion claim: offline-tested and manifest-enabled.
 - Completion rule: anti-stub scan passed.
-- Residual risks: phase 3 review remains pending and is not claimed complete.
-- Next phase: keep the track open and run the review phase.
+- Reconciliation note: the project track index and plan now mark this track
+  complete; later repo-level gates also passed.
+- Residual risks: none specific to the completed download-safety scope.
+- Next phase: none for this track.

@@ -4,16 +4,22 @@ A Go command-line client for the Open Science Framework (OSF).
 
 [![CI](https://github.com/edithatogo/osf-cli-go/actions/workflows/ci.yml/badge.svg)](https://github.com/edithatogo/osf-cli-go/actions/workflows/ci.yml)
 [![Lint](https://github.com/edithatogo/osf-cli-go/actions/workflows/lint.yml/badge.svg)](https://github.com/edithatogo/osf-cli-go/actions/workflows/lint.yml)
+[![Security](https://github.com/edithatogo/osf-cli-go/actions/workflows/security.yml/badge.svg)](https://github.com/edithatogo/osf-cli-go/actions/workflows/security.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/edithatogo/osf-cli-go.svg)](https://pkg.go.dev/github.com/edithatogo/osf-cli-go)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/edithatogo/osf-cli-go)](go.mod)
+[![Release](https://img.shields.io/github/v/release/edithatogo/osf-cli-go?include_prereleases)](https://github.com/edithatogo/osf-cli-go/releases)
 
 ## Features
 
 - `osf auth whoami` — Identify the authenticated OSF account
+- `osf auth login` — Guided personal-access-token bootstrap for username/password users
 - `osf projects list|get` — List and inspect projects
 - `osf components list` — List project components
-- `osf files list|download` — Browse and download OSF Storage files
+- `osf files list|download|upload|mkdir|rm` — Browse, download, upload, create folders, and delete OSF Storage files
+- `osf search` and `osf preprints list` — Search OSF and list preprints
+- `osf registrations create` — Create draft registrations for an existing node
+- `osf export` — Export a node snapshot as JSON or a summary table
 - `osf completion bash|zsh|fish|powershell` — Shell completion scripts
 - JSON and human-readable output modes
 - Safe, atomic file downloads with conflict policy (fail/skip/overwrite)
@@ -35,10 +41,16 @@ go build -o bin\osf.exe ./cmd/osf
 
 ## Authentication
 
-Set `OSF_TOKEN` in your shell session. Do not commit the token or write it into project files.
+Set `OSF_TOKEN` in your shell session. Do not commit the token or write it into project files. `OSF_USERNAME` and `OSF_PASSWORD` are supported as an opt-in fallback credential source, but personal access tokens remain preferred for automation and for accounts using SSO or two-factor authentication.
 
 ```powershell
 $env:OSF_TOKEN = '<your-token>'
+```
+
+For guided token setup:
+
+```powershell
+osf auth login
 ```
 
 ## Quick Start
@@ -52,6 +64,11 @@ osf components list abc12
 osf files list abc12
 osf files download --file <file-id> ./output/
 osf files download --tree abc12 ./output/
+osf files upload --node abc12 ./report.pdf
+osf search "open science"
+osf preprints list
+osf registrations create abc12 --schema <schema-id> --title "Analysis plan"
+osf export abc12 --json
 ```
 
 ## Output Modes
@@ -65,11 +82,18 @@ osf auth whoami --output json
 
 ## Project Status
 
-All 15 Conductor tracks are complete. The CLI is **offline-tested** for all read-only operations including file downloads with conflict handling, path traversal protection, symlink escape prevention, and atomic writes.
+The CLI is **offline-tested** for read-only operations, file downloads, WaterButler write primitives, search, preprint listing, draft registration creation, project create/update/delete operations, and node export. All Conductor tracks are reconciled against their per-track plans with closeout review evidence; live OSF validation remains opt-in because it requires credentials and network access.
 
 ## Documentation
 
 - [Release checklist](docs/release-checklist.md)
+- [Documentation site source](mkdocs.yml)
+- [Install guide](docs/install.md)
+- [Usage guide](docs/usage.md)
+- [Command reference](docs/commands.md)
+- [Examples](docs/examples.md)
+- [Architecture](docs/architecture.md)
+- [Developer guide](docs/contributing.md)
 - [MCP roadmap](docs/mcp-roadmap.md)
 - [Contributing](CONTRIBUTING.md)
 

@@ -6,13 +6,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
 	"path"
+	"path/filepath"
 	"strings"
+	"time"
+
+	"github.com/edithatogo/osf-cli-go/internal/auth"
 )
 
 const defaultBaseURL = "https://api.osf.io/v2/"
+const defaultHTTPTimeout = 30 * time.Second
 
 // Client is an HTTP client for the OSF API v2 JSON:API surface.
 // It handles authentication, pagination, and JSON deserialization.
@@ -20,13 +26,14 @@ type Client struct {
 	baseURL     *url.URL
 	httpClient  *http.Client
 	bearerToken string
+	credentials auth.Credentials
 }
 
 // Option configures a Client using the functional options pattern.
 type Option func(*Client)
 
 // WithHTTPClient sets the HTTP client used for API requests.
-// If nil, http.DefaultClient is used.
+// If nil, a client with the default OSF timeout is used.
 func WithHTTPClient(httpClient *http.Client) Option {
 	return func(c *Client) {
 		c.httpClient = httpClient
@@ -36,7 +43,25 @@ func WithHTTPClient(httpClient *http.Client) Option {
 // WithBearerToken sets the Authorization header for API requests.
 func WithBearerToken(token string) Option {
 	return func(c *Client) {
+		c.credentials = auth.Credentials{Mode: auth.ModeBearerToken, Token: token}
 		c.bearerToken = token
+	}
+}
+
+// WithCredentials sets the OSF credential mode for API requests.
+func WithCredentials(credentials auth.Credentials) Option {
+	return func(c *Client) {
+		c.credentials = credentials
+		if credentials.Mode == auth.ModeBearerToken {
+			c.bearerToken = credentials.Token
+		}
+	}
+}
+
+// WithUsernamePassword sets HTTP Basic request signing credentials.
+func WithUsernamePassword(username, password string) Option {
+	return func(c *Client) {
+		c.credentials = auth.Credentials{Mode: auth.ModeUsernamePassword, Username: username, Password: password}
 	}
 }
 
@@ -55,13 +80,13 @@ func New(baseURL string, opts ...Option) (*Client, error) {
 
 	c := &Client{
 		baseURL:    parsed,
-		httpClient: &http.Client{},
+		httpClient: &http.Client{Timeout: defaultHTTPTimeout},
 	}
 	for _, opt := range opts {
 		opt(c)
 	}
 	if c.httpClient == nil {
-		c.httpClient = &http.Client{}
+		c.httpClient = &http.Client{Timeout: defaultHTTPTimeout}
 	}
 	return c, nil
 }
@@ -133,6 +158,10 @@ func (c *Client) ListStorageFiles(ctx context.Context, nodeID string, segments .
 }
 
 func collectPages[T any](ctx context.Context, c *Client, endpoint string) ([]T, error) {
+	return collectPagesLimit[T](ctx, c, endpoint, 0)
+}
+
+func collectPagesLimit[T any](ctx context.Context, c *Client, endpoint string, limit int) ([]T, error) {
 	var all []T
 	next := endpoint
 	for next != "" {
@@ -141,7 +170,15 @@ func collectPages[T any](ctx context.Context, c *Client, endpoint string) ([]T, 
 		if err != nil {
 			return nil, err
 		}
-		all = append(all, page.Data...)
+		for _, item := range page.Data {
+			if limit > 0 && len(all) >= limit {
+				return all, nil
+			}
+			all = append(all, item)
+		}
+		if limit > 0 && len(all) >= limit {
+			break
+		}
 		if page.Links.Next == "" {
 			break
 		}
@@ -164,9 +201,7 @@ func (c *Client) get(ctx context.Context, endpoint string, dst any) (*url.URL, e
 	if err != nil {
 		return nil, err
 	}
-	if c.bearerToken != "" {
-		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
-	}
+	c.sign(req)
 	req.Header.Set("Accept", "application/vnd.api+json")
 
 	resp, err := c.httpClient.Do(req)
@@ -209,9 +244,7 @@ func (c *Client) post(ctx context.Context, endpoint string, body any, dst any) (
 	if err != nil {
 		return nil, err
 	}
-	if c.bearerToken != "" {
-		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
-	}
+	c.sign(req)
 	req.Header.Set("Accept", "application/vnd.api+json")
 	req.Header.Set("Content-Type", "application/vnd.api+json")
 
@@ -257,9 +290,7 @@ func (c *Client) patch(ctx context.Context, endpoint string, body any, dst any) 
 	if err != nil {
 		return nil, err
 	}
-	if c.bearerToken != "" {
-		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
-	}
+	c.sign(req)
 	req.Header.Set("Accept", "application/vnd.api+json")
 	req.Header.Set("Content-Type", "application/vnd.api+json")
 
@@ -296,9 +327,7 @@ func (c *Client) delete(ctx context.Context, endpoint string) error {
 	if err != nil {
 		return err
 	}
-	if c.bearerToken != "" {
-		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
-	}
+	c.sign(req)
 	req.Header.Set("Accept", "application/vnd.api+json")
 
 	resp, err := c.httpClient.Do(req)
@@ -326,9 +355,7 @@ func (c *Client) OpenDownload(ctx context.Context, downloadURL string) (io.ReadC
 	if err != nil {
 		return nil, err
 	}
-	if c.bearerToken != "" {
-		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
-	}
+	c.sign(req)
 	req.Header.Set("Accept", "*/*")
 
 	resp, err := c.httpClient.Do(req)
@@ -352,7 +379,10 @@ func (c *Client) OpenDownload(ctx context.Context, downloadURL string) (io.ReadC
 // The providerURL is typically obtained from GET /v2/nodes/{id}/files/osfstorage/
 // and looks like "https://files.osf.io/v1/providers/osfstorage/..."
 func (c *Client) UploadFile(ctx context.Context, providerURL, fileName string, content io.Reader, conflict string) error {
-	fullURL := strings.TrimRight(providerURL, "/") + "/" + url.PathEscape(fileName)
+	fullURL, err := waterButlerPath(providerURL, fileName, false)
+	if err != nil {
+		return err
+	}
 	if conflict != "" {
 		parsed, _ := url.Parse(fullURL)
 		q := parsed.Query()
@@ -370,9 +400,10 @@ func (c *Client) UploadFile(ctx context.Context, providerURL, fileName string, c
 	if err != nil {
 		return err
 	}
-	if c.bearerToken != "" {
-		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
+	if contentType := mime.TypeByExtension(filepath.Ext(fileName)); contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
+	c.sign(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -389,15 +420,21 @@ func (c *Client) UploadFile(ctx context.Context, providerURL, fileName string, c
 
 // CreateFolder creates a folder via WaterButler.
 func (c *Client) CreateFolder(ctx context.Context, providerURL, folderName string) error {
-	fullURL := strings.TrimRight(providerURL, "/") + "/" + url.PathEscape(folderName) + "/?kind=folder"
+	fullURL, err := waterButlerPath(providerURL, folderName, true)
+	if err != nil {
+		return err
+	}
+	parsed, _ := url.Parse(fullURL)
+	q := parsed.Query()
+	q.Set("kind", "folder")
+	parsed.RawQuery = q.Encode()
+	fullURL = parsed.String()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, fullURL, http.NoBody)
 	if err != nil {
 		return err
 	}
-	if c.bearerToken != "" {
-		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
-	}
+	c.sign(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -414,15 +451,16 @@ func (c *Client) CreateFolder(ctx context.Context, providerURL, folderName strin
 
 // DeleteFile deletes a file via WaterButler.
 func (c *Client) DeleteFile(ctx context.Context, providerURL, fileName string) error {
-	fullURL := strings.TrimRight(providerURL, "/") + "/" + url.PathEscape(fileName)
+	fullURL, err := waterButlerPath(providerURL, fileName, false)
+	if err != nil {
+		return err
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, fullURL, nil)
 	if err != nil {
 		return err
 	}
-	if c.bearerToken != "" {
-		req.Header.Set("Authorization", "Bearer "+c.bearerToken)
-	}
+	c.sign(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -437,20 +475,130 @@ func (c *Client) DeleteFile(ctx context.Context, providerURL, fileName string) e
 	return nil
 }
 
-// ListPreprints loads all preprints.
-func (c *Client) ListPreprints(ctx context.Context) ([]Node, error) {
-	return collectPages[Node](ctx, c, "/v2/preprints/")
+func waterButlerPath(providerURL, remotePath string, trailingSlash bool) (string, error) {
+	trimmed := strings.TrimSpace(remotePath)
+	if trimmed == "" {
+		return "", fmt.Errorf("remote path is required")
+	}
+
+	clean := path.Clean(strings.ReplaceAll(trimmed, "\\", "/"))
+	if clean == "." || clean == "/" || strings.HasPrefix(clean, "../") || strings.Contains(clean, "/../") {
+		return "", fmt.Errorf("remote path %q must stay within OSF Storage", remotePath)
+	}
+
+	parts := strings.Split(strings.Trim(clean, "/"), "/")
+	escaped := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if part == "" || part == "." || part == ".." {
+			return "", fmt.Errorf("remote path %q must stay within OSF Storage", remotePath)
+		}
+		escaped = append(escaped, url.PathEscape(part))
+	}
+
+	fullURL := strings.TrimRight(providerURL, "/") + "/" + strings.Join(escaped, "/")
+	if trailingSlash {
+		fullURL += "/"
+	}
+	return fullURL, nil
+}
+
+func (c *Client) sign(req *http.Request) {
+	switch c.credentials.Mode {
+	case auth.ModeBearerToken:
+		token := strings.TrimSpace(c.credentials.Token)
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+	case auth.ModeUsernamePassword:
+		username := strings.TrimSpace(c.credentials.Username)
+		password := strings.TrimSpace(c.credentials.Password)
+		if username != "" && password != "" {
+			req.SetBasicAuth(username, password)
+		}
+	default:
+		if c.bearerToken != "" {
+			req.Header.Set("Authorization", "Bearer "+c.bearerToken)
+		}
+	}
+}
+
+// ListPreprints loads preprints visible to the current request context.
+func (c *Client) ListPreprints(ctx context.Context, provider string, limit ...int) ([]Node, error) {
+	endpoint := "/v2/preprints/"
+	if provider != "" {
+		endpoint = appendQuery(endpoint, "filter[provider]", provider)
+	}
+	return collectPagesLimit[Node](ctx, c, endpoint, optionalLimit(limit))
 }
 
 // SearchOSF performs a search across OSF content.
-func (c *Client) SearchOSF(ctx context.Context, query string) ([]Node, error) {
-	endpoint := "/v2/search/?q=" + url.QueryEscape(query) + "&filter[resource_type]=node"
-	return collectPages[Node](ctx, c, endpoint)
+func (c *Client) SearchOSF(ctx context.Context, query string, limit ...int) ([]SearchResult, error) {
+	endpoint := "/v2/search/?q=" + url.QueryEscape(query)
+	nodes, err := collectPagesLimit[Node](ctx, c, endpoint, optionalLimit(limit))
+	if err != nil {
+		return nil, err
+	}
+	results := make([]SearchResult, 0, len(nodes))
+	for _, n := range nodes {
+		results = append(results, SearchResult{
+			ID:          n.ID,
+			Type:        n.Type,
+			Title:       n.Attributes.Title,
+			Description: n.Attributes.Description,
+			Category:    n.Attributes.Category,
+			URL:         n.Links.Self,
+		})
+	}
+	return results, nil
+}
+
+func optionalLimit(values []int) int {
+	if len(values) == 0 || values[0] < 0 {
+		return 0
+	}
+	return values[0]
+}
+
+func appendQuery(endpoint, key, value string) string {
+	separator := "?"
+	if strings.Contains(endpoint, "?") {
+		separator = "&"
+	}
+	return endpoint + separator + url.QueryEscape(key) + "=" + url.QueryEscape(value)
 }
 
 // ListNodeAddons lists all storage add-ons configured for a node.
 func (c *Client) ListNodeAddons(ctx context.Context, id string) ([]Node, error) {
 	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/addons/")
+}
+
+// CreateRegistration creates a draft registration for a node.
+func (c *Client) CreateRegistration(ctx context.Context, nodeID string, request RegistrationRequest) (Node, error) {
+	if strings.TrimSpace(request.SchemaID) == "" {
+		return Node{}, fmt.Errorf("registration schema id is required")
+	}
+
+	attributes := map[string]string{
+		"registration_schema": request.SchemaID,
+	}
+	if request.Title != "" {
+		attributes["title"] = request.Title
+	}
+	if request.Description != "" {
+		attributes["description"] = request.Description
+	}
+
+	var doc document[Node]
+	_, err := c.post(ctx, "/v2/nodes/"+url.PathEscape(nodeID)+"/registrations/", map[string]any{
+		"data": map[string]any{
+			"type":       "registrations",
+			"attributes": attributes,
+		},
+	}, &doc)
+	if err != nil {
+		return Node{}, err
+	}
+	return doc.Data, nil
 }
 
 // GetNodeFilesProvider gets the files provider URL for a node's OSF Storage.
@@ -476,6 +624,7 @@ func (c *Client) GetNodeFilesProvider(ctx context.Context, nodeID string) (strin
 	return "", fmt.Errorf("no osfstorage provider found for node %q", nodeID)
 }
 
+// GetUser returns a user profile by OSF user ID.
 func (c *Client) GetUser(ctx context.Context, id string) (User, error) {
 	var doc document[User]
 	if _, err := c.get(ctx, "/v2/users/"+url.PathEscape(id)+"/", &doc); err != nil {
@@ -484,26 +633,32 @@ func (c *Client) GetUser(ctx context.Context, id string) (User, error) {
 	return doc.Data, nil
 }
 
+// ListNodeRegistrations loads registrations linked to a node.
 func (c *Client) ListNodeRegistrations(ctx context.Context, id string) ([]Node, error) {
 	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/registrations/")
 }
 
+// ListWikiPages loads wiki pages linked to a node.
 func (c *Client) ListWikiPages(ctx context.Context, id string) ([]Node, error) {
 	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/wikis/")
 }
 
+// ListNodeComments loads comments linked to a node.
 func (c *Client) ListNodeComments(ctx context.Context, id string) ([]Node, error) {
 	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/comments/")
 }
 
+// ListNodeLogs loads audit log entries linked to a node.
 func (c *Client) ListNodeLogs(ctx context.Context, id string) ([]Node, error) {
 	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/logs/")
 }
 
+// ListNodeIdentifiers loads identifiers linked to a node.
 func (c *Client) ListNodeIdentifiers(ctx context.Context, id string) ([]Node, error) {
 	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/identifiers/")
 }
 
+// CreateNode creates an OSF node with the supplied title, category, and description.
 func (c *Client) CreateNode(ctx context.Context, title, category, description string) (Node, error) {
 	var doc document[Node]
 	_, err := c.post(ctx, "/v2/nodes/", map[string]any{
@@ -522,6 +677,7 @@ func (c *Client) CreateNode(ctx context.Context, title, category, description st
 	return doc.Data, nil
 }
 
+// UpdateNode updates title and description metadata for an OSF node.
 func (c *Client) UpdateNode(ctx context.Context, id, title, description string) (Node, error) {
 	var doc document[Node]
 	body := map[string]any{
@@ -541,6 +697,7 @@ func (c *Client) UpdateNode(ctx context.Context, id, title, description string) 
 	return doc.Data, nil
 }
 
+// DeleteNode deletes an OSF node by ID.
 func (c *Client) DeleteNode(ctx context.Context, id string) error {
 	return c.delete(ctx, "/v2/nodes/"+url.PathEscape(id)+"/")
 }

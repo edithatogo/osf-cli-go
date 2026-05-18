@@ -1,0 +1,27 @@
+site_name: osf-cli-go
+site_description: A Go command-line client for the Open Science Framework.
+site_url: https://edithatogo.github.io/osf-cli-go/
+repo_url: https://github.com/edithatogo/osf-cli-go
+repo_name: edithatogo/osf-cli-go
+
+theme:
+  name: mkdocs
+
+nav:
+  - Home: index.md
+  - Install: install.md
+  - Usage: usage.md
+  - Commands: commands.md
+  - Examples: examples.md
+  - Architecture: architecture.md
+  - Development: development.md
+  - Contributing: contributing.md
+  - Release checklist: release-checklist.md
+  - MCP roadmap: mcp-roadmap.md
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+
+strict: true

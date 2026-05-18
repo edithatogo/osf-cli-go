@@ -49,8 +49,8 @@ func TestRunValidationDryRunPlansAllSteps(t *testing.T) {
 	if len(report.Steps) == 0 {
 		t.Fatal("expected planned steps")
 	}
-	if got := report.Steps[len(report.Steps)-1].Status; got != "planned" {
-		t.Fatalf("last step status = %q, want planned", got)
+	if got := report.Steps[len(report.Steps)-1].Status; got != "pending" {
+		t.Fatalf("last step status = %q, want pending", got)
 	}
 }
 
@@ -99,9 +99,34 @@ func TestWriteEvidenceRedactsInputs(t *testing.T) {
 			t.Fatalf("evidence leaked %q: %s", forbidden, text)
 		}
 	}
-	for _, want := range []string{"OSF_TOKEN: set", "OSF_VALIDATE_PROJECT: set", "files download: planned"} {
+	for _, want := range []string{"OSF_TOKEN: set", "OSF_VALIDATE_PROJECT: set", "files download: pending", "search: planned", "preprints list: planned"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("evidence missing %q: %s", want, text)
 		}
 	}
+}
+
+func TestExecutableStepsGateFileDownload(t *testing.T) {
+	t.Parallel()
+
+	steps := executableSteps(validationEnv{projectRef: "xj6qc"})
+	for _, step := range steps {
+		if step.Name == "files download" && step.Executable {
+			t.Fatalf("files download executable without download ref: %+v", step)
+		}
+	}
+
+	steps = executableSteps(validationEnv{projectRef: "xj6qc", downloadRef: "file-1"})
+	for _, step := range steps {
+		if step.Name == "files download" {
+			if !step.Executable {
+				t.Fatalf("files download not executable with download ref: %+v", step)
+			}
+			if !strings.Contains(step.Command, "file-1") {
+				t.Fatalf("download command = %q, want file ref", step.Command)
+			}
+			return
+		}
+	}
+	t.Fatal("files download step not found")
 }

@@ -35,7 +35,7 @@ Use this checklist before tagging a release or publishing binaries.
 ## Safety Review
 
 - Confirm the release docs do not describe planned commands as already implemented.
-- Confirm `OSF_TOKEN` is documented as an environment variable only.
+- Confirm `OSF_TOKEN` remains the preferred auth path and that `OSF_USERNAME`/`OSF_PASSWORD` fallback limitations, SSO/2FA caveats, and guided token bootstrap behavior are documented.
 - Confirm live OSF tests remain opt-in and are not implied by default release validation.
 
 ## Publishing

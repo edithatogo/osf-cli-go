@@ -55,6 +55,7 @@ type User struct {
 	Links      Links          `json:"links"`
 }
 
+// UserAttributes carries profile fields returned for an OSF user.
 type UserAttributes struct {
 	FullName   string `json:"full_name"`
 	GivenName  string `json:"given_name,omitempty"`
@@ -69,6 +70,7 @@ type Node struct {
 	Links      Links          `json:"links"`
 }
 
+// NodeAttributes carries display and category fields for OSF nodes.
 type NodeAttributes struct {
 	Title       string `json:"title"`
 	Description string `json:"description,omitempty"`
@@ -83,6 +85,7 @@ type Contributor struct {
 	Links      Links                 `json:"links"`
 }
 
+// ContributorAttributes carries contributor display and permission metadata.
 type ContributorAttributes struct {
 	FullName      string `json:"full_name"`
 	Bibliographic bool   `json:"bibliographic"`
@@ -97,6 +100,7 @@ type StorageFile struct {
 	Links      Links                 `json:"links"`
 }
 
+// StorageFileAttributes carries OSF Storage file metadata.
 type StorageFileAttributes struct {
 	Name string `json:"name"`
 	Kind string `json:"kind"`
@@ -116,8 +120,26 @@ type FileVersion struct {
 	Links      Links                 `json:"links"`
 }
 
+// FileVersionAttributes carries size and timestamp metadata for a file version.
 type FileVersionAttributes struct {
 	Size         int64     `json:"size,omitempty"`
 	DateCreated  time.Time `json:"date_created,omitempty"`
 	DateModified time.Time `json:"date_modified,omitempty"`
+}
+
+// SearchResult models one OSF search result across supported resource types.
+type SearchResult struct {
+	ID          string `json:"id"`
+	Type        string `json:"type"`
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
+	Category    string `json:"category,omitempty"`
+	URL         string `json:"url,omitempty"`
+}
+
+// RegistrationRequest describes the draft registration fields submitted for a node.
+type RegistrationRequest struct {
+	SchemaID    string `json:"schemaId"`
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
 }

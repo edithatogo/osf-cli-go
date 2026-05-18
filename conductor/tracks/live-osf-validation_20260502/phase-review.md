@@ -16,10 +16,12 @@
 
 ## Anti-Stub Evidence
 
-- `go run ./tools/checkstubs` result: pending for this track closure pass.
-- Production markers found: pending.
-- Ignored paths verified: pending.
-- Self-scan exclusion verified: pending.
+- `go run ./tools/checkstubs` result: passed in the later repo-level closeout
+  run.
+- Production markers found: none reported by the scanner.
+- Ignored paths verified: no stub markers reported in the checked scope.
+- Self-scan exclusion verified: the scan completed against this repo without
+  reporting production stubs in the checked scope.
 - Validation evidence link or location: `conductor/tracks/live-osf-validation_20260502/live-validation-evidence.md`.
 
 ## Validation Commands
@@ -31,14 +33,20 @@ go run ./tools/livevalidation
 
 ## Conductor Review
 
-- Review command: not run in this pass.
+- Review command: covered by the later repo-level closeout and
+  `$conductor-review`/checkreviews gate.
 - Blocking findings: none from the implemented harness and documentation work.
 - Fixes applied: not needed for the dry-run harness.
-- Re-review result: not run.
+- Re-review result: no blocking findings reported in the later closeout pass.
 
 ## Status
 
-- Completion claim: scaffolded
-- Completion rule: the validator is present, documented, and tested in dry-run mode without requiring OSF credentials.
-- Residual risks: live command execution still needs explicit OSF variables and a project reference; `files download` remains deferred until the download command exists; the host did not have enough scratch space to compile the validator locally.
-- Next phase: add the live `files download` check once the download CLI track lands.
+- Completion claim: complete for the opt-in live validation harness.
+- Completion rule: the validator is present, documented, dry-run tested, and
+  later extended to include the current read-only command surface.
+- Reconciliation note: the project track index and plan now mark this track
+  complete; username/password live read-only validation also passed in the
+  later `username-password-auth_20260517` closeout.
+- Residual risks: `files download` live validation remains gated on
+  `OSF_VALIDATE_DOWNLOAD`, and live write validation remains approval-gated.
+- Next phase: none for this track.

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -41,6 +42,8 @@ type contractEntry struct {
 func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 	root := newRootCommandWithClient(stdout, stderr, nil)
 	root.SetArgs(args)
+	ctx := WithSignal(context.Background())
+	root.SetContext(ctx)
 
 	if err := root.Execute(); err != nil {
 		err = auth.RedactError(err)
@@ -99,6 +102,7 @@ func newRootCommandWithClient(stdout, stderr io.Writer, client readonlyClient) *
 		newExportCommand(client),
 		newSearchCommand(client),
 		newPreprintsCommand(client),
+		newRegistrationsCommand(client),
 		newOpenCommand(),
 		newWhoamiCommand(client),
 		newCompletionCommand(root),
@@ -165,13 +169,14 @@ func writeRootContract(w io.Writer) error {
 			"usage_or_argument": 2,
 		},
 		Commands: []contractEntry{
-			{Name: "auth", Status: "implemented", Description: "Manage OSF personal access tokens"},
-			{Name: "projects", Status: "implemented", Description: "List and inspect OSF projects and components"},
+			{Name: "auth", Status: "implemented", Description: "Manage OSF authentication and token bootstrap guidance"},
+			{Name: "projects", Status: "implemented", Description: "List, inspect, create, update, and delete OSF projects and components"},
 			{Name: "components", Status: "implemented", Description: "List project components"},
-			{Name: "files", Status: "implemented", Description: "List and download OSF Storage files"},
+			{Name: "files", Status: "implemented", Description: "List, download, upload, create folders, and delete OSF Storage files"},
 			{Name: "export", Status: "implemented", Description: "Export a node snapshot"},
 			{Name: "search", Status: "implemented", Description: "Search OSF projects and components"},
 			{Name: "preprints", Status: "implemented", Description: "List OSF preprints"},
+			{Name: "registrations", Status: "implemented", Description: "Create OSF draft registrations"},
 			{Name: "open", Status: "implemented", Description: "Open an OSF node in the default browser"},
 			{Name: "whoami", Status: "implemented", Description: "Show the active OSF account (alias for auth whoami)"},
 			{Name: "completion", Status: "implemented", Description: "Generate shell completion scripts"},

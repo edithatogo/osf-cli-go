@@ -17,6 +17,9 @@ type readonlyClient interface {
 	CurrentUser(context.Context) (osfapi.User, error)
 	ListProjects(context.Context) ([]osfapi.Node, error)
 	GetNode(context.Context, string) (osfapi.Node, error)
+	CreateNode(context.Context, string, string, string) (osfapi.Node, error)
+	UpdateNode(context.Context, string, string, string) (osfapi.Node, error)
+	DeleteNode(context.Context, string) error
 	ListNodeContributors(context.Context, string) ([]osfapi.Contributor, error)
 	ListNodeChildren(context.Context, string) ([]osfapi.Node, error)
 	ListStorageFiles(context.Context, string, ...string) ([]osfapi.StorageFile, error)
@@ -26,14 +29,17 @@ type readonlyClient interface {
 	UploadFile(context.Context, string, string, io.Reader, string) error
 	CreateFolder(context.Context, string, string) error
 	DeleteFile(context.Context, string, string) error
-	ListPreprints(context.Context) ([]osfapi.Node, error)
-	SearchOSF(context.Context, string) ([]osfapi.Node, error)
+	ListPreprints(context.Context, string, ...int) ([]osfapi.Node, error)
+	SearchOSF(context.Context, string, ...int) ([]osfapi.SearchResult, error)
 	ListNodeAddons(context.Context, string) ([]osfapi.Node, error)
+	CreateRegistration(context.Context, string, osfapi.RegistrationRequest) (osfapi.Node, error)
 }
 
 type defaultReadonlyClient struct {
-	api         *osfapi.Client
-	bearerToken bool
+	api           *osfapi.Client
+	bearerToken   bool
+	credentials   auth.Credentials
+	credentialErr error
 }
 
 func newDefaultReadonlyClient() readonlyClient {
@@ -41,24 +47,30 @@ func newDefaultReadonlyClient() readonlyClient {
 }
 
 func newDefaultReadonlyClientFromSource(source auth.Source) readonlyClient {
-	token, err := auth.LoadToken(source)
-	if err != nil {
-		token = ""
+	credentials, err := auth.LoadCredentials(source)
+	if err != nil && credentials.Mode == "" {
+		credentials = auth.Credentials{Mode: auth.ModeAnonymous}
 	}
+	credentialErr := err
 
-	api, err := osfapi.New(osfAPIBaseURL, osfapi.WithBearerToken(token))
+	api, err := osfapi.New(osfAPIBaseURL, osfapi.WithCredentials(credentials))
 	if err != nil {
 		panic(err)
 	}
 
 	return &defaultReadonlyClient{
-		api:         api,
-		bearerToken: token != "",
+		api:           api,
+		bearerToken:   credentials.Mode == auth.ModeBearerToken && credentials.Authenticated(),
+		credentials:   credentials,
+		credentialErr: credentialErr,
 	}
 }
 
 func (c *defaultReadonlyClient) ListProjects(ctx context.Context) ([]osfapi.Node, error) {
-	if !c.bearerToken {
+	if !c.credentials.Authenticated() {
+		if c.credentialErr != nil {
+			return nil, c.credentialErr
+		}
 		return nil, auth.MissingTokenError{Env: auth.TokenEnv}
 	}
 
@@ -66,15 +78,37 @@ func (c *defaultReadonlyClient) ListProjects(ctx context.Context) ([]osfapi.Node
 }
 
 func (c *defaultReadonlyClient) CurrentUser(ctx context.Context) (osfapi.User, error) {
-	if !c.bearerToken {
+	if !c.credentials.Authenticated() {
+		if c.credentialErr != nil {
+			return osfapi.User{}, c.credentialErr
+		}
 		return osfapi.User{}, auth.MissingTokenError{Env: auth.TokenEnv}
 	}
 
 	return c.api.CurrentUser(ctx)
 }
 
+func (c *defaultReadonlyClient) AuthMode() auth.Mode {
+	if c.credentials.Mode == "" {
+		return auth.ModeAnonymous
+	}
+	return c.credentials.Mode
+}
+
 func (c *defaultReadonlyClient) GetNode(ctx context.Context, id string) (osfapi.Node, error) {
 	return c.api.GetNode(ctx, id)
+}
+
+func (c *defaultReadonlyClient) CreateNode(ctx context.Context, title, category, description string) (osfapi.Node, error) {
+	return c.api.CreateNode(ctx, title, category, description)
+}
+
+func (c *defaultReadonlyClient) UpdateNode(ctx context.Context, id, title, description string) (osfapi.Node, error) {
+	return c.api.UpdateNode(ctx, id, title, description)
+}
+
+func (c *defaultReadonlyClient) DeleteNode(ctx context.Context, id string) error {
+	return c.api.DeleteNode(ctx, id)
 }
 
 func (c *defaultReadonlyClient) ListNodeContributors(ctx context.Context, id string) ([]osfapi.Contributor, error) {
@@ -113,16 +147,20 @@ func (c *defaultReadonlyClient) DeleteFile(ctx context.Context, providerURL, fil
 	return c.api.DeleteFile(ctx, providerURL, fileName)
 }
 
-func (c *defaultReadonlyClient) ListPreprints(ctx context.Context) ([]osfapi.Node, error) {
-	return c.api.ListPreprints(ctx)
+func (c *defaultReadonlyClient) ListPreprints(ctx context.Context, provider string, limit ...int) ([]osfapi.Node, error) {
+	return c.api.ListPreprints(ctx, provider, limit...)
 }
 
-func (c *defaultReadonlyClient) SearchOSF(ctx context.Context, query string) ([]osfapi.Node, error) {
-	return c.api.SearchOSF(ctx, query)
+func (c *defaultReadonlyClient) SearchOSF(ctx context.Context, query string, limit ...int) ([]osfapi.SearchResult, error) {
+	return c.api.SearchOSF(ctx, query, limit...)
 }
 
 func (c *defaultReadonlyClient) ListNodeAddons(ctx context.Context, id string) ([]osfapi.Node, error) {
 	return c.api.ListNodeAddons(ctx, id)
+}
+
+func (c *defaultReadonlyClient) CreateRegistration(ctx context.Context, nodeID string, request osfapi.RegistrationRequest) (osfapi.Node, error) {
+	return c.api.CreateRegistration(ctx, nodeID, request)
 }
 
 func parseNodeIDOrURL(input string) (string, error) {

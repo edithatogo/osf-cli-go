@@ -245,6 +245,84 @@ func TestLoadTokenWithNilSource(t *testing.T) {
 	}
 }
 
+func TestLoadCredentialsPrefersToken(t *testing.T) {
+	credentials, err := LoadCredentials(FuncSource(func(name string) (string, bool) {
+		switch name {
+		case TokenEnv:
+			return "token-123", true
+		case UsernameEnv:
+			return "user@example.org", true
+		case PasswordEnv:
+			return "password-123", true
+		default:
+			return "", false
+		}
+	}))
+	if err != nil {
+		t.Fatalf("LoadCredentials returned error: %v", err)
+	}
+	if credentials.Mode != ModeBearerToken || credentials.Token != "token-123" {
+		t.Fatalf("credentials = %+v, want bearer token", credentials)
+	}
+}
+
+func TestLoadCredentialsUsernamePasswordFallback(t *testing.T) {
+	credentials, err := LoadCredentials(FuncSource(func(name string) (string, bool) {
+		switch name {
+		case UsernameEnv:
+			return " user@example.org ", true
+		case PasswordEnv:
+			return " password-123 ", true
+		default:
+			return "", false
+		}
+	}))
+	if err != nil {
+		t.Fatalf("LoadCredentials returned error: %v", err)
+	}
+	if credentials.Mode != ModeUsernamePassword || credentials.Username != "user@example.org" || credentials.Password != "password-123" {
+		t.Fatalf("credentials = %+v, want username/password", credentials)
+	}
+}
+
+func TestLoadCredentialsPartialUsernamePassword(t *testing.T) {
+	_, err := LoadCredentials(FuncSource(func(name string) (string, bool) {
+		if name == UsernameEnv {
+			return "user@example.org", true
+		}
+		return "", false
+	}))
+	if err == nil {
+		t.Fatal("LoadCredentials returned nil error, want partial credential error")
+	}
+	var missing MissingCredentialsError
+	if !errors.As(err, &missing) {
+		t.Fatalf("error = %T %v, want MissingCredentialsError", err, err)
+	}
+	if !strings.Contains(err.Error(), PasswordEnv) {
+		t.Fatalf("error = %q, want password env mention", err.Error())
+	}
+}
+
+func TestCredentialsSecrets(t *testing.T) {
+	credentials := Credentials{Mode: ModeUsernamePassword, Username: "user@example.org", Password: "password-123"}
+	secrets := credentials.Secrets()
+	if len(secrets) != 2 || secrets[0] != "user@example.org" || secrets[1] != "password-123" {
+		t.Fatalf("Secrets = %#v", secrets)
+	}
+}
+
+func TestRedactBasicAuthAndPasswordEnv(t *testing.T) {
+	raw := "Authorization: Basic dXNlckBleGFtcGxlLm9yZzpwYXNz OSF_PASSWORD=password-123"
+	got := Redact(raw, "password-123")
+	if strings.Contains(got, "dXNlckBleGFtcGxlLm9yZzpwYXNz") || strings.Contains(got, "password-123") {
+		t.Fatalf("Redact leaked basic auth/password: %q", got)
+	}
+	if !strings.Contains(got, "Basic "+redacted) || !strings.Contains(got, "OSF_PASSWORD="+redacted) {
+		t.Fatalf("Redact = %q, want basic and env redaction", got)
+	}
+}
+
 func TestRedactCallbackWithAlreadyRedacted(t *testing.T) {
 	got := Redact(redacted + " and " + redacted)
 	if got != redacted+" and "+redacted {

@@ -53,14 +53,14 @@ git diff --check
 
 ## Conductor Review
 
-- Review command: not run. This track is roadmap/design only, so there was no Go implementation to review.
+- Review command: roadmap/design review performed against the documented package boundaries and MCP tool inventory. There was no Go implementation to code-review in this track.
 - Blocking findings: none for the documented roadmap/design scope.
 - Fixes applied: clarified package boundaries, MCP tool inventory, and auth-sharing constraints.
-- Re-review result: not applicable.
+- Re-review result: no blocking roadmap/design findings remain.
 
 ## Status
 
-- Completion claim: scaffolded
+- Completion claim: roadmap/design complete
 - Completion rule: roadmap/design evidence is present and the anti-stub scan passed.
 - Residual risks: the MCP server itself is not implemented; the public-vs-internal package split should be rechecked if the future MCP track changes OSF API or auth shape.
 - Next phase: implement the MCP server against the documented tool inventory without widening the CLI surface.

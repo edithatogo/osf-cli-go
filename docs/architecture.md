@@ -5,12 +5,11 @@
 ```
 cmd/osf/            — main package, CLI entry point
 internal/
-  auth/             — token loading, redaction of secrets in output
-  cli/              — Cobra command tree, output formatting, test fixtures
+  auth/             — credential loading, auth-mode selection, redaction of secrets in output
+  cli/              — Cobra command tree, command contracts, terminal behavior
   download/         — safe file writes, conflict policies, folder-tree plans
   osfapi/           — OSF API v2 HTTP client (JSON:API)
   output/           — table and JSON output helpers
-doc.go              — package-level godoc
 docs/               — user-facing documentation
 ```
 
@@ -20,12 +19,18 @@ Commands are defined with [Cobra](https://github.com/spf13/cobra) in
 `internal/cli/`. The entrypoint in `cmd/osf/main.go` calls `cli.Run()`,
 which creates the root command, attaches subcommands, and executes it.
 
-The root command (`osf`) has five subcommands:
+The root command (`osf`) exposes these command groups:
 
-- `auth` → `whoami`
+- `auth` → `whoami`, `login`
 - `projects` → `list`, `get`
 - `components` → `list`
-- `files` → `list`, `download`
+- `files` → `list`, `download`, `upload`, `mkdir`, `rm`
+- `export`
+- `search`
+- `preprints` → `list`
+- `registrations` → `create`
+- `open`
+- `whoami`
 - `completion` → `bash`, `zsh`, `fish`, `powershell`
 
 The root command supports `--output json` to emit a machine-readable
@@ -41,10 +46,18 @@ type readonlyClient interface {
     CurrentUser(context.Context) (osfapi.User, error)
     ListProjects(context.Context) ([]osfapi.Node, error)
     GetNode(context.Context, string) (osfapi.Node, error)
+    ListNodeContributors(context.Context, string) ([]osfapi.Contributor, error)
     ListNodeChildren(context.Context, string) ([]osfapi.Node, error)
     ListStorageFiles(context.Context, string, ...string) ([]osfapi.StorageFile, error)
     GetStorageFile(context.Context, string) (osfapi.StorageFile, error)
     OpenDownload(context.Context, string) (io.ReadCloser, error)
+    GetNodeFilesProvider(context.Context, string) (string, error)
+    UploadFile(context.Context, string, string, io.Reader, string) error
+    CreateFolder(context.Context, string, string) error
+    DeleteFile(context.Context, string, string) error
+    ListPreprints(context.Context) ([]osfapi.Node, error)
+    SearchOSF(context.Context, string) ([]osfapi.Node, error)
+    ListNodeAddons(context.Context, string) ([]osfapi.Node, error)
 }
 ```
 
@@ -60,11 +73,12 @@ This interface serves two purposes:
 
 `newDefaultReadonlyClient()` constructs a production client that:
 
-1. Loads the token from `os.LookupEnv` (via `auth.LoadToken`).
-2. Creates an `osfapi.Client` with the token.
-3. Wraps it in a `defaultReadonlyClient` that guards authenticated
+1. Loads credentials from `os.LookupEnv` (via `auth.LoadCredentials`).
+2. Selects `OSF_TOKEN` first, then `OSF_USERNAME` plus `OSF_PASSWORD`, otherwise anonymous public access.
+3. Creates an `osfapi.Client` with the selected credentials.
+4. Wraps it in a `defaultReadonlyClient` that guards authenticated
    methods (`CurrentUser`, `ListProjects`) by returning
-   `MissingTokenError` when no token was loaded.
+   `MissingTokenError` when no credentials were loaded.
 
 ## OSF API Client
 
@@ -73,22 +87,28 @@ This interface serves two purposes:
 
 Key design points:
 
-- **Functional options** (`WithHTTPClient`, `WithBearerToken`) for
+- **Functional options** (`WithHTTPClient`, `WithBearerToken`,
+  `WithCredentials`, `WithUsernamePassword`) for
   configuration without breaking the constructor signature.
+- **Default request timeout** of 30 seconds for production HTTP clients, so
+  slow OSF/public endpoints fail instead of hanging indefinitely.
 - **Automatic pagination** via `collectPages`, which follows the
   `links.next` cursor in each JSON:API response until exhaustion.
 - **Error parsing** via `parseAPIError`, which handles both the
   JSON:API `errors[]` array and top-level `title`/`detail` fields.
 - **Relative URL resolution** via `resolveReference`, so pagination
   links (often relative) are resolved against the base URL.
-- The `get` method is unexported; all exported methods (e.g.
-  `GetNode`, `ListStorageFiles`) are typed wrappers around it.
+- WaterButler write methods (`UploadFile`, `CreateFolder`, `DeleteFile`)
+  encode remote path segments, preserve context cancellation, and return
+  actionable response-body errors for non-2xx responses.
+- The low-level HTTP helpers are unexported; exported methods such as
+  `GetNode`, `ListStorageFiles`, and `UploadFile` are typed wrappers around them.
 
 ### Testing
 
 The CI test suite uses `httptest.NewServer` with fixture JSON files
-in `internal/cli/cli_test.go`. The fake `readonlyClient` matches the
-interface so commands can be exercised without network calls.
+under `internal/osfapi/testdata`. CLI tests use a fake `readonlyClient`
+so commands can be exercised without network calls.
 
 ### Types
 
@@ -99,6 +119,7 @@ their embedded attributes structs:
 - `Node` / `NodeAttributes` — projects and components
 - `Contributor` / `ContributorAttributes` — contributor entries
 - `StorageFile` / `StorageFileAttributes` — OSF Storage files and folders
+- `FileVersion` / `FileVersionAttributes` — file-version metadata
 - `Links` — the standard JSON:API links object (self, next, prev, download)
 - `APIError` — structured error with status code, method, path, title, detail
 
@@ -156,18 +177,23 @@ their embedded attributes structs:
 
 ## Authentication
 
-`internal/auth/auth.go` handles token loading and redaction:
+`internal/auth/auth.go` handles credential loading and redaction:
 
 - **Token loading** (`LoadToken`): reads `OSF_TOKEN` from any `Source`
   (default: `EnvSource`, backed by `os.LookupEnv`). Returns
   `MissingTokenError` when unset or empty.
+- **Credential loading** (`LoadCredentials`): prefers `OSF_TOKEN`, then falls
+  back to `OSF_USERNAME` plus `OSF_PASSWORD`; missing or partial fallback
+  credentials are represented by `MissingCredentialsError`.
 - **Source abstraction**: `Source` is an interface with a single
   `Lookup` method. `FuncSource` adapts a function; `EnvSource` reads
   from the process environment. This makes token loading testable.
 - **Redaction** (`Redact`): scrubs three patterns from loggable text:
   - Explicitly provided secret strings (tokens, passwords).
   - `Bearer <token>` patterns in HTTP headers.
-  - `OSF_TOKEN=<value>` patterns in shell commands.
+  - `Basic <base64>` patterns in HTTP headers.
+  - `OSF_TOKEN=<value>`, `OSF_USERNAME=<value>`, and
+    `OSF_PASSWORD=<value>` patterns in shell commands.
   - Any 24+ character base64-like string (OSF token heuristic).
 - **RedactError** (`RedactError`): wraps `Redact` for error values,
   returning nil for nil errors.

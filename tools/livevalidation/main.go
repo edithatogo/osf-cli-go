@@ -21,6 +21,8 @@ const (
 type validationEnv struct {
 	liveEnabled bool
 	token       string
+	username    string
+	password    string
 	projectRef  string
 	downloadRef string
 }
@@ -106,7 +108,7 @@ func runValidation(ctx context.Context, env validationEnv, liveMode bool, timeou
 		return report, nil
 	}
 
-	if env.token == "" || env.projectRef == "" {
+	if (env.token == "" && (env.username == "" || env.password == "")) || env.projectRef == "" {
 		report.Mode = "skipped"
 		report.Skipped = true
 		report.SkipReason = missingEnvMessage(env)
@@ -149,12 +151,16 @@ func runValidation(ctx context.Context, env validationEnv, liveMode bool, timeou
 
 func loadValidationEnv(source auth.Source) validationEnv {
 	token, _ := source.Lookup(auth.TokenEnv)
+	username, _ := source.Lookup(auth.UsernameEnv)
+	password, _ := source.Lookup(auth.PasswordEnv)
 	projectRef, _ := source.Lookup("OSF_VALIDATE_PROJECT")
 	downloadRef, _ := source.Lookup("OSF_VALIDATE_DOWNLOAD")
 
 	return validationEnv{
 		liveEnabled: truthyLookup(source, "OSF_LIVE_VALIDATION"),
 		token:       strings.TrimSpace(token),
+		username:    strings.TrimSpace(username),
+		password:    strings.TrimSpace(password),
 		projectRef:  strings.TrimSpace(projectRef),
 		downloadRef: strings.TrimSpace(downloadRef),
 	}
@@ -175,8 +181,8 @@ func truthyLookup(source auth.Source, name string) bool {
 
 func missingEnvMessage(env validationEnv) string {
 	var missing []string
-	if env.token == "" {
-		missing = append(missing, auth.TokenEnv)
+	if env.token == "" && (env.username == "" || env.password == "") {
+		missing = append(missing, auth.TokenEnv+" or "+auth.UsernameEnv+"/"+auth.PasswordEnv)
 	}
 	if env.projectRef == "" {
 		missing = append(missing, "OSF_VALIDATE_PROJECT")
@@ -207,12 +213,17 @@ func plannedSteps(env validationEnv) []validationResult {
 func executableSteps(env validationEnv) []validationStep {
 	project := "<project>"
 	if env.projectRef != "" {
-		project = "<redacted-project>"
+		project = env.projectRef
 	}
 
 	downloadRef := "<download-ref>"
 	if env.downloadRef != "" {
-		downloadRef = "<redacted-download-ref>"
+		downloadRef = env.downloadRef
+	}
+
+	downloadCommand := fmt.Sprintf("files download --file %s <temp-dir>", downloadRef)
+	if env.downloadRef != "" {
+		downloadCommand = fmt.Sprintf("files download --file %s %s", downloadRef, filepath.Join(os.TempDir(), "osf-cli-go-livevalidation-download"))
 	}
 
 	return []validationStep{
@@ -221,7 +232,11 @@ func executableSteps(env validationEnv) []validationStep {
 		{Name: "projects get", Command: "projects get " + project, Executable: true},
 		{Name: "components list", Command: "components list " + project, Executable: true},
 		{Name: "files list", Command: "files list " + project, Executable: true},
-		{Name: "files download", Command: fmt.Sprintf("files download --file %s <temp-dir>", downloadRef), Executable: true},
+		{Name: "files addons", Command: "files addons " + project, Executable: true},
+		{Name: "export", Command: "export " + project + " --json", Executable: true},
+		{Name: "search", Command: "search open --limit 5 --json", Executable: true},
+		{Name: "preprints list", Command: "preprints list --limit 5 --json", Executable: true},
+		{Name: "files download", Command: downloadCommand, Executable: env.downloadRef != ""},
 	}
 }
 
@@ -236,7 +251,7 @@ func runOSFCommand(parent context.Context, timeout time.Duration, env validation
 
 	cmdArgs := append([]string{"run", osfCommandPath}, args...)
 	cmd := exec.CommandContext(ctx, "go", cmdArgs...)
-	cmd.Env = append(os.Environ(), auth.TokenEnv+"="+env.token)
+	cmd.Env = append(os.Environ(), auth.TokenEnv+"="+env.token, auth.UsernameEnv+"="+env.username, auth.PasswordEnv+"="+env.password)
 	if env.projectRef != "" {
 		cmd.Env = append(cmd.Env, "OSF_VALIDATE_PROJECT="+env.projectRef)
 	}
@@ -245,12 +260,12 @@ func runOSFCommand(parent context.Context, timeout time.Duration, env validation
 	}
 
 	out, err := cmd.CombinedOutput()
-	output := auth.Redact(string(out), env.token, env.projectRef, env.downloadRef)
+	output := auth.Redact(string(out), env.token, env.username, env.password, env.projectRef, env.downloadRef)
 	if ctx.Err() != nil {
 		return output, ctx.Err()
 	}
 	if err != nil {
-		return output, auth.RedactError(err, env.token, env.projectRef, env.downloadRef)
+		return output, auth.RedactError(err, env.token, env.username, env.password, env.projectRef, env.downloadRef)
 	}
 	return output, nil
 }
@@ -285,6 +300,8 @@ func writeEvidence(path string, report validationReport) error {
 	}
 	builder.WriteString("- Environment:\n")
 	fmt.Fprintf(&builder, "  - %s: %s\n", auth.TokenEnv, presence(report.Env.token))
+	fmt.Fprintf(&builder, "  - %s: %s\n", auth.UsernameEnv, presence(report.Env.username))
+	fmt.Fprintf(&builder, "  - %s: %s\n", auth.PasswordEnv, presence(report.Env.password))
 	fmt.Fprintf(&builder, "  - OSF_VALIDATE_PROJECT: %s\n", presence(report.Env.projectRef))
 	fmt.Fprintf(&builder, "  - OSF_LIVE_VALIDATION: %t\n", report.Env.liveEnabled)
 	builder.WriteString("- Planned coverage:\n")

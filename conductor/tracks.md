@@ -1,6 +1,7 @@
 # Project Tracks
 
 This file tracks all major work items. Each track has its own spec and plan.
+The per-track `plan.md` files are the source of truth for completion state.
 
 ---
 
@@ -25,3 +26,5 @@ This file tracks all major work items. Each track has its own spec and plan.
 - [x] [waterbutler-write-operations](tracks/waterbutler-write-operations_20260502/spec.md) — File upload, folder creation, and file deletion via WaterButler API.
 - [x] [preprints-search-registrations](tracks/preprints-search-registrations_20260502/spec.md) — Preprint listing, search, and add-on listing endpoints with CLI commands.
 - [x] [node-export-commands](tracks/node-export-commands_20260502/spec.md) — `osf export` command with full node snapshot.
+- [x] [username-password-auth](tracks/username-password-auth_20260517/spec.md) — Username/password authentication fallback with command-level capability mapping.
+- [x] [conductor-state-reconciliation](tracks/conductor-state-reconciliation_20260517/spec.md) — Reconcile completed track index, plans, and stale phase-review status language.

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -398,6 +399,30 @@ func TestFilesListJSONOutput(t *testing.T) {
 	}
 }
 
+func TestFilesListPassesFolderPathSegments(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{
+		storageLists: map[string][]osfapi.StorageFile{
+			"project-1:folder/subfolder": {
+				{ID: "f1", Attributes: osfapi.StorageFileAttributes{Name: "nested.txt", Kind: "file"}, Links: osfapi.Links{Download: "https://files.osf.io/f1"}},
+			},
+		},
+	}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"files", "list", "project-1", "folder/subfolder", "--json"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("files list nested returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	if got := strings.Join(client.gotFilesSegments, "/"); got != "folder/subfolder" {
+		t.Fatalf("segments = %q, want folder/subfolder", got)
+	}
+	if !strings.Contains(stdout.String(), "nested.txt") {
+		t.Fatalf("stdout = %q, want nested file", stdout.String())
+	}
+}
+
 func TestZshCompletion(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -607,8 +632,8 @@ func TestWriteRootContractWithJSON(t *testing.T) {
 	if err := json.Unmarshal(buf.Bytes(), &contract); err != nil {
 		t.Fatalf("stdout is not valid JSON: %v\n%s", err, buf.String())
 	}
-	if len(contract.Commands) != 10 {
-		t.Fatalf("command count = %d, want 10", len(contract.Commands))
+	if len(contract.Commands) != 11 {
+		t.Fatalf("command count = %d, want 11", len(contract.Commands))
 	}
 	if contract.Commands[0].Status != "implemented" || contract.Commands[1].Status != "implemented" {
 		t.Fatalf("unexpected command statuses: %#v", contract.Commands)
@@ -823,6 +848,122 @@ func TestParseNodeIDOrURLRejectsNonOSFURL(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "not an OSF host") {
 		t.Fatalf("error = %q, want OSF host message", err.Error())
+	}
+}
+
+func TestProjectsCreateRequiresConfirmation(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClientInput([]string{"projects", "create", "--title", "New Project"}, "", &stdout, &stderr, client)
+	if code != 1 {
+		t.Fatalf("projects create without confirmation returned %d, want 1", code)
+	}
+	if client.gotCreateNodeTitle != "" {
+		t.Fatalf("created node title = %q, want no create", client.gotCreateNodeTitle)
+	}
+	if !strings.Contains(stderr.String(), "node creation confirmation required") {
+		t.Fatalf("stderr = %q, want confirmation error", stderr.String())
+	}
+}
+
+func TestProjectsCreateAfterConfirmation(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClientInput([]string{"projects", "create", "--title", "New Project", "--description", "Draft"}, "yes\n", &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("projects create returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	if client.gotCreateNodeTitle != "New Project" || client.gotCreateNodeCategory != "project" || client.gotCreateNodeDescription != "Draft" {
+		t.Fatalf("create call title=%q category=%q description=%q", client.gotCreateNodeTitle, client.gotCreateNodeCategory, client.gotCreateNodeDescription)
+	}
+	if !strings.Contains(stdout.String(), "New Project") {
+		t.Fatalf("stdout = %q, want created node", stdout.String())
+	}
+}
+
+func TestProjectsUpdatePreservesOmittedFieldsAndRequiresConfirmation(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{
+		node: osfapi.Node{ID: "abc123", Type: "nodes", Attributes: osfapi.NodeAttributes{Title: "Old", Category: "project", Description: "Keep me"}, Links: osfapi.Links{Self: "https://osf.io/abc123/"}},
+	}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClientInput([]string{"projects", "update", "abc123", "--title", "Updated"}, "", &stdout, &stderr, client)
+	if code != 1 {
+		t.Fatalf("projects update without confirmation returned %d, want 1", code)
+	}
+	if client.gotUpdateNodeID != "" {
+		t.Fatalf("updated node id = %q, want no update", client.gotUpdateNodeID)
+	}
+	if !strings.Contains(stderr.String(), "node update confirmation required") {
+		t.Fatalf("stderr = %q, want confirmation error", stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = runWithClientInput([]string{"projects", "update", "abc123", "--title", "Updated"}, "yes\n", &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("projects update returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	if client.gotUpdateNodeID != "abc123" || client.gotUpdateNodeTitle != "Updated" || client.gotUpdateNodeDescription != "Keep me" {
+		t.Fatalf("update call id=%q title=%q description=%q", client.gotUpdateNodeID, client.gotUpdateNodeTitle, client.gotUpdateNodeDescription)
+	}
+}
+
+func TestProjectsUpdateRequiresChangedField(t *testing.T) {
+	t.Parallel()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"projects", "update", "abc123"}, &stdout, &stderr, &fakeReadonlyClient{})
+	if code != 1 {
+		t.Fatalf("projects update returned %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), "at least one of --title or --description is required") {
+		t.Fatalf("stderr = %q, want missing update field error", stderr.String())
+	}
+}
+
+func TestProjectsDeleteRequiresConfirmation(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClientInput([]string{"projects", "delete", "abc123"}, "", &stdout, &stderr, client)
+	if code != 1 {
+		t.Fatalf("projects delete without confirmation returned %d, want 1", code)
+	}
+	if client.gotDeleteNodeID != "" {
+		t.Fatalf("deleted node id = %q, want no delete", client.gotDeleteNodeID)
+	}
+	if !strings.Contains(stderr.String(), "node deletion confirmation required") {
+		t.Fatalf("stderr = %q, want confirmation error", stderr.String())
+	}
+}
+
+func TestProjectsDeleteYesSkipsPrompt(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"projects", "delete", "https://osf.io/abc123/", "--yes"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("projects delete --yes returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	if client.gotDeleteNodeID != "abc123" {
+		t.Fatalf("deleted node id = %q, want abc123", client.gotDeleteNodeID)
+	}
+	if !strings.Contains(stdout.String(), "deleted node abc123") {
+		t.Fatalf("stdout = %q, want deletion message", stdout.String())
 	}
 }
 
@@ -1161,6 +1302,88 @@ func TestDefaultReadonlyClientNewFromSourceWithToken(t *testing.T) {
 	}
 }
 
+func TestDefaultReadonlyClientNewFromSourceWithUsernamePassword(t *testing.T) {
+	client := newDefaultReadonlyClientFromSource(auth.FuncSource(func(name string) (string, bool) {
+		switch name {
+		case auth.UsernameEnv:
+			return "user@example.org", true
+		case auth.PasswordEnv:
+			return "password-123", true
+		default:
+			return "", false
+		}
+	}))
+	dc, ok := client.(*defaultReadonlyClient)
+	if !ok {
+		t.Fatalf("type = %T", client)
+	}
+	if dc.bearerToken {
+		t.Fatal("bearerToken = true, want false for username/password mode")
+	}
+	if dc.AuthMode() != auth.ModeUsernamePassword {
+		t.Fatalf("AuthMode = %q, want username/password", dc.AuthMode())
+	}
+}
+
+func TestDefaultReadonlyClientPrefersTokenOverUsernamePassword(t *testing.T) {
+	client := newDefaultReadonlyClientFromSource(auth.FuncSource(func(name string) (string, bool) {
+		switch name {
+		case auth.TokenEnv:
+			return "token-123", true
+		case auth.UsernameEnv:
+			return "user@example.org", true
+		case auth.PasswordEnv:
+			return "password-123", true
+		default:
+			return "", false
+		}
+	}))
+	dc := client.(*defaultReadonlyClient)
+	if !dc.bearerToken || dc.AuthMode() != auth.ModeBearerToken {
+		t.Fatalf("client mode bearer=%v authMode=%q, want bearer token", dc.bearerToken, dc.AuthMode())
+	}
+}
+
+func TestDefaultReadonlyClientReportsPartialUsernamePassword(t *testing.T) {
+	client := newDefaultReadonlyClientFromSource(auth.FuncSource(func(name string) (string, bool) {
+		if name == auth.UsernameEnv {
+			return "user@example.org", true
+		}
+		return "", false
+	}))
+	_, err := client.CurrentUser(t.Context())
+	if err == nil {
+		t.Fatal("CurrentUser returned nil error, want partial credential error")
+	}
+	if !strings.Contains(err.Error(), auth.PasswordEnv) {
+		t.Fatalf("error = %q, want password env mention", err.Error())
+	}
+}
+
+func TestAuthLoginGuidedBootstrap(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Run([]string{"auth", "login"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("auth login returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "https://osf.io/settings/tokens/") || !strings.Contains(stdout.String(), "OSF_TOKEN") {
+		t.Fatalf("auth login output = %q, want token guidance", stdout.String())
+	}
+}
+
+func TestAuthLoginPrintEnvRequiresExplicitToken(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Run([]string{"auth", "login", "--token", "token-123", "--print-env"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("auth login --print-env returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "OSF_TOKEN") || !strings.Contains(stdout.String(), "token-123") {
+		t.Fatalf("stdout = %q, want explicit export", stdout.String())
+	}
+}
+
 func TestCompletionCommandHelp(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -1199,21 +1422,43 @@ func TestFilesDownloadRejectsInvalidFlags(t *testing.T) {
 }
 
 type fakeReadonlyClient struct {
-	currentUser         osfapi.User
-	projects            []osfapi.Node
-	node                osfapi.Node
-	children            []osfapi.Node
-	files               []osfapi.StorageFile
-	storageFiles        map[string]osfapi.StorageFile
-	storageLists        map[string][]osfapi.StorageFile
-	downloadBodies      map[string]string
-	gotCurrentUserCalls int
-	gotNodeID           string
-	gotChildrenID       string
-	gotFilesID          string
-	gotFilesSegments    []string
-	gotStorageFileID    string
-	gotOpenDownloadURL  string
+	currentUser              osfapi.User
+	projects                 []osfapi.Node
+	node                     osfapi.Node
+	children                 []osfapi.Node
+	preprints                []osfapi.Node
+	addons                   []osfapi.Node
+	searchResults            []osfapi.SearchResult
+	files                    []osfapi.StorageFile
+	storageFiles             map[string]osfapi.StorageFile
+	storageLists             map[string][]osfapi.StorageFile
+	downloadBodies           map[string]string
+	gotCurrentUserCalls      int
+	gotNodeID                string
+	gotChildrenID            string
+	gotFilesID               string
+	gotFilesSegments         []string
+	gotStorageFileID         string
+	gotOpenDownloadURL       string
+	gotProviderURL           string
+	gotUploadName            string
+	gotUploadBody            string
+	gotUploadConflict        string
+	gotCreatedFolder         string
+	gotDeletedFile           string
+	gotPreprintProvider      string
+	gotPreprintLimit         int
+	gotSearchLimit           int
+	gotAddonNodeID           string
+	gotRegistrationNode      string
+	gotRegistrationReq       osfapi.RegistrationRequest
+	gotCreateNodeTitle       string
+	gotCreateNodeCategory    string
+	gotCreateNodeDescription string
+	gotUpdateNodeID          string
+	gotUpdateNodeTitle       string
+	gotUpdateNodeDescription string
+	gotDeleteNodeID          string
 }
 
 func (f *fakeReadonlyClient) CurrentUser(context.Context) (osfapi.User, error) {
@@ -1228,6 +1473,25 @@ func (f *fakeReadonlyClient) ListProjects(context.Context) ([]osfapi.Node, error
 func (f *fakeReadonlyClient) GetNode(_ context.Context, id string) (osfapi.Node, error) {
 	f.gotNodeID = id
 	return f.node, nil
+}
+
+func (f *fakeReadonlyClient) CreateNode(_ context.Context, title, category, description string) (osfapi.Node, error) {
+	f.gotCreateNodeTitle = title
+	f.gotCreateNodeCategory = category
+	f.gotCreateNodeDescription = description
+	return osfapi.Node{ID: "new-node", Type: "nodes", Attributes: osfapi.NodeAttributes{Title: title, Category: category, Description: description}, Links: osfapi.Links{Self: "https://osf.io/new-node/"}}, nil
+}
+
+func (f *fakeReadonlyClient) UpdateNode(_ context.Context, id, title, description string) (osfapi.Node, error) {
+	f.gotUpdateNodeID = id
+	f.gotUpdateNodeTitle = title
+	f.gotUpdateNodeDescription = description
+	return osfapi.Node{ID: id, Type: "nodes", Attributes: osfapi.NodeAttributes{Title: title, Category: "project", Description: description}, Links: osfapi.Links{Self: "https://osf.io/" + id + "/"}}, nil
+}
+
+func (f *fakeReadonlyClient) DeleteNode(_ context.Context, id string) error {
+	f.gotDeleteNodeID = id
+	return nil
 }
 
 func (f *fakeReadonlyClient) ListNodeContributors(_ context.Context, id string) ([]osfapi.Contributor, error) {
@@ -1261,31 +1525,57 @@ func (f *fakeReadonlyClient) GetStorageFile(_ context.Context, id string) (osfap
 	return osfapi.StorageFile{}, fmt.Errorf("missing storage file %q", id)
 }
 
-func (f *fakeReadonlyClient) ListPreprints(context.Context) ([]osfapi.Node, error) {
-	return nil, nil
+func (f *fakeReadonlyClient) ListPreprints(_ context.Context, provider string, limit ...int) ([]osfapi.Node, error) {
+	f.gotPreprintProvider = provider
+	if len(limit) > 0 {
+		f.gotPreprintLimit = limit[0]
+	}
+	return append([]osfapi.Node(nil), f.preprints...), nil
 }
 
-func (f *fakeReadonlyClient) SearchOSF(_ context.Context, query string) ([]osfapi.Node, error) {
-	return nil, nil
+func (f *fakeReadonlyClient) SearchOSF(_ context.Context, query string, limit ...int) ([]osfapi.SearchResult, error) {
+	if len(limit) > 0 {
+		f.gotSearchLimit = limit[0]
+	}
+	return append([]osfapi.SearchResult(nil), f.searchResults...), nil
 }
 
 func (f *fakeReadonlyClient) ListNodeAddons(_ context.Context, id string) ([]osfapi.Node, error) {
-	return nil, nil
+	f.gotAddonNodeID = id
+	return append([]osfapi.Node(nil), f.addons...), nil
+}
+
+func (f *fakeReadonlyClient) CreateRegistration(_ context.Context, nodeID string, request osfapi.RegistrationRequest) (osfapi.Node, error) {
+	f.gotRegistrationNode = nodeID
+	f.gotRegistrationReq = request
+	return osfapi.Node{ID: "reg1", Type: "registrations", Attributes: osfapi.NodeAttributes{Title: request.Title}, Links: osfapi.Links{Self: "https://osf.io/reg1/"}}, nil
 }
 
 func (f *fakeReadonlyClient) GetNodeFilesProvider(_ context.Context, id string) (string, error) {
 	return "https://files.osf.io/v1/providers/osfstorage/" + id + "/", nil
 }
 
-func (f *fakeReadonlyClient) UploadFile(_ context.Context, providerURL, name string, _ io.Reader, conflict string) error {
+func (f *fakeReadonlyClient) UploadFile(_ context.Context, providerURL, name string, content io.Reader, conflict string) error {
+	f.gotProviderURL = providerURL
+	f.gotUploadName = name
+	f.gotUploadConflict = conflict
+	body, err := io.ReadAll(content)
+	if err != nil {
+		return err
+	}
+	f.gotUploadBody = string(body)
 	return nil
 }
 
 func (f *fakeReadonlyClient) CreateFolder(_ context.Context, providerURL, folderName string) error {
+	f.gotProviderURL = providerURL
+	f.gotCreatedFolder = folderName
 	return nil
 }
 
 func (f *fakeReadonlyClient) DeleteFile(_ context.Context, providerURL, fileName string) error {
+	f.gotProviderURL = providerURL
+	f.gotDeletedFile = fileName
 	return nil
 }
 
@@ -1353,22 +1643,43 @@ func TestExportTableOutput(t *testing.T) {
 func TestPreprintsListOutput(t *testing.T) {
 	t.Parallel()
 
+	client := &fakeReadonlyClient{
+		preprints: []osfapi.Node{{ID: "p1", Type: "preprints", Attributes: osfapi.NodeAttributes{Title: "Preprint"}, Links: osfapi.Links{Self: "https://osf.io/p1/"}}},
+	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	code := runWithClient([]string{"preprints", "list"}, &stdout, &stderr, &fakeReadonlyClient{})
+	code := runWithClient([]string{"preprints", "list", "--provider", "osf"}, &stdout, &stderr, client)
 	if code != 0 {
 		t.Fatalf("preprints list returned %d, want 0", code)
+	}
+	if client.gotPreprintProvider != "osf" {
+		t.Fatalf("provider = %q, want osf", client.gotPreprintProvider)
+	}
+	if client.gotPreprintLimit != 20 {
+		t.Fatalf("limit = %d, want default 20", client.gotPreprintLimit)
+	}
+	if !strings.Contains(stdout.String(), "Preprint") {
+		t.Fatalf("stdout = %q, want Preprint", stdout.String())
 	}
 }
 
 func TestSearchOutput(t *testing.T) {
 	t.Parallel()
 
+	client := &fakeReadonlyClient{
+		searchResults: []osfapi.SearchResult{{ID: "s1", Type: "preprints", Title: "Search Result", URL: "https://osf.io/s1/"}},
+	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
-	code := runWithClient([]string{"search", "open+science"}, &stdout, &stderr, &fakeReadonlyClient{})
+	code := runWithClient([]string{"search", "open+science"}, &stdout, &stderr, client)
 	if code != 0 {
 		t.Fatalf("search returned %d, want 0", code)
+	}
+	if !strings.Contains(stdout.String(), "preprints") || !strings.Contains(stdout.String(), "Search Result") {
+		t.Fatalf("stdout = %q, want typed search result", stdout.String())
+	}
+	if client.gotSearchLimit != 20 {
+		t.Fatalf("limit = %d, want default 20", client.gotSearchLimit)
 	}
 }
 
@@ -1434,9 +1745,153 @@ func TestSearchEmpty(t *testing.T) {
 	}
 }
 
+func TestFilesUploadStreamsFileAndReportsSuccess(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	localPath := filepath.Join(dir, "report.csv")
+	if err := os.WriteFile(localPath, []byte("a,b\n1,2\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	client := &fakeReadonlyClient{}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"files", "upload", "--node", "abc123", "--conflict", "overwrite", localPath}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("files upload returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	if client.gotUploadName != "report.csv" || client.gotUploadBody != "a,b\n1,2\n" || client.gotUploadConflict != "overwrite" {
+		t.Fatalf("upload call name=%q body=%q conflict=%q", client.gotUploadName, client.gotUploadBody, client.gotUploadConflict)
+	}
+	if !strings.Contains(stdout.String(), "uploaded report.csv to node abc123") {
+		t.Fatalf("stdout = %q, want upload message", stdout.String())
+	}
+}
+
+func TestFilesMkdirPassesNestedFolderPath(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"files", "mkdir", "--node", "abc123", "nested/folder"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("files mkdir returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	if client.gotCreatedFolder != "nested/folder" {
+		t.Fatalf("created folder = %q, want nested/folder", client.gotCreatedFolder)
+	}
+}
+
+func TestFilesRmRequiresConfirmation(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClientInput([]string{"files", "rm", "--node", "abc123", "old.csv"}, "", &stdout, &stderr, client)
+	if code != 1 {
+		t.Fatalf("files rm without confirmation returned %d, want 1", code)
+	}
+	if client.gotDeletedFile != "" {
+		t.Fatalf("deleted file = %q, want no delete", client.gotDeletedFile)
+	}
+	if !strings.Contains(stderr.String(), "delete confirmation required") {
+		t.Fatalf("stderr = %q, want confirmation error", stderr.String())
+	}
+}
+
+func TestFilesRmDeletesAfterConfirmation(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClientInput([]string{"files", "rm", "--node", "abc123", "old.csv"}, "yes\n", &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("files rm returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	if client.gotDeletedFile != "old.csv" {
+		t.Fatalf("deleted file = %q, want old.csv", client.gotDeletedFile)
+	}
+}
+
+func TestFilesRmYesSkipsPrompt(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"files", "rm", "--node", "abc123", "--yes", "old.csv"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("files rm --yes returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	if client.gotDeletedFile != "old.csv" {
+		t.Fatalf("deleted file = %q, want old.csv", client.gotDeletedFile)
+	}
+}
+
+func TestFilesAddonsOutput(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{
+		addons: []osfapi.Node{{ID: "osfstorage", Type: "addons", Attributes: osfapi.NodeAttributes{Title: "OSF Storage", Category: "storage"}, Links: osfapi.Links{Self: "https://api.osf.io/v2/addons/osfstorage/"}}},
+	}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"files", "addons", "abc123"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("files addons returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	if client.gotAddonNodeID != "abc123" {
+		t.Fatalf("addon node id = %q, want abc123", client.gotAddonNodeID)
+	}
+	if !strings.Contains(stdout.String(), "OSF Storage") {
+		t.Fatalf("stdout = %q, want OSF Storage", stdout.String())
+	}
+}
+
+func TestRegistrationsCreateRequiresSchema(t *testing.T) {
+	t.Parallel()
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"registrations", "create", "abc123"}, &stdout, &stderr, &fakeReadonlyClient{})
+	if code != 1 {
+		t.Fatalf("registrations create returned %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), "--schema flag is required") {
+		t.Fatalf("stderr = %q, want schema error", stderr.String())
+	}
+}
+
+func TestRegistrationsCreateWithConfirmation(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClientInput([]string{"registrations", "create", "abc123", "--schema", "schema-1", "--title", "Registration"}, "yes\n", &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("registrations create returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	if client.gotRegistrationNode != "abc123" || client.gotRegistrationReq.SchemaID != "schema-1" || client.gotRegistrationReq.Title != "Registration" {
+		t.Fatalf("registration call node=%q request=%+v", client.gotRegistrationNode, client.gotRegistrationReq)
+	}
+	if !strings.Contains(stdout.String(), "reg1") {
+		t.Fatalf("stdout = %q, want reg1", stdout.String())
+	}
+}
+
 func runWithClient(args []string, stdout, stderr *bytes.Buffer, client readonlyClient) int {
+	return runWithClientInput(args, "", stdout, stderr, client)
+}
+
+func runWithClientInput(args []string, stdin string, stdout, stderr *bytes.Buffer, client readonlyClient) int {
 	root := newRootCommandWithClient(stdout, stderr, client)
 	root.SetArgs(args)
+	root.SetIn(strings.NewReader(stdin))
 	if err := root.Execute(); err != nil {
 		err = auth.RedactError(err)
 		fmt.Fprintln(stderr, err)

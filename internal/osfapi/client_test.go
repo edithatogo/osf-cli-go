@@ -2,6 +2,7 @@ package osfapi
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -37,6 +38,34 @@ func TestCurrentUser(t *testing.T) {
 	}
 	if user.ID != "u1" || user.Attributes.FullName != "Ada Lovelace" {
 		t.Fatalf("unexpected user: %+v", user)
+	}
+}
+
+func TestCurrentUserWithUsernamePassword(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		username, password, ok := r.BasicAuth()
+		if !ok {
+			t.Fatal("missing basic auth header")
+		}
+		if username != "user@example.org" || password != "password-123" {
+			t.Fatalf("basic auth = %q/%q", username, password)
+		}
+		writeFixture(t, w, "user_me.json")
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()), WithUsernamePassword("user@example.org", "password-123"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	user, err := client.CurrentUser(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if user.ID != "u1" {
+		t.Fatalf("user id = %q, want u1", user.ID)
 	}
 }
 
@@ -1013,8 +1042,11 @@ func TestUploadFile(t *testing.T) {
 		if got := r.Header.Get("Authorization"); got != "Bearer token-123" {
 			t.Fatalf("authorization header = %q", got)
 		}
-		if got := r.URL.Path; got != "/v1/providers/osfstorage/abc123/report.csv" {
+		if got := r.URL.Path; got != "/v1/providers/osfstorage/abc123/report.txt" {
 			t.Fatalf("path = %q", got)
+		}
+		if got := r.Header.Get("Content-Type"); got != "text/plain; charset=utf-8" {
+			t.Fatalf("content-type = %q", got)
 		}
 		if got := r.URL.Query().Get("kind"); got != "file" {
 			t.Fatalf("kind = %q", got)
@@ -1036,7 +1068,7 @@ func TestUploadFile(t *testing.T) {
 	}
 
 	providerURL := srv.URL + "/v1/providers/osfstorage/abc123"
-	err = client.UploadFile(t.Context(), providerURL, "report.csv", strings.NewReader("col1,col2\n1,2\n"), "overwrite")
+	err = client.UploadFile(t.Context(), providerURL, "report.txt", strings.NewReader("col1,col2\n1,2\n"), "overwrite")
 	if err != nil {
 		t.Fatalf("UploadFile returned error: %v", err)
 	}
@@ -1093,6 +1125,47 @@ func TestCreateFolder(t *testing.T) {
 	err = client.CreateFolder(t.Context(), srv.URL+"/v1/providers/osfstorage/abc123", "myfolder")
 	if err != nil {
 		t.Fatalf("CreateFolder returned error: %v", err)
+	}
+}
+
+func TestCreateFolderNestedPath(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Path; got != "/v1/providers/osfstorage/abc123/nested/folder/" {
+			t.Fatalf("path = %q", got)
+		}
+		if got := r.URL.Query().Get("kind"); got != "folder" {
+			t.Fatalf("kind = %q", got)
+		}
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := client.CreateFolder(t.Context(), srv.URL+"/v1/providers/osfstorage/abc123", "nested/folder"); err != nil {
+		t.Fatalf("CreateFolder returned error: %v", err)
+	}
+}
+
+func TestWaterButlerPathRejectsTraversal(t *testing.T) {
+	t.Parallel()
+
+	client, err := New("https://api.osf.io/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = client.CreateFolder(t.Context(), "https://files.osf.io/v1/providers/osfstorage/abc123", "../outside")
+	if err == nil {
+		t.Fatal("CreateFolder returned nil error, want traversal error")
+	}
+	if !strings.Contains(err.Error(), "must stay within OSF Storage") {
+		t.Fatalf("error = %q", err.Error())
 	}
 }
 
@@ -1177,6 +1250,9 @@ func TestListPreprints(t *testing.T) {
 		if got := r.URL.Path; got != "/v2/preprints/" {
 			t.Fatalf("path = %q", got)
 		}
+		if got := r.URL.Query().Get("filter[provider]"); got != "osf" {
+			t.Fatalf("filter[provider] = %q", got)
+		}
 		writeFixture(t, w, "node_list_page1.json")
 	}))
 	defer srv.Close()
@@ -1186,7 +1262,7 @@ func TestListPreprints(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	preprints, err := client.ListPreprints(t.Context())
+	preprints, err := client.ListPreprints(t.Context(), "osf")
 	if err != nil {
 		t.Fatalf("ListPreprints returned error: %v", err)
 	}
@@ -1205,9 +1281,6 @@ func TestSearchOSF(t *testing.T) {
 		if got, want := r.URL.Query().Get("q"), "open science"; got != want {
 			t.Fatalf("q = %q, want %q", got, want)
 		}
-		if got := r.URL.Query().Get("filter[resource_type]"); got != "node" {
-			t.Fatalf("filter[resource_type] = %q", got)
-		}
 		writeFixture(t, w, "node_list_page1.json")
 	}))
 	defer srv.Close()
@@ -1223,6 +1296,63 @@ func TestSearchOSF(t *testing.T) {
 	}
 	if len(results) != 1 || results[0].ID != "item-1" {
 		t.Fatalf("results = %+v", results)
+	}
+	if results[0].Type != "nodes" || results[0].Title != "List Item One" {
+		t.Fatalf("typed result = %+v", results[0])
+	}
+}
+
+func TestCreateRegistration(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Method; got != http.MethodPost {
+			t.Fatalf("method = %q", got)
+		}
+		if got := r.URL.Path; got != "/v2/nodes/project-123/registrations/" {
+			t.Fatalf("path = %q", got)
+		}
+		var body map[string]map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatal(err)
+		}
+		data := body["data"]
+		attrs, ok := data["attributes"].(map[string]any)
+		if !ok {
+			t.Fatalf("attributes = %#v", data["attributes"])
+		}
+		if got := attrs["registration_schema"]; got != "schema-1" {
+			t.Fatalf("registration_schema = %#v", got)
+		}
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		_, _ = w.Write([]byte(`{"data":{"id":"reg1","type":"registrations","attributes":{"title":"Draft"},"links":{"self":"https://osf.io/reg1/"}},"links":{}}`))
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	registration, err := client.CreateRegistration(t.Context(), "project-123", RegistrationRequest{SchemaID: "schema-1", Title: "Draft"})
+	if err != nil {
+		t.Fatalf("CreateRegistration returned error: %v", err)
+	}
+	if registration.ID != "reg1" || registration.Type != "registrations" {
+		t.Fatalf("registration = %+v", registration)
+	}
+}
+
+func TestCreateRegistrationRequiresSchema(t *testing.T) {
+	t.Parallel()
+
+	client, err := New("https://api.osf.io/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = client.CreateRegistration(t.Context(), "project-123", RegistrationRequest{})
+	if err == nil {
+		t.Fatal("CreateRegistration returned nil error, want schema error")
 	}
 }
 
