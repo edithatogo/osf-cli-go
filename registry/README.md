@@ -31,6 +31,12 @@ The `.github/workflows/mcp-registry.yml` workflow builds and pushes the GHCR
 image, validates `server.json`, and publishes to the official MCP Registry with
 GitHub OIDC.
 
+Published official MCP Registry entry:
+- `io.github.edithatogo/osf-cli-go`
+- version `0.2.0`
+- package `ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.2.0`
+- workflow run `https://github.com/edithatogo/osf-cli-go/actions/runs/26027015142`
+
 The image label `io.modelcontextprotocol.server.name` must match
 `server.json` name: `io.github.edithatogo/osf-cli-go`.
 

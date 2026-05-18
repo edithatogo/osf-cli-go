@@ -29,10 +29,9 @@ Date: 2026-05-18
 
 ## Submission Status
 
-No live registry submission has been completed yet. The official MCP Registry,
-Smithery, MCP.Directory, Glama, and PulseMCP all require a committed public
-server plus at least one usable package, release artifact, hosted endpoint, or
-manual web review step.
+Official MCP Registry submission is complete. Smithery, MCP.Directory, Glama,
+and PulseMCP still require either a manual web submission, downstream indexing,
+an MCPB artifact, or a public Streamable HTTP endpoint.
 
 The prepared local route is:
 
@@ -45,6 +44,15 @@ The prepared CI route is:
 1. Push the `v0.2.0` tag or manually dispatch `.github/workflows/mcp-registry.yml`.
 2. Let GitHub Actions build/push the OCI image and publish `server.json` using
    GitHub OIDC.
+
+The CI route was manually dispatched from `master` and completed successfully:
+
+- Workflow run: `https://github.com/edithatogo/osf-cli-go/actions/runs/26027015142`
+- GHCR image: `ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.2.0`
+- Registry name: `io.github.edithatogo/osf-cli-go`
+- Registry version: `0.2.0`
+- Registry status: `active`
+- Published at: `2026-05-18T10:09:19.854378Z`
 
 Smithery remains blocked until either an MCPB artifact or a public Streamable
 HTTP endpoint is produced.

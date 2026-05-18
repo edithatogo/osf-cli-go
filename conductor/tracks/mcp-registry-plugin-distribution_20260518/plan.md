@@ -51,7 +51,7 @@
 
 ## Phase 5: Submission And Publication
 
-- [ ] Task: Submit to official MCP Registry after package/server prerequisites
+- [x] Task: Submit to official MCP Registry after package/server prerequisites
   are satisfied.
 - [ ] Task: Submit/publish to Smithery after URL/MCPB prerequisites are
   satisfied.
@@ -60,7 +60,7 @@
   passes and public GitHub/ZIP package is ready.
 - [ ] Task: Publish or document install paths for GitHub Copilot, Codex, Gemini
   CLI, and Qwen Code.
-- [ ] Task: Record submission receipts, URLs, review queues, or blockers.
+- [~] Task: Record submission receipts, URLs, review queues, or blockers.
 
 ## Phase 6: Review
 
