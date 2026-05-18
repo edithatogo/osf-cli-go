@@ -1,0 +1,75 @@
+{
+  "canonical": {
+    "serverName": "io.github.edithatogo/osf-cli-go",
+    "title": "OSF CLI Go",
+    "shortDescription": "Read-only MCP tools for authenticated Open Science Framework projects and files.",
+    "repositoryUrl": "https://github.com/edithatogo/osf-cli-go",
+    "officialRegistryUrl": "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.edithatogo%2Fosf-cli-go",
+    "version": "0.2.0",
+    "package": "ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.2.0",
+    "transport": "stdio"
+  },
+  "classification": {
+    "categories": [
+      "Research",
+      "Developer Tools",
+      "Data"
+    ],
+    "keywords": [
+      "OSF",
+      "Open Science Framework",
+      "research data",
+      "files",
+      "projects",
+      "MCP"
+    ],
+    "readOnly": true,
+    "auth": [
+      "OSF_TOKEN",
+      "OSF_USERNAME",
+      "OSF_PASSWORD"
+    ]
+  },
+  "capabilities": {
+    "tools": [
+      "osf_whoami",
+      "osf_projects_list",
+      "osf_project_get",
+      "osf_components_list",
+      "osf_files_list",
+      "osf_contributors_list"
+    ]
+  },
+  "directories": {
+    "officialMcpRegistry": {
+      "mode": "mcp_publisher",
+      "status": "published",
+      "evidence": "https://github.com/edithatogo/osf-cli-go/actions/runs/26027015142"
+    },
+    "mcpDirectory": {
+      "mode": "manual_form",
+      "status": "prepared",
+      "submitUrl": "https://mcp.directory/submit"
+    },
+    "glama": {
+      "mode": "auto_index_or_web_oauth_claim",
+      "status": "prepared",
+      "submitUrl": "https://glama.ai/"
+    },
+    "pulseMcp": {
+      "mode": "official_registry_ingest_or_manual_url",
+      "status": "prepared",
+      "submitUrl": "https://www.pulsemcp.com/submit"
+    },
+    "smithery": {
+      "mode": "cli_or_api",
+      "status": "prepared_mcpb",
+      "submitCommand": "smithery mcp publish ./dist/mcpb/osf-cli-go-0.2.0-<runtime>.mcpb -n edithatogo/osf-cli-go"
+    },
+    "mcpCentral": {
+      "mode": "official_registry_aggregator",
+      "status": "watch",
+      "submitUrl": "https://mcpcentral.io/servers"
+    }
+  }
+}

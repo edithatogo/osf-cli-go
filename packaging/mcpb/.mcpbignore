@@ -1,0 +1,8 @@
+.git/
+.github/
+.gocache/
+.gomodcache/
+dist/
+coverage.out
+*.log
+*.test

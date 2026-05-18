@@ -1,0 +1,37 @@
+name: Plugin Archives
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v0.2.0"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: macos-latest
+          - os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Build plugin archives
+        shell: pwsh
+        run: ./scripts/build-plugin-archives.ps1
+
+      - name: Upload plugin archives
+        uses: actions/upload-artifact@v5
+        with:
+          name: plugin-archives-${{ runner.os }}
+          path: dist/plugins/*.zip

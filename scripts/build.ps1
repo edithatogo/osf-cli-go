@@ -1,5 +1,6 @@
 param(
     [string]$Output = "bin\osf.exe",
+    [string]$McpOutput = "bin\osf-mcp.exe",
     [string]$Version = "",
     [string]$Commit = "",
     [string]$BuildDate = ""
@@ -50,3 +51,14 @@ $ldflags = @(
 
 & go build -trimpath -ldflags $ldflags -o $Output ./cmd/osf
 
+$mcpOutputDir = Split-Path -Parent $McpOutput
+if ($mcpOutputDir) {
+    New-Item -ItemType Directory -Force -Path $mcpOutputDir | Out-Null
+}
+
+$mcpLdflags = @(
+    "-s -w",
+    "-X main.version=$Version"
+) -join " "
+
+& go build -trimpath -ldflags $mcpLdflags -o $McpOutput ./cmd/osf-mcp

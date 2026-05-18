@@ -1,12 +1,19 @@
 {
+  "name": "osf-cli-go",
+  "interface": {
+    "displayName": "OSF CLI Go"
+  },
   "plugins": [
     {
       "name": "osf-cli-go",
-      "source": "./plugins/codex-osf",
+      "source": {
+        "source": "local",
+        "path": "./plugins/codex-osf"
+      },
       "category": "research",
       "policy": {
-        "installation": "optional",
-        "authentication": "user-provided"
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
       }
     }
   ]

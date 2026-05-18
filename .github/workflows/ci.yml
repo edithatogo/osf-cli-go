@@ -32,6 +32,8 @@ jobs:
         run: go run ./tools/checkstubs
       - name: Conductor review evidence
         run: go run ./tools/checkreviews
+      - name: Registry submission contract
+        run: go run ./tools/checkregistries
       - name: Coverage
         run: |
           go test ./... -coverprofile=coverage.out

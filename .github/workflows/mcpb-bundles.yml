@@ -1,0 +1,44 @@
+name: MCPB Bundles
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v0.2.0"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: macos-latest
+          - os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Install MCPB CLI
+        run: npm install -g @anthropic-ai/mcpb
+
+      - name: Build MCPB bundle
+        shell: pwsh
+        run: ./scripts/build-mcpb.ps1 -UseMcpbCli
+
+      - name: Upload MCPB bundle
+        uses: actions/upload-artifact@v5
+        with:
+          name: mcpb-${{ runner.os }}
+          path: dist/mcpb/*.mcpb

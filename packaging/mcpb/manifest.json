@@ -1,0 +1,103 @@
+{
+  "manifest_version": "0.3",
+  "name": "osf-cli-go",
+  "display_name": "OSF CLI Go",
+  "version": "0.2.0",
+  "description": "Read-only MCP tools for authenticated Open Science Framework projects and files.",
+  "long_description": "OSF CLI Go exposes read-only Model Context Protocol tools for inspecting an authenticated Open Science Framework account, projects, components, OSF Storage files, and contributors.",
+  "author": {
+    "name": "edithatogo",
+    "url": "https://github.com/edithatogo"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edithatogo/osf-cli-go"
+  },
+  "homepage": "https://github.com/edithatogo/osf-cli-go",
+  "documentation": "https://github.com/edithatogo/osf-cli-go#readme",
+  "support": "https://github.com/edithatogo/osf-cli-go/issues",
+  "license": "Apache-2.0",
+  "privacy_policies": [
+    "https://osf.io/privacy-policy"
+  ],
+  "keywords": [
+    "osf",
+    "open-science",
+    "research",
+    "mcp"
+  ],
+  "server": {
+    "type": "binary",
+    "entry_point": "server/osf-mcp",
+    "mcp_config": {
+      "command": "${__dirname}/server/osf-mcp",
+      "args": [],
+      "env": {
+        "OSF_TOKEN": "${user_config.osf_token}",
+        "OSF_USERNAME": "${user_config.osf_username}",
+        "OSF_PASSWORD": "${user_config.osf_password}"
+      },
+      "platform_overrides": {
+        "win32": {
+          "command": "${__dirname}\\server\\osf-mcp.exe"
+        }
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "osf_whoami",
+      "description": "Return the authenticated OSF user profile."
+    },
+    {
+      "name": "osf_projects_list",
+      "description": "List projects owned by the authenticated OSF user."
+    },
+    {
+      "name": "osf_project_get",
+      "description": "Get an OSF project or component by id or URL."
+    },
+    {
+      "name": "osf_components_list",
+      "description": "List immediate child components for an OSF project or component."
+    },
+    {
+      "name": "osf_files_list",
+      "description": "List OSF Storage files and folders."
+    },
+    {
+      "name": "osf_contributors_list",
+      "description": "List contributors for an OSF project or component."
+    }
+  ],
+  "user_config": {
+    "osf_token": {
+      "type": "string",
+      "title": "OSF personal access token",
+      "description": "Preferred OSF authentication token. Create one at https://osf.io/settings/tokens/.",
+      "sensitive": true,
+      "required": false
+    },
+    "osf_username": {
+      "type": "string",
+      "title": "OSF username",
+      "description": "Optional fallback username when no OSF token is provided.",
+      "sensitive": true,
+      "required": false
+    },
+    "osf_password": {
+      "type": "string",
+      "title": "OSF password",
+      "description": "Optional fallback password when no OSF token is provided.",
+      "sensitive": true,
+      "required": false
+    }
+  },
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+    ]
+  }
+}

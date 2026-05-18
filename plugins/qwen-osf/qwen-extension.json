@@ -2,11 +2,33 @@
   "name": "osf-cli-go",
   "version": "0.2.0",
   "description": "Read-only Open Science Framework MCP tools.",
+  "settings": {
+    "osfToken": {
+      "type": "string",
+      "description": "Preferred OSF personal access token.",
+      "sensitive": true
+    },
+    "osfUsername": {
+      "type": "string",
+      "description": "Optional OSF username fallback.",
+      "sensitive": true
+    },
+    "osfPassword": {
+      "type": "string",
+      "description": "Optional OSF password fallback.",
+      "sensitive": true
+    }
+  },
   "mcpServers": {
     "osf": {
       "command": "${extensionPath}${/}bin${/}osf-mcp",
       "args": [],
-      "cwd": "${extensionPath}"
+      "cwd": "${extensionPath}",
+      "env": {
+        "OSF_TOKEN": "${settings.osfToken}",
+        "OSF_USERNAME": "${settings.osfUsername}",
+        "OSF_PASSWORD": "${settings.osfPassword}"
+      }
     }
   },
   "contextFileName": "QWEN.md"
