@@ -1,0 +1,43 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.edithatogo/osf-cli-go",
+  "title": "OSF CLI Go",
+  "description": "Read-only MCP tools for authenticated Open Science Framework projects and files.",
+  "version": "0.2.0",
+  "repository": {
+    "url": "https://github.com/edithatogo/osf-cli-go",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.2.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "OSF_TOKEN",
+          "description": "Preferred OSF personal access token.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "OSF_USERNAME",
+          "description": "Optional OSF username fallback when OSF_TOKEN is not provided.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "OSF_PASSWORD",
+          "description": "Optional OSF password fallback when OSF_TOKEN is not provided.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

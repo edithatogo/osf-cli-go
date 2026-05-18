@@ -20,6 +20,7 @@ A Go command-line client for the Open Science Framework (OSF).
 - `osf search` and `osf preprints list` — Search OSF and list preprints
 - `osf registrations create` — Create draft registrations for an existing node
 - `osf export` — Export a node snapshot as JSON or a summary table
+- `osf-mcp` — Stdio MCP server exposing read-only OSF tools for agent clients
 - `osf completion bash|zsh|fish|powershell` — Shell completion scripts
 - JSON and human-readable output modes
 - Safe, atomic file downloads with conflict policy (fail/skip/overwrite)
@@ -31,11 +32,13 @@ Requirements:
 
 ```powershell
 go install github.com/edithatogo/osf-cli-go/cmd/osf@latest
+go install github.com/edithatogo/osf-cli-go/cmd/osf-mcp@latest
 ```
 
 Or from a local checkout:
 ```powershell
 go build -o bin\osf.exe ./cmd/osf
+go build -o bin\osf-mcp.exe ./cmd/osf-mcp
 .\scripts\build.ps1
 ```
 
@@ -70,6 +73,16 @@ osf preprints list
 osf registrations create abc12 --schema <schema-id> --title "Analysis plan"
 osf export abc12 --json
 ```
+
+## MCP Server
+
+`osf-mcp` runs a stdio MCP server with read-only tools:
+`osf_whoami`, `osf_projects_list`, `osf_project_get`,
+`osf_components_list`, `osf_files_list`, and `osf_contributors_list`.
+
+Local development configs are included for GitHub Copilot, VS Code, Claude,
+Codex, Gemini CLI, and Qwen Code. Public registry metadata is in `server.json`
+and `registry/`.
 
 ## Output Modes
 

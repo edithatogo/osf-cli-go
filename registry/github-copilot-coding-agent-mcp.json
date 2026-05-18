@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "osf": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "-e",
+        "OSF_TOKEN=${COPILOT_MCP_OSF_TOKEN}",
+        "ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.2.0"
+      ],
+      "tools": [
+        "*"
+      ]
+    }
+  }
+}

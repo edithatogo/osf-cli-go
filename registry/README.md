@@ -1,0 +1,54 @@
+# Registry and Client Distribution
+
+This directory records the package and submission surfaces for the OSF MCP
+server.
+
+## Official MCP Registry
+
+Primary package route: OCI image on GitHub Container Registry.
+
+Required local files:
+- `server.json`
+- `Dockerfile.mcp`
+
+Publish flow:
+
+```powershell
+docker build -f Dockerfile.mcp -t ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.2.0 .
+docker push ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.2.0
+mcp-publisher login github
+mcp-publisher publish
+```
+
+CI publish flow:
+
+```powershell
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The `.github/workflows/mcp-registry.yml` workflow builds and pushes the GHCR
+image, validates `server.json`, and publishes to the official MCP Registry with
+GitHub OIDC.
+
+The image label `io.modelcontextprotocol.server.name` must match
+`server.json` name: `io.github.edithatogo/osf-cli-go`.
+
+## Smithery
+
+Smithery can publish either a public Streamable HTTP endpoint or an MCPB bundle.
+This repo currently prepares the stdio server and OCI route first. A Smithery
+submission is blocked until either a public HTTPS MCP endpoint or MCPB artifact
+exists.
+
+## MCP.Directory, Glama, PulseMCP
+
+These directory submissions should point to the public GitHub repository after
+the MCP server, install instructions, and at least one package route are
+available in the default branch.
+
+## Client Plugins
+
+Client-specific install examples live under `plugins/` and `.github/mcp.json`.
+All local development configs run `go run ./cmd/osf-mcp`; release bundles should
+replace that with the packaged `osf-mcp` binary.

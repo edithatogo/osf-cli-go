@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "osf": {
+      "command": "${CODEX_PLUGIN_ROOT}/bin/osf-mcp",
+      "args": []
+    }
+  }
+}

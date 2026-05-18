@@ -1,0 +1,13 @@
+{
+  "name": "osf-cli-go",
+  "owner": {
+    "name": "edithatogo"
+  },
+  "plugins": [
+    {
+      "name": "osf-cli-go",
+      "source": "./plugins/claude-osf",
+      "description": "Read-only OSF MCP tools for Claude Code and Claude/Cowork."
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "plugins": [
+    {
+      "name": "osf-cli-go",
+      "source": "./plugins/codex-osf",
+      "category": "research",
+      "policy": {
+        "installation": "optional",
+        "authentication": "user-provided"
+      }
+    }
+  ]
+}

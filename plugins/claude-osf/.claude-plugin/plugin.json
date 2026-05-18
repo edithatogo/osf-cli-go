@@ -1,0 +1,16 @@
+{
+  "name": "osf-cli-go",
+  "version": "0.2.0",
+  "description": "Read-only OSF MCP tools for Claude Code and Claude/Cowork.",
+  "author": {
+    "name": "edithatogo"
+  },
+  "repository": "https://github.com/edithatogo/osf-cli-go",
+  "license": "Apache-2.0",
+  "mcpServers": {
+    "osf": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/bin/osf-mcp",
+      "args": []
+    }
+  }
+}

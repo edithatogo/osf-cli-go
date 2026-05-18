@@ -1,0 +1,23 @@
+{
+  "name": "osf-cli-go",
+  "version": "0.2.0",
+  "description": "Read-only OSF MCP tools for Codex.",
+  "author": "edithatogo",
+  "homepage": "https://github.com/edithatogo/osf-cli-go",
+  "repository": "https://github.com/edithatogo/osf-cli-go",
+  "license": "Apache-2.0",
+  "keywords": [
+    "osf",
+    "mcp",
+    "research"
+  ],
+  "mcpServers": {
+    "osf": "./.mcp.json"
+  },
+  "skills": [
+    "osf"
+  ],
+  "interface": {
+    "type": "mcp"
+  }
+}

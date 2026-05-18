@@ -17,9 +17,20 @@ builds:
       - -X github.com/edithatogo/osf-cli-go/internal/cli.version={{.Version}}
       - -X github.com/edithatogo/osf-cli-go/internal/cli.buildCommit={{.Commit}}
       - -X github.com/edithatogo/osf-cli-go/internal/cli.buildDate={{.Date}}
+  - id: osf-mcp
+    main: ./cmd/osf-mcp
+    binary: osf-mcp
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
 
 archives:
   - id: osf
+    ids:
+      - osf
+      - osf-mcp
     formats:
       - tar.gz
     format_overrides:
@@ -39,4 +50,3 @@ release:
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
-

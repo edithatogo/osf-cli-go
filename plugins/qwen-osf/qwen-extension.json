@@ -1,0 +1,13 @@
+{
+  "name": "osf-cli-go",
+  "version": "0.2.0",
+  "description": "Read-only Open Science Framework MCP tools.",
+  "mcpServers": {
+    "osf": {
+      "command": "${extensionPath}${/}bin${/}osf-mcp",
+      "args": [],
+      "cwd": "${extensionPath}"
+    }
+  },
+  "contextFileName": "QWEN.md"
+}
