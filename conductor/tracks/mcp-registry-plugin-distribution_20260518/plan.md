@@ -32,7 +32,7 @@
 - [~] Task: Prepare MCP.Directory submission metadata.
 - [x] Task: Update release automation so publishing can produce current binaries
   and checksums from a new tag.
-- [ ] Task: Trigger Go proxy/pkg.go.dev visibility for the current release tag.
+- [x] Task: Trigger Go proxy/pkg.go.dev visibility for the current release tag.
 - [ ] Task: Run release checklist and record evidence.
 
 ## Phase 4: Client Plugins And Extensions

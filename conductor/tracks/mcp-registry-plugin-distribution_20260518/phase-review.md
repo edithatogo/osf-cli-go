@@ -53,6 +53,14 @@ The CI route was manually dispatched from `master` and completed successfully:
 - Registry version: `0.2.0`
 - Registry status: `active`
 - Published at: `2026-05-18T10:09:19.854378Z`
+- Release tag: `v0.2.0`
+- Go module proxy check: `go list -m -json github.com/edithatogo/osf-cli-go@v0.2.0`
+  returned tag hash `49d0dc49cf40bc6bc85bdcdc19bbeea043cb45f1`.
+
+The later tag-triggered registry workflow run rebuilt and pushed the same image,
+then failed at the final publish step because the registry rejected duplicate
+version `0.2.0`, as expected. The workflow was updated to treat that duplicate
+publish case as idempotent success for future reruns.
 
 Smithery remains blocked until either an MCPB artifact or a public Streamable
 HTTP endpoint is produced.

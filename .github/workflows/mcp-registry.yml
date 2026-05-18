@@ -48,4 +48,14 @@ jobs:
       - name: Publish to MCP Registry
         run: |
           mcp-publisher login github-oidc
-          mcp-publisher publish server.json
+          set +e
+          mcp-publisher publish server.json 2>&1 | tee publish.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -ne 0 ]; then
+            if grep -q "cannot publish duplicate version" publish.log; then
+              echo "MCP Registry version already exists; treating duplicate publish as success."
+            else
+              exit "$status"
+            fi
+          fi

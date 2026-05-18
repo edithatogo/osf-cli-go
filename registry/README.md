@@ -36,6 +36,7 @@ Published official MCP Registry entry:
 - version `0.2.0`
 - package `ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.2.0`
 - workflow run `https://github.com/edithatogo/osf-cli-go/actions/runs/26027015142`
+- Go module tag `v0.2.0`
 
 The image label `io.modelcontextprotocol.server.name` must match
 `server.json` name: `io.github.edithatogo/osf-cli-go`.
