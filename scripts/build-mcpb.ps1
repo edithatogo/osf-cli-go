@@ -25,6 +25,9 @@ Copy-Item -LiteralPath (Join-Path $repo "packaging/mcpb/.mcpbignore") -Destinati
 
 $binaryPath = Join-Path $serverDir $binaryName
 & go build -trimpath -ldflags "-s -w -X main.version=$Version" -o $binaryPath ./cmd/osf-mcp
+if ($LASTEXITCODE -ne 0) {
+    throw "go build failed for MCPB bundle"
+}
 
 $mcpbPath = Join-Path $outRoot "$bundleName.mcpb"
 if (Test-Path -LiteralPath $mcpbPath) {

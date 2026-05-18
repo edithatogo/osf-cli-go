@@ -1,0 +1,18 @@
+{
+  "name": "osf-cli-go",
+  "description": "Local marketplace for OSF CLI Go Codex plugin.",
+  "owner": {
+    "name": "edithatogo"
+  },
+  "plugins": [
+    {
+      "name": "osf-cli-go",
+      "description": "Read-only OSF MCP tools for Codex.",
+      "version": "0.2.0",
+      "source": "../../plugins/codex-osf",
+      "author": {
+        "name": "edithatogo"
+      }
+    }
+  ]
+}

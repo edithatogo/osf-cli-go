@@ -47,27 +47,105 @@
   "tools": [
     {
       "name": "osf_whoami",
-      "description": "Return the authenticated OSF user profile."
+      "description": "Return the authenticated OSF user profile.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
     },
     {
       "name": "osf_projects_list",
-      "description": "List projects owned by the authenticated OSF user."
+      "description": "List projects owned by the authenticated OSF user.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Optional page number for paginated OSF results."
+          },
+          "page_size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Optional page size for OSF results."
+          }
+        },
+        "additionalProperties": false
+      }
     },
     {
       "name": "osf_project_get",
-      "description": "Get an OSF project or component by id or URL."
+      "description": "Get an OSF project or component by id or URL.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "description": "OSF project/component id or URL."
+          }
+        },
+        "required": [
+          "project"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "osf_components_list",
-      "description": "List immediate child components for an OSF project or component."
+      "description": "List immediate child components for an OSF project or component.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "description": "OSF project/component id or URL."
+          }
+        },
+        "required": [
+          "project"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "osf_files_list",
-      "description": "List OSF Storage files and folders."
+      "description": "List OSF Storage files and folders.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "description": "OSF project/component id or URL."
+          },
+          "path": {
+            "type": "string",
+            "description": "Optional OSF Storage folder path."
+          }
+        },
+        "required": [
+          "project"
+        ],
+        "additionalProperties": false
+      }
     },
     {
       "name": "osf_contributors_list",
-      "description": "List contributors for an OSF project or component."
+      "description": "List contributors for an OSF project or component.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "description": "OSF project/component id or URL."
+          }
+        },
+        "required": [
+          "project"
+        ],
+        "additionalProperties": false
+      }
     }
   ],
   "user_config": {

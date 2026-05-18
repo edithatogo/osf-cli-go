@@ -66,8 +66,15 @@
     },
     "smithery": {
       "mode": "cli_or_api",
-      "status": "blocked_auth",
-      "submitCommand": "smithery mcp publish ./dist/mcpb/osf-cli-go-0.2.0-<runtime>.mcpb -n edithatogo/osf-cli-go"
+      "status": "published",
+      "submitCommand": "smithery mcp publish ./dist/mcpb/osf-cli-go-0.2.0-<runtime>.mcpb -n edithatogo/osf-cli-go",
+      "evidence": {
+        "deploymentId": "4a285e7c-567f-4c53-ae1d-af64e95fc054",
+        "qualifiedName": "edithatogo/osf-cli-go",
+        "status": "SUCCESS",
+        "mcpUrl": "https://osf-cli-go--edithatogo.run.tools",
+        "statusUrl": "https://smithery.ai/servers/edithatogo/osf-cli-go/releases"
+      }
     },
     "mcpCentral": {
       "mode": "official_registry_aggregator",

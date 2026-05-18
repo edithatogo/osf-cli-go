@@ -33,6 +33,12 @@ Get-Content plugins\gemini-osf\gemini-extension.json | ConvertFrom-Json
 Get-Content plugins\qwen-osf\qwen-extension.json | ConvertFrom-Json
 ```
 
+Register the local Codex plugin marketplace:
+
+```powershell
+codex plugin marketplace add C:\Users\60217257\repos\osf-cli-go\.agents\plugins
+```
+
 Build self-contained plugin archives:
 
 ```powershell

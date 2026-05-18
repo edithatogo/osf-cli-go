@@ -27,8 +27,10 @@ Date: 2026-05-18
 
 ## Submission Status
 
-- Smithery: blocked by CLI authentication. Two browser login sessions expired
-  without a token; `smithery auth whoami --json` returned `No token found`.
+- Smithery: published by CLI after browser authentication. Release
+  `4a285e7c-567f-4c53-ae1d-af64e95fc054` was accepted for
+  `edithatogo/osf-cli-go`; status `SUCCESS`; MCP URL
+  `https://osf-cli-go--edithatogo.run.tools`.
 - MCP.Directory: submitted by Playwright on 2026-05-18. The page returned
   `Server Submitted!`; local evidence is in
   `dist/submission-evidence/mcp-directory/result.json`.
@@ -43,6 +45,8 @@ Date: 2026-05-18
 - GitHub Copilot/Claude Cowork/Codex/Gemini/Qwen: local/release package routes
   prepared; public gallery or marketplace discovery depends on external
   install/review flows.
+- Codex plugin marketplace: registered locally with
+  `codex plugin marketplace add C:\Users\60217257\repos\osf-cli-go\.agents\plugins`.
 
 ## Validation Evidence
 
@@ -53,6 +57,8 @@ Date: 2026-05-18
   `packaging/mcpb/manifest.json`, Codex marketplace, Gemini, and Qwen manifests:
   pass
 - `scripts/build-mcpb.ps1`: pass locally, produced Windows `.mcpb`
+- Smithery MCPB publish: pass after adding explicit MCP `inputSchema` objects
+  to the six manifest tool entries.
 - `scripts/build-plugin-archives.ps1`: pass locally with repo-local Go caches,
   produced five Windows ZIPs including `github-copilot-osf`
 - `MCPB Bundles` workflow: pass on Linux, macOS, and Windows

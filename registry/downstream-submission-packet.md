@@ -87,13 +87,21 @@ URL plus the official MCP Registry name.
 
 ### Smithery
 
-Use MCPB route once an `.mcpb` artifact exists:
+Published with the MCPB route:
 
 ```powershell
 smithery mcp publish .\dist\mcpb\osf-cli-go-0.2.0-<runtime>.mcpb -n edithatogo/osf-cli-go
 ```
 
-Hosted URL publishing is blocked until a public Streamable HTTP endpoint exists.
+Receipt:
+
+```text
+deploymentId: 4a285e7c-567f-4c53-ae1d-af64e95fc054
+qualifiedName: edithatogo/osf-cli-go
+status: SUCCESS
+mcpUrl: https://osf-cli-go--edithatogo.run.tools
+statusUrl: https://smithery.ai/servers/edithatogo/osf-cli-go/releases
+```
 
 ### Claude Plugin Directory
 
