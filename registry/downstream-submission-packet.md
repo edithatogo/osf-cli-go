@@ -99,3 +99,10 @@ Hosted URL publishing is blocked until a public Streamable HTTP endpoint exists.
 
 Submit the public repository or ZIP containing `plugins/claude-osf`. Include
 that the plugin uses the bundled `bin/osf-mcp` binary and read-only OSF tools.
+
+### GitHub Copilot
+
+Use `.github/mcp.json` for Copilot coding agent repository configuration and
+`.mcp.json` for Copilot CLI/workspace MCP configuration. The release ZIP
+`github-copilot-osf-<version>-<runtime>.zip` carries both files plus the bundled
+`bin/osf-mcp` binary for review or attachment.

@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "osf": {
+      "type": "stdio",
+      "command": "go",
+      "args": [
+        "run",
+        "./cmd/osf-mcp"
+      ],
+      "tools": [
+        "*"
+      ]
+    }
+  }
+}

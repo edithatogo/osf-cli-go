@@ -48,28 +48,36 @@
     },
     "mcpDirectory": {
       "mode": "manual_form",
-      "status": "prepared",
-      "submitUrl": "https://mcp.directory/submit"
+      "status": "submitted",
+      "submitUrl": "https://mcp.directory/submit",
+      "evidence": "dist/submission-evidence/mcp-directory/result.json"
     },
     "glama": {
       "mode": "auto_index_or_web_oauth_claim",
-      "status": "prepared",
-      "submitUrl": "https://glama.ai/"
+      "status": "blocked_oauth_or_auto_index",
+      "submitUrl": "https://glama.ai/",
+      "evidence": "dist/submission-evidence/glama/result.json"
     },
     "pulseMcp": {
       "mode": "official_registry_ingest_or_manual_url",
-      "status": "prepared",
-      "submitUrl": "https://www.pulsemcp.com/submit"
+      "status": "blocked_access_denied",
+      "submitUrl": "https://www.pulsemcp.com/submit",
+      "evidence": "Access Denied page requests contact via hello@pulsemcp.com"
     },
     "smithery": {
       "mode": "cli_or_api",
-      "status": "prepared_mcpb",
+      "status": "blocked_auth",
       "submitCommand": "smithery mcp publish ./dist/mcpb/osf-cli-go-0.2.0-<runtime>.mcpb -n edithatogo/osf-cli-go"
     },
     "mcpCentral": {
       "mode": "official_registry_aggregator",
       "status": "watch",
       "submitUrl": "https://mcpcentral.io/servers"
+    },
+    "githubCopilot": {
+      "mode": "repository_and_workspace_mcp_config",
+      "status": "prepared",
+      "submitUrl": "https://docs.github.com/copilot/customizing-copilot/using-model-context-protocol/extending-copilot-coding-agent-with-mcp"
     }
   }
 }

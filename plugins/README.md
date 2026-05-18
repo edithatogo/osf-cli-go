@@ -17,6 +17,7 @@ bundle the binary or use the MCPB artifacts from `dist/mcpb`.
 ## Packages
 
 - `claude-osf`: Claude Code/Cowork plugin metadata.
+- `github-copilot-osf`: GitHub Copilot MCP configuration package.
 - `codex-osf`: Codex plugin metadata and skill.
 - `gemini-osf`: Gemini CLI extension metadata.
 - `qwen-osf`: Qwen Code extension metadata.
@@ -25,6 +26,8 @@ bundle the binary or use the MCPB artifacts from `dist/mcpb`.
 
 ```powershell
 Get-Content plugins\claude-osf\.claude-plugin\plugin.json | ConvertFrom-Json
+Get-Content plugins\github-copilot-osf\.github\mcp.json | ConvertFrom-Json
+Get-Content plugins\github-copilot-osf\.mcp.json | ConvertFrom-Json
 Get-Content plugins\codex-osf\.codex-plugin\plugin.json | ConvertFrom-Json
 Get-Content plugins\gemini-osf\gemini-extension.json | ConvertFrom-Json
 Get-Content plugins\qwen-osf\qwen-extension.json | ConvertFrom-Json

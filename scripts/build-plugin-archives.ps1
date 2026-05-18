@@ -13,7 +13,7 @@ if (-not $outRoot.StartsWith($repo, [System.StringComparison]::OrdinalIgnoreCase
 
 $runtime = [System.Runtime.InteropServices.RuntimeInformation]::RuntimeIdentifier
 $binaryName = if ($runtime -like "win*") { "osf-mcp.exe" } else { "osf-mcp" }
-$pluginNames = @("claude-osf", "codex-osf", "gemini-osf", "qwen-osf")
+$pluginNames = @("github-copilot-osf", "claude-osf", "codex-osf", "gemini-osf", "qwen-osf")
 
 New-Item -ItemType Directory -Force -Path $outRoot | Out-Null
 
@@ -27,6 +27,9 @@ foreach ($pluginName in $pluginNames) {
     New-Item -ItemType Directory -Force -Path $bin | Out-Null
     Copy-Item -Path (Join-Path $src "*") -Destination $stage -Recurse -Force
     & go build -trimpath -ldflags "-s -w -X main.version=$Version" -o (Join-Path $bin $binaryName) ./cmd/osf-mcp
+    if ($LASTEXITCODE -ne 0) {
+        throw "go build failed for $pluginName"
+    }
 
     $archive = Join-Path $outRoot "$pluginName-$Version-$runtime.zip"
     if (Test-Path -LiteralPath $archive) {
