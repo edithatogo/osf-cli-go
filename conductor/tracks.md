@@ -30,3 +30,13 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [x] [conductor-state-reconciliation](tracks/conductor-state-reconciliation_20260517/spec.md) — Reconcile completed track index, plans, and stale phase-review status language.
 - [x] [mcp-registry-plugin-distribution](tracks/mcp-registry-plugin-distribution_20260518/spec.md) — Implement MCP package/server distribution, registry submissions, and client plugins for Copilot, Claude/Cowork, Codex, Gemini CLI, and Qwen Code.
 - [x] [downstream-registry-submission-contract](archive/downstream-registry-submission-contract_20260518/spec.md) — Complete Smithery/MCPB, downstream directory, and client-plugin submission contracts after official MCP Registry publication.
+- [ ] [official-mcp-github-registry-adoption](tracks/official-mcp-github-registry-adoption_20260706/spec.md) — Maintain and improve Official MCP Registry and GitHub MCP Registry adoption for the OSF MCP server.
+- [ ] [smithery-quality-publication-adoption](tracks/smithery-quality-publication-adoption_20260706/spec.md) — Optimize Smithery publication quality and adoption for the OSF MCP server.
+- [ ] [mcp-directory-adoption](tracks/mcp-directory-adoption_20260706/spec.md) — Submit, verify, and optimize MCP.Directory adoption for the OSF MCP server.
+- [ ] [glama-quality-claim-adoption](tracks/glama-quality-claim-adoption_20260706/spec.md) — Claim or improve Glama listing quality for the OSF MCP server.
+- [ ] [cursor-directory-adoption](tracks/cursor-directory-adoption_20260706/spec.md) — Submit and optimize Cursor Directory adoption for the OSF MCP server.
+- [ ] [claude-official-plugin-directory-adoption](tracks/claude-official-plugin-directory-adoption_20260706/spec.md) — Prepare and submit the OSF Claude plugin to the official Claude plugin directory.
+- [ ] [codex-marketplace-adoption](tracks/codex-marketplace-adoption_20260706/spec.md) — Submit and optimize the OSF Codex plugin for Codex Marketplace adoption.
+- [ ] [homebrew-tap-adoption](tracks/homebrew-tap-adoption_20260706/spec.md) — Prepare and submit Homebrew tap distribution for the OSF CLI and MCP binaries.
+- [ ] [winget-adoption](tracks/winget-adoption_20260706/spec.md) — Prepare and submit WinGet distribution for OSF CLI Go.
+- [ ] [scoop-adoption](tracks/scoop-adoption_20260706/spec.md) — Prepare and submit Scoop distribution for OSF CLI Go.

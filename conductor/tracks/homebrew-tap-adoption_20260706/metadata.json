@@ -1,0 +1,8 @@
+{
+  "track_id": "homebrew-tap-adoption_20260706",
+  "type": "chore",
+  "status": "new",
+  "created_at": "2026-07-06T13:22:25Z",
+  "updated_at": "2026-07-06T13:22:25Z",
+  "description": "Prepare and submit Homebrew tap distribution for the OSF CLI and MCP binaries."
+}
