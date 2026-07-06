@@ -18,8 +18,8 @@
 - [x] Task: Add a first read-only MCP tool set: whoami, projects list/get,
   components list, files list, and contributors list.
 - [x] Task: Add stdio server packaging for local clients.
-- [ ] Task: Add HTTP/streamable deployment path or static server card if needed
-  for Smithery and other URL-based registries.
+- [x] Task: Add HTTP/streamable deployment path or static server card if needed
+  for Smithery and other URL-based registries. Commit: 202aa59
 - [x] Task: Add MCPB or OCI packaging if selected by the registry matrix.
 - [~] Task: Add tests for MCP tool schemas, auth handling, redaction, and
   failure cases.

@@ -44,9 +44,17 @@ The image label `io.modelcontextprotocol.server.name` must match
 ## Smithery
 
 Smithery can publish either a public Streamable HTTP endpoint or an MCPB bundle.
-This repo currently prepares the stdio server and OCI route first. A Smithery
-submission is blocked until either a public HTTPS MCP endpoint or MCPB artifact
-exists.
+This repo uses the MCPB route for the stdio MCP server; a public Streamable
+HTTP service is not required for the current distribution contract.
+
+Published Smithery release:
+- qualified name `edithatogo/osf-cli-go`
+- deployment `4a285e7c-567f-4c53-ae1d-af64e95fc054`
+- MCP URL `https://osf-cli-go--edithatogo.run.tools`
+- status URL `https://smithery.ai/servers/edithatogo/osf-cli-go/releases`
+
+The MCPB manifest is validated by `go run ./tools/checkregistries`, including
+tool schema names and sensitive OSF auth configuration.
 
 ## MCP.Directory, Glama, PulseMCP
 

@@ -59,19 +59,7 @@
       "description": "List projects owned by the authenticated OSF user.",
       "inputSchema": {
         "type": "object",
-        "properties": {
-          "page": {
-            "type": "integer",
-            "minimum": 1,
-            "description": "Optional page number for paginated OSF results."
-          },
-          "page_size": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 100,
-            "description": "Optional page size for OSF results."
-          }
-        },
+        "properties": {},
         "additionalProperties": false
       }
     },
@@ -81,13 +69,13 @@
       "inputSchema": {
         "type": "object",
         "properties": {
-          "project": {
+          "id": {
             "type": "string",
             "description": "OSF project/component id or URL."
           }
         },
         "required": [
-          "project"
+          "id"
         ],
         "additionalProperties": false
       }
@@ -98,13 +86,13 @@
       "inputSchema": {
         "type": "object",
         "properties": {
-          "project": {
+          "id": {
             "type": "string",
             "description": "OSF project/component id or URL."
           }
         },
         "required": [
-          "project"
+          "id"
         ],
         "additionalProperties": false
       }
@@ -115,7 +103,7 @@
       "inputSchema": {
         "type": "object",
         "properties": {
-          "project": {
+          "id": {
             "type": "string",
             "description": "OSF project/component id or URL."
           },
@@ -125,7 +113,7 @@
           }
         },
         "required": [
-          "project"
+          "id"
         ],
         "additionalProperties": false
       }
@@ -136,13 +124,13 @@
       "inputSchema": {
         "type": "object",
         "properties": {
-          "project": {
+          "id": {
             "type": "string",
             "description": "OSF project/component id or URL."
           }
         },
         "required": [
-          "project"
+          "id"
         ],
         "additionalProperties": false
       }
