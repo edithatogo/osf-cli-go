@@ -17,7 +17,7 @@
 - [x] Task: Add a local script to build a binary-backed MCPB bundle.
 - [x] Task: Add a CI workflow to build and upload MCPB bundle artifacts for
   release/manual distribution.
-- [~] Task: Validate the manifest and document validation commands.
+- [x] Task: Validate the manifest and document validation commands. Commit: pending
 
 ## Phase 3: Client Plugin Distribution
 
