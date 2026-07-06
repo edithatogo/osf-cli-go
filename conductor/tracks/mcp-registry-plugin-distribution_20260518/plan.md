@@ -71,5 +71,5 @@
 - [x] Task: Run `go test ./...`, `go vet ./...`, `golangci-lint run`,
   `go run ./tools/checkstubs`, and `go run ./tools/checkreviews`.
   Commit: a37a4dc
-- [ ] Task: Run `$conductor-review`, apply fixes, rerun review, and write phase
-  review evidence.
+- [x] Task: Run `$conductor-review`, apply fixes, rerun review, and write phase
+  review evidence. Commit: pending
