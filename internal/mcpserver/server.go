@@ -7,6 +7,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/edithatogo/osf-cli-go/internal/auth"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -140,7 +141,7 @@ func New(client OSFClient, opts Options) *mcp.Server {
 func (s *Server) Whoami(ctx context.Context, _ *mcp.CallToolRequest, _ EmptyInput) (*mcp.CallToolResult, UserResult, error) {
 	user, err := s.client.CurrentUser(ctx)
 	if err != nil {
-		return nil, UserResult{}, err
+		return nil, UserResult{}, mcpError(err)
 	}
 	return nil, UserResult{User: toUserOutput(user)}, nil
 }
@@ -148,7 +149,7 @@ func (s *Server) Whoami(ctx context.Context, _ *mcp.CallToolRequest, _ EmptyInpu
 func (s *Server) ListProjects(ctx context.Context, _ *mcp.CallToolRequest, _ EmptyInput) (*mcp.CallToolResult, NodesResult, error) {
 	nodes, err := s.client.ListCurrentUserProjects(ctx)
 	if err != nil {
-		return nil, NodesResult{}, err
+		return nil, NodesResult{}, mcpError(err)
 	}
 	return nil, NodesResult{Nodes: toNodeOutputs(nodes)}, nil
 }
@@ -156,11 +157,11 @@ func (s *Server) ListProjects(ctx context.Context, _ *mcp.CallToolRequest, _ Emp
 func (s *Server) GetProject(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, NodeResult, error) {
 	id, err := normalizeNodeID(in.ID)
 	if err != nil {
-		return nil, NodeResult{}, err
+		return nil, NodeResult{}, mcpError(err)
 	}
 	node, err := s.client.GetNode(ctx, id)
 	if err != nil {
-		return nil, NodeResult{}, err
+		return nil, NodeResult{}, mcpError(err)
 	}
 	return nil, NodeResult{Node: toNodeOutput(node)}, nil
 }
@@ -168,11 +169,11 @@ func (s *Server) GetProject(ctx context.Context, _ *mcp.CallToolRequest, in Node
 func (s *Server) ListComponents(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, NodesResult, error) {
 	id, err := normalizeNodeID(in.ID)
 	if err != nil {
-		return nil, NodesResult{}, err
+		return nil, NodesResult{}, mcpError(err)
 	}
 	nodes, err := s.client.ListNodeChildren(ctx, id)
 	if err != nil {
-		return nil, NodesResult{}, err
+		return nil, NodesResult{}, mcpError(err)
 	}
 	return nil, NodesResult{Nodes: toNodeOutputs(nodes)}, nil
 }
@@ -180,15 +181,15 @@ func (s *Server) ListComponents(ctx context.Context, _ *mcp.CallToolRequest, in 
 func (s *Server) ListFiles(ctx context.Context, _ *mcp.CallToolRequest, in FilesInput) (*mcp.CallToolResult, FilesResult, error) {
 	id, err := normalizeNodeID(in.ID)
 	if err != nil {
-		return nil, FilesResult{}, err
+		return nil, FilesResult{}, mcpError(err)
 	}
 	segments, err := storagePathSegments(in.Path)
 	if err != nil {
-		return nil, FilesResult{}, err
+		return nil, FilesResult{}, mcpError(err)
 	}
 	files, err := s.client.ListStorageFiles(ctx, id, segments...)
 	if err != nil {
-		return nil, FilesResult{}, err
+		return nil, FilesResult{}, mcpError(err)
 	}
 	return nil, FilesResult{Files: toFileOutputs(files)}, nil
 }
@@ -196,13 +197,17 @@ func (s *Server) ListFiles(ctx context.Context, _ *mcp.CallToolRequest, in Files
 func (s *Server) ListContributors(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, ContributorsResult, error) {
 	id, err := normalizeNodeID(in.ID)
 	if err != nil {
-		return nil, ContributorsResult{}, err
+		return nil, ContributorsResult{}, mcpError(err)
 	}
 	contributors, err := s.client.ListNodeContributors(ctx, id)
 	if err != nil {
-		return nil, ContributorsResult{}, err
+		return nil, ContributorsResult{}, mcpError(err)
 	}
 	return nil, ContributorsResult{Contributors: toContributorOutputs(contributors)}, nil
+}
+
+func mcpError(err error) error {
+	return auth.RedactError(err)
 }
 
 func normalizeNodeID(raw string) (string, error) {

@@ -2,6 +2,10 @@ package mcpserver
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
@@ -35,6 +39,36 @@ func TestServerExposesReadOnlyTools(t *testing.T) {
 		if !got[name] {
 			t.Fatalf("missing tool %q; all tools: %v", name, names)
 		}
+	}
+}
+
+func TestServerToolInputSchemasMatchPackagedContract(t *testing.T) {
+	session := connectTestServer(t, &fakeOSFClient{})
+
+	want := map[string][]string{
+		"osf_whoami":            {},
+		"osf_projects_list":     {},
+		"osf_project_get":       {"id"},
+		"osf_components_list":   {"id"},
+		"osf_files_list":        {"id", "path"},
+		"osf_contributors_list": {"id"},
+	}
+	for tool, err := range session.Tools(t.Context(), nil) {
+		if err != nil {
+			t.Fatalf("Tools returned error: %v", err)
+		}
+		properties := schemaProperties(t, tool.InputSchema)
+		wantProperties, ok := want[tool.Name]
+		if !ok {
+			t.Fatalf("unexpected tool %q", tool.Name)
+		}
+		if diff := missingOrExtra(properties, wantProperties); diff != "" {
+			t.Fatalf("tool %s schema properties mismatch: %s", tool.Name, diff)
+		}
+		delete(want, tool.Name)
+	}
+	for name := range want {
+		t.Fatalf("missing tool %q", name)
 	}
 }
 
@@ -102,6 +136,29 @@ func TestFilesListRejectsTraversal(t *testing.T) {
 	}
 }
 
+func TestToolFailureRedactsSecretMaterial(t *testing.T) {
+	session := connectTestServer(t, &fakeOSFClient{
+		failErr: errors.New("request failed Authorization: Bearer osf_live_token_abc123def456ghi789xyz OSF_PASSWORD=password-123"),
+	})
+
+	result, err := session.CallTool(t.Context(), &mcp.CallToolParams{Name: "osf_whoami"})
+	if err != nil {
+		t.Fatalf("CallTool returned error: %v", err)
+	}
+	if !result.IsError {
+		t.Fatal("tool succeeded, want MCP tool error")
+	}
+	rendered := contentText(result.Content)
+	for _, forbidden := range []string{"osf_live_token_abc123def456ghi789xyz", "password-123"} {
+		if strings.Contains(rendered, forbidden) {
+			t.Fatalf("tool error leaked %q in %#v", forbidden, result.Content)
+		}
+	}
+	if !strings.Contains(rendered, "[REDACTED]") {
+		t.Fatalf("tool error = %#v, want redaction marker", result.Content)
+	}
+}
+
 func connectTestServer(t *testing.T, osf OSFClient) *mcp.ClientSession {
 	t.Helper()
 	ctx := context.Background()
@@ -119,12 +176,64 @@ func connectTestServer(t *testing.T, osf OSFClient) *mcp.ClientSession {
 	return session
 }
 
+func schemaProperties(t *testing.T, schema any) map[string]bool {
+	t.Helper()
+	data, err := json.Marshal(schema)
+	if err != nil {
+		t.Fatalf("marshal schema: %v", err)
+	}
+	var decoded struct {
+		Properties map[string]any `json:"properties"`
+	}
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("unmarshal schema %s: %v", string(data), err)
+	}
+	properties := map[string]bool{}
+	for name := range decoded.Properties {
+		properties[name] = true
+	}
+	return properties
+}
+
+func missingOrExtra(got map[string]bool, want []string) string {
+	wantSet := map[string]bool{}
+	for _, name := range want {
+		wantSet[name] = true
+		if !got[name] {
+			return "missing " + name
+		}
+	}
+	for name := range got {
+		if !wantSet[name] {
+			return "unexpected " + name
+		}
+	}
+	return ""
+}
+
+func contentText(content []mcp.Content) string {
+	var b strings.Builder
+	for _, item := range content {
+		switch value := item.(type) {
+		case *mcp.TextContent:
+			b.WriteString(value.Text)
+		default:
+			b.WriteString(fmt.Sprint(item))
+		}
+	}
+	return b.String()
+}
+
 type fakeOSFClient struct {
 	gotNodeID       string
 	gotFileSegments []string
+	failErr         error
 }
 
 func (f *fakeOSFClient) CurrentUser(context.Context) (osfapi.User, error) {
+	if f.failErr != nil {
+		return osfapi.User{}, f.failErr
+	}
 	return osfapi.User{
 		ID:         "user-1",
 		Type:       "users",
@@ -134,20 +243,32 @@ func (f *fakeOSFClient) CurrentUser(context.Context) (osfapi.User, error) {
 }
 
 func (f *fakeOSFClient) ListCurrentUserProjects(context.Context) ([]osfapi.Node, error) {
+	if f.failErr != nil {
+		return nil, f.failErr
+	}
 	return []osfapi.Node{node("project-1", "Alpha")}, nil
 }
 
 func (f *fakeOSFClient) GetNode(_ context.Context, id string) (osfapi.Node, error) {
+	if f.failErr != nil {
+		return osfapi.Node{}, f.failErr
+	}
 	f.gotNodeID = id
 	return node(id, "Alpha"), nil
 }
 
 func (f *fakeOSFClient) ListNodeChildren(_ context.Context, id string) ([]osfapi.Node, error) {
+	if f.failErr != nil {
+		return nil, f.failErr
+	}
 	f.gotNodeID = id
 	return []osfapi.Node{node("component-1", "Component")}, nil
 }
 
 func (f *fakeOSFClient) ListNodeContributors(_ context.Context, id string) ([]osfapi.Contributor, error) {
+	if f.failErr != nil {
+		return nil, f.failErr
+	}
 	f.gotNodeID = id
 	return []osfapi.Contributor{{
 		ID:         "contrib-1",
@@ -158,6 +279,9 @@ func (f *fakeOSFClient) ListNodeContributors(_ context.Context, id string) ([]os
 }
 
 func (f *fakeOSFClient) ListStorageFiles(_ context.Context, id string, segments ...string) ([]osfapi.StorageFile, error) {
+	if f.failErr != nil {
+		return nil, f.failErr
+	}
 	f.gotNodeID = id
 	f.gotFileSegments = append([]string(nil), segments...)
 	return []osfapi.StorageFile{{

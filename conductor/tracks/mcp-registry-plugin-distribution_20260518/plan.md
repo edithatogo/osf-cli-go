@@ -21,8 +21,8 @@
 - [x] Task: Add HTTP/streamable deployment path or static server card if needed
   for Smithery and other URL-based registries. Commit: 37a65ff
 - [x] Task: Add MCPB or OCI packaging if selected by the registry matrix.
-- [~] Task: Add tests for MCP tool schemas, auth handling, redaction, and
-  failure cases.
+- [x] Task: Add tests for MCP tool schemas, auth handling, redaction, and
+  failure cases. Commit: pending
 
 ## Phase 3: Registry Metadata And Release Readiness
 
