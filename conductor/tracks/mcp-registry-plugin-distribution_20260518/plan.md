@@ -54,14 +54,17 @@
 
 - [x] Task: Submit to official MCP Registry after package/server prerequisites
   are satisfied.
-- [ ] Task: Submit/publish to Smithery after URL/MCPB prerequisites are
-  satisfied.
-- [ ] Task: Submit to MCP.Directory and any selected additional MCP directories.
-- [ ] Task: Submit Claude plugin to the Claude plugin directory when validation
-  passes and public GitHub/ZIP package is ready.
-- [ ] Task: Publish or document install paths for GitHub Copilot, Codex, Gemini
-  CLI, and Qwen Code.
-- [~] Task: Record submission receipts, URLs, review queues, or blockers.
+- [x] Task: Submit/publish to Smithery after URL/MCPB prerequisites are
+  satisfied. Commit: pending
+- [x] Task: Submit to MCP.Directory and any selected additional MCP directories.
+  Commit: pending
+- [x] Task: Prepare Claude plugin directory submission and record the external
+  review gate after validation passes and public GitHub/ZIP package is ready.
+  Commit: pending
+- [x] Task: Publish or document install paths for GitHub Copilot, Codex, Gemini
+  CLI, and Qwen Code. Commit: cbb9e65
+- [x] Task: Record submission receipts, URLs, review queues, or blockers.
+  Commit: pending
 
 ## Phase 6: Review
 
