@@ -48,7 +48,7 @@
     },
     "mcpDirectory": {
       "mode": "manual_form",
-      "status": "submitted",
+      "status": "prepared",
       "submitUrl": "https://mcp.directory/submit",
       "evidence": "dist/submission-evidence/mcp-directory/result.json"
     },
