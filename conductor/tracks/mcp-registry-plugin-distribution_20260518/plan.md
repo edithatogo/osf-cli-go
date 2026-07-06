@@ -30,7 +30,7 @@
   Registry submission.
 - [x] Task: Generate Smithery metadata/config schema or server-card endpoint.
   Commit: 37a65ff
-- [~] Task: Prepare MCP.Directory submission metadata.
+- [x] Task: Prepare MCP.Directory submission metadata. Commit: 37a65ff
 - [x] Task: Update release automation so publishing can produce current binaries
   and checksums from a new tag.
 - [x] Task: Trigger Go proxy/pkg.go.dev visibility for the current release tag.
