@@ -68,7 +68,8 @@
 
 ## Phase 6: Review
 
-- [ ] Task: Run `go test ./...`, `go vet ./...`, `golangci-lint run`,
+- [x] Task: Run `go test ./...`, `go vet ./...`, `golangci-lint run`,
   `go run ./tools/checkstubs`, and `go run ./tools/checkreviews`.
+  Commit: pending
 - [ ] Task: Run `$conductor-review`, apply fixes, rerun review, and write phase
   review evidence.
