@@ -29,4 +29,4 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [x] [username-password-auth](tracks/username-password-auth_20260517/spec.md) — Username/password authentication fallback with command-level capability mapping.
 - [x] [conductor-state-reconciliation](tracks/conductor-state-reconciliation_20260517/spec.md) — Reconcile completed track index, plans, and stale phase-review status language.
 - [x] [mcp-registry-plugin-distribution](tracks/mcp-registry-plugin-distribution_20260518/spec.md) — Implement MCP package/server distribution, registry submissions, and client plugins for Copilot, Claude/Cowork, Codex, Gemini CLI, and Qwen Code.
-- [x] [downstream-registry-submission-contract](tracks/downstream-registry-submission-contract_20260518/spec.md) — Complete Smithery/MCPB, downstream directory, and client-plugin submission contracts after official MCP Registry publication.
+- [x] [downstream-registry-submission-contract](archive/downstream-registry-submission-contract_20260518/spec.md) — Complete Smithery/MCPB, downstream directory, and client-plugin submission contracts after official MCP Registry publication.
