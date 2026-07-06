@@ -1,0 +1,1 @@
+Task complete: added MCP schema, failure, and redaction coverage; handler errors now use auth.RedactError.
