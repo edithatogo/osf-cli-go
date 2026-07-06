@@ -34,7 +34,7 @@
 - [x] Task: Update release automation so publishing can produce current binaries
   and checksums from a new tag.
 - [x] Task: Trigger Go proxy/pkg.go.dev visibility for the current release tag.
-- [x] Task: Run release checklist and record evidence. Commit: pending
+- [x] Task: Run release checklist and record evidence. Commit: 17e3aa5
 
 ## Phase 4: Client Plugins And Extensions
 
