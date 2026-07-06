@@ -28,7 +28,8 @@
 
 - [x] Task: Generate `server.json` or equivalent metadata for official MCP
   Registry submission.
-- [~] Task: Generate Smithery metadata/config schema or server-card endpoint.
+- [x] Task: Generate Smithery metadata/config schema or server-card endpoint.
+  Commit: 37a65ff
 - [~] Task: Prepare MCP.Directory submission metadata.
 - [x] Task: Update release automation so publishing can produce current binaries
   and checksums from a new tag.
