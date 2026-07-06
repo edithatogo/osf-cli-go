@@ -19,3 +19,23 @@ go run ./cmd/osf-mcp
 
 Set `OSF_TOKEN` before starting the client. `OSF_USERNAME` and `OSF_PASSWORD`
 are supported as a fallback, but token authentication is preferred.
+
+## Install And Validate
+
+Repository configuration:
+
+```powershell
+Copy-Item plugins\github-copilot-osf\.github\mcp.json .github\mcp.json
+Get-Content .github\mcp.json | ConvertFrom-Json
+```
+
+Workspace configuration:
+
+```powershell
+Copy-Item plugins\github-copilot-osf\.mcp.json .mcp.json
+Get-Content .mcp.json | ConvertFrom-Json
+```
+
+For release review or attachment, use the generated
+`github-copilot-osf-<version>-<runtime>.zip` archive so the `bin\osf-mcp`
+binary is bundled with the MCP JSON files.

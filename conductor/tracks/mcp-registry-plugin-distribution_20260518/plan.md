@@ -47,8 +47,8 @@
 - [x] Task: Create Gemini CLI extension package with `gemini-extension.json`.
 - [x] Task: Create or validate Qwen Code extension compatibility, using
   converted Claude/Gemini metadata where supported.
-- [~] Task: Add validation instructions and install commands for every plugin
-  surface.
+- [x] Task: Add validation instructions and install commands for every plugin
+  surface. Commit: pending
 
 ## Phase 5: Submission And Publication
 
