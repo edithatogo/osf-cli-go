@@ -48,7 +48,7 @@
 - [x] Task: Create or validate Qwen Code extension compatibility, using
   converted Claude/Gemini metadata where supported.
 - [x] Task: Add validation instructions and install commands for every plugin
-  surface. Commit: pending
+  surface. Commit: cbb9e65
 
 ## Phase 5: Submission And Publication
 
