@@ -22,7 +22,7 @@
   for Smithery and other URL-based registries. Commit: 37a65ff
 - [x] Task: Add MCPB or OCI packaging if selected by the registry matrix.
 - [x] Task: Add tests for MCP tool schemas, auth handling, redaction, and
-  failure cases. Commit: pending
+  failure cases. Commit: 37b8131
 
 ## Phase 3: Registry Metadata And Release Readiness
 
