@@ -30,7 +30,7 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [x] [conductor-state-reconciliation](tracks/conductor-state-reconciliation_20260517/spec.md) — Reconcile completed track index, plans, and stale phase-review status language.
 - [x] [mcp-registry-plugin-distribution](tracks/mcp-registry-plugin-distribution_20260518/spec.md) — Implement MCP package/server distribution, registry submissions, and client plugins for Copilot, Claude/Cowork, Codex, Gemini CLI, and Qwen Code.
 - [x] [downstream-registry-submission-contract](archive/downstream-registry-submission-contract_20260518/spec.md) — Complete Smithery/MCPB, downstream directory, and client-plugin submission contracts after official MCP Registry publication.
-- [ ] [official-mcp-github-registry-adoption](tracks/official-mcp-github-registry-adoption_20260706/spec.md) — Maintain and improve Official MCP Registry and GitHub MCP Registry adoption for the OSF MCP server.
+- [x] [official-mcp-github-registry-adoption](archive/official-mcp-github-registry-adoption_20260706/spec.md) — Maintain and improve Official MCP Registry and GitHub MCP Registry adoption for the OSF MCP server.
 - [ ] [smithery-quality-publication-adoption](tracks/smithery-quality-publication-adoption_20260706/spec.md) — Optimize Smithery publication quality and adoption for the OSF MCP server.
 - [ ] [mcp-directory-adoption](tracks/mcp-directory-adoption_20260706/spec.md) — Submit, verify, and optimize MCP.Directory adoption for the OSF MCP server.
 - [ ] [glama-quality-claim-adoption](tracks/glama-quality-claim-adoption_20260706/spec.md) — Claim or improve Glama listing quality for the OSF MCP server.

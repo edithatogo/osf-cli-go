@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
+	"strings"
 )
 
 type serverMetadata struct {
@@ -15,28 +17,36 @@ type serverMetadata struct {
 		URL string `json:"url"`
 	} `json:"repository"`
 	Packages []struct {
-		Identifier string `json:"identifier"`
-		Transport  struct {
+		RegistryType string `json:"registryType"`
+		Identifier   string `json:"identifier"`
+		Transport    struct {
 			Type string `json:"type"`
 		} `json:"transport"`
 		EnvironmentVariables []struct {
-			Name string `json:"name"`
+			Name       string `json:"name"`
+			Format     string `json:"format"`
+			IsSecret   bool   `json:"isSecret"`
+			IsRequired bool   `json:"isRequired"`
 		} `json:"environmentVariables"`
 	} `json:"packages"`
 }
 
 type directorySubmissions struct {
 	Canonical struct {
-		ServerName       string `json:"serverName"`
-		Title            string `json:"title"`
-		ShortDescription string `json:"shortDescription"`
-		RepositoryURL    string `json:"repositoryUrl"`
-		Version          string `json:"version"`
-		Package          string `json:"package"`
-		Transport        string `json:"transport"`
+		ServerName          string `json:"serverName"`
+		Title               string `json:"title"`
+		ShortDescription    string `json:"shortDescription"`
+		RepositoryURL       string `json:"repositoryUrl"`
+		OfficialRegistryURL string `json:"officialRegistryUrl"`
+		Version             string `json:"version"`
+		Package             string `json:"package"`
+		Transport           string `json:"transport"`
 	} `json:"canonical"`
 	Classification struct {
-		Auth []string `json:"auth"`
+		Categories []string `json:"categories"`
+		Keywords   []string `json:"keywords"`
+		ReadOnly   bool     `json:"readOnly"`
+		Auth       []string `json:"auth"`
 	} `json:"classification"`
 	Directories struct {
 		Smithery struct {
@@ -70,35 +80,78 @@ type mcpbManifest struct {
 }
 
 func main() {
+	if err := run(); err != nil {
+		fail("%v", err)
+	}
+}
+
+func run() error {
 	var server serverMetadata
-	mustReadJSON("server.json", &server)
+	if err := readJSON("server.json", &server); err != nil {
+		return err
+	}
 
 	var submissions directorySubmissions
-	mustReadJSON("registry/directory-submissions.json", &submissions)
+	if err := readJSON("registry/directory-submissions.json", &submissions); err != nil {
+		return err
+	}
 
 	var manifest mcpbManifest
-	mustReadJSON("packaging/mcpb/manifest.json", &manifest)
+	if err := readJSON("packaging/mcpb/manifest.json", &manifest); err != nil {
+		return err
+	}
 
-	check("serverName", submissions.Canonical.ServerName, server.Name)
-	check("title", submissions.Canonical.Title, server.Title)
-	check("shortDescription", submissions.Canonical.ShortDescription, server.Description)
-	check("repositoryUrl", submissions.Canonical.RepositoryURL, server.Repository.URL)
-	check("version", submissions.Canonical.Version, server.Version)
-
+	if err := checkEqual("serverName", submissions.Canonical.ServerName, server.Name); err != nil {
+		return err
+	}
+	if err := checkEqual("title", submissions.Canonical.Title, server.Title); err != nil {
+		return err
+	}
+	if err := checkEqual("shortDescription", submissions.Canonical.ShortDescription, server.Description); err != nil {
+		return err
+	}
+	if err := checkEqual("repositoryUrl", submissions.Canonical.RepositoryURL, server.Repository.URL); err != nil {
+		return err
+	}
+	if err := checkEqual("version", submissions.Canonical.Version, server.Version); err != nil {
+		return err
+	}
 	if len(server.Packages) != 1 {
-		fail("server.json packages count = %d, want 1", len(server.Packages))
+		return fmt.Errorf("server.json packages count = %d, want 1", len(server.Packages))
 	}
 	pkg := server.Packages[0]
-	check("package", submissions.Canonical.Package, pkg.Identifier)
-	check("transport", submissions.Canonical.Transport, pkg.Transport.Type)
+	if err := checkEqual("package", submissions.Canonical.Package, pkg.Identifier); err != nil {
+		return err
+	}
+	if err := checkEqual("transport", submissions.Canonical.Transport, pkg.Transport.Type); err != nil {
+		return err
+	}
+	if err := checkEqual("officialRegistryUrl", submissions.Canonical.OfficialRegistryURL, officialRegistryURL(server.Name)); err != nil {
+		return err
+	}
+	if len(submissions.Classification.Categories) == 0 {
+		return fmt.Errorf("directory categories must not be empty")
+	}
+	if len(submissions.Classification.Keywords) == 0 {
+		return fmt.Errorf("directory keywords must not be empty")
+	}
+	if !submissions.Classification.ReadOnly {
+		return fmt.Errorf("directory classification readOnly must be true")
+	}
+	if pkg.RegistryType != "oci" {
+		return fmt.Errorf("server.json package registryType = %q, want %q", pkg.RegistryType, "oci")
+	}
 
 	wantAuth := map[string]bool{}
 	for _, name := range pkg.EnvironmentVariables {
+		if !name.IsSecret {
+			return fmt.Errorf("server.json environment variable %q must be secret", name.Name)
+		}
 		wantAuth[name.Name] = true
 	}
 	for _, name := range submissions.Classification.Auth {
 		if !wantAuth[name] {
-			fail("directory auth %q not present in server.json environmentVariables", name)
+			return fmt.Errorf("directory auth %q not present in server.json environmentVariables", name)
 		}
 	}
 	for name := range wantAuth {
@@ -110,32 +163,44 @@ func main() {
 			}
 		}
 		if !found {
-			fail("server.json environment variable %q missing from directory auth list", name)
+			return fmt.Errorf("server.json environment variable %q missing from directory auth list", name)
 		}
 	}
 
-	checkAuthSecrets(server, submissions, manifest)
-	checkMCPBToolSchemas(manifest)
-	checkSmitheryRoute(submissions)
+	if err := checkAuthSecrets(server, submissions, manifest); err != nil {
+		return err
+	}
+	if err := checkMCPBToolSchemas(manifest); err != nil {
+		return err
+	}
+	if err := checkSmitheryRoute(submissions); err != nil {
+		return err
+	}
+	if err := checkRegistryReadme(server, pkg, submissions); err != nil {
+		return err
+	}
+	return nil
 }
 
-func mustReadJSON(path string, dst any) {
+func readJSON(path string, dst any) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		fail("read %s: %v", path, err)
+		return fmt.Errorf("read %s: %w", path, err)
 	}
 	if err := json.Unmarshal(data, dst); err != nil {
-		fail("parse %s: %v", path, err)
+		return fmt.Errorf("parse %s: %w", path, err)
 	}
+	return nil
 }
 
-func check(field, got, want string) {
+func checkEqual(field, got, want string) error {
 	if got != want {
-		fail("%s = %q, want %q", field, got, want)
+		return fmt.Errorf("%s = %q, want %q", field, got, want)
 	}
+	return nil
 }
 
-func checkAuthSecrets(server serverMetadata, submissions directorySubmissions, manifest mcpbManifest) {
+func checkAuthSecrets(server serverMetadata, submissions directorySubmissions, manifest mcpbManifest) error {
 	for _, env := range server.Packages[0].EnvironmentVariables {
 		switch env.Name {
 		case "OSF_TOKEN", "OSF_USERNAME", "OSF_PASSWORD":
@@ -143,24 +208,25 @@ func checkAuthSecrets(server serverMetadata, submissions directorySubmissions, m
 			continue
 		}
 		if _, ok := manifest.Server.MCPConfig.Env[env.Name]; !ok {
-			fail("MCPB mcp_config env missing %q", env.Name)
+			return fmt.Errorf("MCPB mcp_config env missing %q", env.Name)
 		}
 		configName := configNameForEnv(env.Name)
 		config, ok := manifest.UserConfig[configName]
 		if !ok {
-			fail("MCPB user_config missing %q for env %q", configName, env.Name)
+			return fmt.Errorf("MCPB user_config missing %q for env %q", configName, env.Name)
 		}
 		if !config.Sensitive {
-			fail("MCPB user_config %q must be sensitive", configName)
+			return fmt.Errorf("MCPB user_config %q must be sensitive", configName)
 		}
 	}
 	for _, name := range submissions.Classification.Auth {
 		switch name {
 		case "OSF_TOKEN", "OSF_USERNAME", "OSF_PASSWORD":
 		default:
-			fail("unexpected auth field %q in directory submissions", name)
+			return fmt.Errorf("unexpected auth field %q in directory submissions", name)
 		}
 	}
+	return nil
 }
 
 func configNameForEnv(env string) string {
@@ -176,7 +242,7 @@ func configNameForEnv(env string) string {
 	}
 }
 
-func checkMCPBToolSchemas(manifest mcpbManifest) {
+func checkMCPBToolSchemas(manifest mcpbManifest) error {
 	want := map[string]struct {
 		properties []string
 		required   []string
@@ -192,42 +258,84 @@ func checkMCPBToolSchemas(manifest mcpbManifest) {
 	for _, tool := range manifest.Tools {
 		spec, ok := want[tool.Name]
 		if !ok {
-			fail("unexpected MCPB tool %q", tool.Name)
+			return fmt.Errorf("unexpected MCPB tool %q", tool.Name)
 		}
 		seen[tool.Name] = true
-		check("tool "+tool.Name+" inputSchema.type", tool.InputSchema.Type, "object")
+		if err := checkEqual("tool "+tool.Name+" inputSchema.type", tool.InputSchema.Type, "object"); err != nil {
+			return err
+		}
 		for _, property := range spec.properties {
 			field, ok := tool.InputSchema.Properties[property]
 			if !ok {
-				fail("tool %s inputSchema missing property %q", tool.Name, property)
+				return fmt.Errorf("tool %s inputSchema missing property %q", tool.Name, property)
 			}
-			check("tool "+tool.Name+" property "+property+" type", field.Type, "string")
+			if err := checkEqual("tool "+tool.Name+" property "+property+" type", field.Type, "string"); err != nil {
+				return err
+			}
 		}
 		for property := range tool.InputSchema.Properties {
 			if !contains(spec.properties, property) {
-				fail("tool %s inputSchema has unexpected property %q", tool.Name, property)
+				return fmt.Errorf("tool %s inputSchema has unexpected property %q", tool.Name, property)
 			}
 		}
 		for _, required := range spec.required {
 			if !contains(tool.InputSchema.Required, required) {
-				fail("tool %s inputSchema missing required %q", tool.Name, required)
+				return fmt.Errorf("tool %s inputSchema missing required %q", tool.Name, required)
 			}
 		}
 	}
 	for name := range want {
 		if !seen[name] {
-			fail("MCPB manifest missing tool %q", name)
+			return fmt.Errorf("MCPB manifest missing tool %q", name)
 		}
 	}
+	return nil
 }
 
-func checkSmitheryRoute(submissions directorySubmissions) {
+func checkSmitheryRoute(submissions directorySubmissions) error {
 	if submissions.Directories.Smithery.Status != "published" {
-		fail("Smithery status = %q, want published", submissions.Directories.Smithery.Status)
+		return fmt.Errorf("Smithery status = %q, want published", submissions.Directories.Smithery.Status)
 	}
 	if submissions.Directories.Smithery.Evidence.MCPURL == "" {
-		fail("Smithery published status requires mcpUrl evidence")
+		return fmt.Errorf("Smithery published status requires mcpUrl evidence")
 	}
+	return nil
+}
+
+func checkRegistryReadme(server serverMetadata, pkg struct {
+	RegistryType string `json:"registryType"`
+	Identifier   string `json:"identifier"`
+	Transport    struct {
+		Type string `json:"type"`
+	} `json:"transport"`
+	EnvironmentVariables []struct {
+		Name       string `json:"name"`
+		Format     string `json:"format"`
+		IsSecret   bool   `json:"isSecret"`
+		IsRequired bool   `json:"isRequired"`
+	} `json:"environmentVariables"`
+}, submissions directorySubmissions) error {
+	data, err := os.ReadFile("registry/README.md")
+	if err != nil {
+		return fmt.Errorf("read registry/README.md: %w", err)
+	}
+	content := string(data)
+	for _, want := range []string{
+		server.Name,
+		pkg.Identifier,
+		"Official MCP Registry",
+		"docker build -f Dockerfile.mcp -t " + pkg.Identifier,
+		"mcp-publisher publish",
+	} {
+		if !strings.Contains(content, want) {
+			return fmt.Errorf("registry README missing %q", want)
+		}
+	}
+	return nil
+}
+
+func officialRegistryURL(serverName string) string {
+	return "https://registry.modelcontextprotocol.io/v0.1/servers?search=" + url.QueryEscape(serverName)
 }
 
 func contains(values []string, want string) bool {
