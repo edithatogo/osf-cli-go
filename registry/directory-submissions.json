@@ -69,7 +69,7 @@
       "status": "published",
       "submitCommand": "smithery mcp publish ./dist/mcpb/osf-cli-go-0.2.0-<runtime>.mcpb -n edithatogo/osf-cli-go",
       "evidence": {
-        "deploymentId": "4a285e7c-567f-4c53-ae1d-af64e95fc054",
+        "deploymentId": "3f36fe28-b4e2-456d-8cc3-051e351a6767",
         "qualifiedName": "edithatogo/osf-cli-go",
         "status": "SUCCESS",
         "mcpUrl": "https://osf-cli-go--edithatogo.run.tools",
