@@ -22,4 +22,6 @@ deprecated in favor of the official MCP registry.
 
 ## Result
 
-No blocking repository-local findings remain.
+The review found and corrected a validator weakness: integration templates are
+now required to provide all three credential variables with exact `${env:NAME}`
+references. No blocking repository-local findings remain.

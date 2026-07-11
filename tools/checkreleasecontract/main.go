@@ -168,12 +168,23 @@ func validateIntegrationConfig(path, key string) error {
 	if !ok || osf.Command != "go" || len(osf.Args) != 2 || osf.Args[0] != "run" || osf.Args[1] != "./cmd/osf-mcp" {
 		return fmt.Errorf("%s has an invalid osf server command", path)
 	}
+	requiredEnv := map[string]bool{
+		"OSF_TOKEN":    false,
+		"OSF_USERNAME": false,
+		"OSF_PASSWORD": false,
+	}
 	for name, value := range osf.Env {
 		if name != "OSF_TOKEN" && name != "OSF_USERNAME" && name != "OSF_PASSWORD" {
 			return fmt.Errorf("%s contains an unexpected environment variable %s", path, name)
 		}
-		if value == "" || !strings.Contains(value, "env:") {
+		if value != "${env:"+name+"}" {
 			return fmt.Errorf("%s does not reference %s through the environment", path, name)
+		}
+		requiredEnv[name] = true
+	}
+	for name, present := range requiredEnv {
+		if !present {
+			return fmt.Errorf("%s is missing environment variable %s", path, name)
 		}
 	}
 	return nil
