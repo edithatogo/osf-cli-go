@@ -66,3 +66,17 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [ ] [presqt-osf-parity](tracks/presqt-osf-parity_20260711/spec.md) — Benchmark PresQT preservation and metadata-transfer workflows; source Lucy-Family-Institute/presqt; issue #19.
 
 - [ ] [metacheck-osf-validation](tracks/metacheck-osf-validation_20260711/spec.md) — Add OSF research-output and preregistration validation workflows; source scienceverse/metacheck; issue #20.
+
+- [ ] [v1-launch-readiness](tracks/v1-launch-readiness_20260711/spec.md) — Define and satisfy the OSF CLI Go 1.0 launch contract; issue #21.
+
+- [ ] [github-copilot-plugin-publication](tracks/github-copilot-plugin-publication_20260711/spec.md) — Publish the OSF plugin to GitHub Copilot marketplaces; issue #22.
+
+- [ ] [gemini-extension-gallery-publication](tracks/gemini-extension-gallery-publication_20260711/spec.md) — Publish the OSF extension to the Gemini CLI gallery; issue #23.
+
+- [ ] [qwen-extension-publication](tracks/qwen-extension-publication_20260711/spec.md) — Publish the OSF extension for Qwen Code; issue #24.
+
+- [ ] [coding-agent-ecosystem-publication](tracks/coding-agent-ecosystem-publication_20260711/spec.md) — Package and publish OSF integrations for additional coding agents; issue #25.
+
+- [ ] [mcp-catalog-discoverability-sweep](tracks/mcp-catalog-discoverability-sweep_20260711/spec.md) — Complete a high-value MCP registry and catalog sweep; issue #26.
+
+- [ ] [software-preprint-readiness](tracks/software-preprint-readiness_20260711/spec.md) — Prepare and assess an OSF CLI Go software preprint; issue #27.

@@ -1,23 +1,19 @@
 {
   "name": "osf-cli-go",
   "version": "0.3.1",
-  "description": "Read-only OSF MCP tools for Codex.",
-  "author": "edithatogo",
+  "description": "Open Science Framework tools for GitHub Copilot CLI and coding agent.",
+  "author": {
+    "name": "edithatogo"
+  },
   "homepage": "https://github.com/edithatogo/osf-cli-go",
   "repository": "https://github.com/edithatogo/osf-cli-go",
   "license": "Apache-2.0",
   "keywords": [
     "osf",
+    "open-science",
     "mcp",
     "research"
   ],
-  "mcpServers": {
-    "osf": "./.mcp.json"
-  },
-  "skills": [
-    "osf"
-  ],
-  "interface": {
-    "type": "mcp"
-  }
+  "mcpServers": "./.mcp.json",
+  "skills": "./skills/"
 }

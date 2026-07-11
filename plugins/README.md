@@ -30,6 +30,7 @@ Validate package metadata from the repository root:
 Get-Content plugins\claude-osf\.claude-plugin\plugin.json | ConvertFrom-Json
 Get-Content plugins\github-copilot-osf\.github\mcp.json | ConvertFrom-Json
 Get-Content plugins\github-copilot-osf\.mcp.json | ConvertFrom-Json
+Get-Content plugins\github-copilot-osf\plugin.json | ConvertFrom-Json
 Get-Content plugins\codex-osf\.codex-plugin\plugin.json | ConvertFrom-Json
 Get-Content plugins\gemini-osf\gemini-extension.json | ConvertFrom-Json
 Get-Content plugins\qwen-osf\qwen-extension.json | ConvertFrom-Json
@@ -53,6 +54,7 @@ claude plugin validate $env:USERPROFILE\.claude\plugins\osf-cli-go
 GitHub Copilot:
 
 ```powershell
+copilot plugin install edithatogo/osf-cli-go:plugins/github-copilot-osf
 Copy-Item plugins\github-copilot-osf\.github\mcp.json .github\mcp.json
 Copy-Item plugins\github-copilot-osf\.mcp.json .mcp.json
 Get-Content .github\mcp.json | ConvertFrom-Json
