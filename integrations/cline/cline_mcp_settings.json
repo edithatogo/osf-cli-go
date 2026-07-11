@@ -1,14 +1,15 @@
 {
-  "servers": {
+  "mcpServers": {
     "osf": {
-      "type": "stdio",
       "command": "go",
       "args": ["run", "./cmd/osf-mcp"],
       "env": {
         "OSF_TOKEN": "${env:OSF_TOKEN}",
         "OSF_USERNAME": "${env:OSF_USERNAME}",
         "OSF_PASSWORD": "${env:OSF_PASSWORD}"
-      }
+      },
+      "alwaysAllow": [],
+      "disabled": false
     }
   }
 }

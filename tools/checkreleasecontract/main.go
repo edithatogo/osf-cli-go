@@ -50,6 +50,12 @@ func run() error {
 		".github/plugin/marketplace.json",
 		"gemini-extension.json",
 		"qwen-extension.json",
+		".cursor/mcp.json",
+		".roo/mcp.json",
+		".vscode/mcp.json",
+		"integrations/cline/cline_mcp_settings.json",
+		"integrations/windsurf/mcp_config.json",
+		"integrations/zed/settings.json",
 		"docs/compatibility-policy.md",
 		"docs/support-policy.md",
 		"docs/live-validation-matrix.md",
@@ -129,7 +135,47 @@ func run() error {
 	if err := validateGeminiManifest("plugins/qwen-osf/qwen-extension.json", packagedQwen, server.Version, "${extensionPath}"); err != nil {
 		return err
 	}
+	for path, key := range map[string]string{
+		".cursor/mcp.json": "mcpServers",
+		".roo/mcp.json":    "mcpServers",
+		".vscode/mcp.json": "servers",
+		"integrations/cline/cline_mcp_settings.json": "mcpServers",
+		"integrations/windsurf/mcp_config.json":      "mcpServers",
+		"integrations/zed/settings.json":             "context_servers",
+	} {
+		if err := validateIntegrationConfig(path, key); err != nil {
+			return err
+		}
+	}
 
+	return nil
+}
+
+func validateIntegrationConfig(path, key string) error {
+	var config map[string]map[string]struct {
+		Command string            `json:"command"`
+		Args    []string          `json:"args"`
+		Env     map[string]string `json:"env"`
+	}
+	if err := readJSON(path, &config); err != nil {
+		return err
+	}
+	servers, ok := config[key]
+	if !ok {
+		return fmt.Errorf("%s is missing %s", path, key)
+	}
+	osf, ok := servers["osf"]
+	if !ok || osf.Command != "go" || len(osf.Args) != 2 || osf.Args[0] != "run" || osf.Args[1] != "./cmd/osf-mcp" {
+		return fmt.Errorf("%s has an invalid osf server command", path)
+	}
+	for name, value := range osf.Env {
+		if name != "OSF_TOKEN" && name != "OSF_USERNAME" && name != "OSF_PASSWORD" {
+			return fmt.Errorf("%s contains an unexpected environment variable %s", path, name)
+		}
+		if value == "" || !strings.Contains(value, "env:") {
+			return fmt.Errorf("%s does not reference %s through the environment", path, name)
+		}
+	}
 	return nil
 }
 

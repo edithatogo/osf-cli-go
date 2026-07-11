@@ -10,7 +10,7 @@ Last reviewed: 2026-07-11
 | GitHub Copilot CLI/cloud agent | `plugins/github-copilot-osf`, `.github/plugin/marketplace.json`, skill, and MCP configs | Repository-hosted marketplace available; GitHub-maintained default marketplace approval not evidenced | `github-copilot-plugin-publication_20260711` |
 | Gemini CLI | root `gemini-extension.json` and `plugins/gemini-osf` release package | Public repository is gallery-discoverable via `gemini-cli-extension`; gallery indexing/approval not yet evidenced | `gemini-extension-gallery-publication_20260711` |
 | Qwen Code | root `qwen-extension.json` and `plugins/qwen-osf` release package | Public Git/local/archive installation available; Qwen has no separate maintained gallery evidenced, with Claude/Gemini channels documented | `qwen-extension-publication_20260711` |
-| Cursor, Cline, Roo, Windsurf, VS Code, Zed | MCP metadata and repository install paths vary | Audit and publication pending | `coding-agent-ecosystem-publication_20260711` |
+| Cursor, Cline, Roo, Windsurf, VS Code, Zed | `integrations/`, `.cursor/mcp.json`, `.roo/mcp.json`, and `.vscode/mcp.json` | Standard MCP configuration templates available; provider gallery listings not evidenced | `coding-agent-ecosystem-publication_20260711` |
 
 An artifact is not described as submitted or approved until dated provider-side
 evidence exists. GitHub Copilot supports repository or marketplace installation
