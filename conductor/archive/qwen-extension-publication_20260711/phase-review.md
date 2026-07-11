@@ -23,5 +23,8 @@ identified. The repository does not claim Qwen publication or approval.
 
 ## Result
 
-No blocking repository-local findings remain. The host keychain limitation is
-recorded as an environment-specific installation gate.
+The review found and corrected a misleading whole-repository Qwen install
+example. It now points to the packaged extension or release archive because
+the repository's Claude marketplace is selected first. No blocking
+repository-local findings remain. The host keychain limitation is recorded as
+an environment-specific installation gate.

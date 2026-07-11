@@ -85,7 +85,7 @@ Get-Content $env:USERPROFILE\.gemini\extensions\osf-cli-go\gemini-extension.json
 Qwen Code:
 
 ```powershell
-qwen extensions install https://github.com/edithatogo/osf-cli-go
+qwen extensions install .\plugins\qwen-osf
 Copy-Item -Recurse plugins\qwen-osf $env:USERPROFILE\.qwen\extensions\osf-cli-go
 Get-Content $env:USERPROFILE\.qwen\extensions\osf-cli-go\qwen-extension.json | ConvertFrom-Json
 ```
@@ -110,6 +110,8 @@ Gemini CLI gallery discovery uses the root `gemini-extension.json` and the
 is used for self-contained release archives with a bundled `bin/osf-mcp`.
 
 Qwen Code supports direct Git repository, local path, archive, npm, Claude
-marketplace, and Gemini gallery installation. The root `qwen-extension.json`
-supports direct repository installation, while `plugins/qwen-osf` is the
-self-contained release-archive variant.
+marketplace, and Gemini gallery installation. For this multi-client repository,
+use `plugins/qwen-osf` or a generated archive because whole-repository
+installation resolves the existing Claude marketplace first. The root
+`qwen-extension.json` preserves the Qwen contract for gallery and root-package
+validation.

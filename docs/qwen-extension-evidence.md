@@ -50,7 +50,9 @@ Use a generated `qwen-osf-<version>-<runtime>.zip` archive for distribution.
 
 ## Exact external status
 
-The repository and archive are ready for Qwen installation. No separate
+The packaged repository directory and archive are ready for Qwen installation.
+The whole multi-client repository is not advertised as a direct Qwen install
+source because its Claude marketplace is selected first. No separate
 Qwen-maintained public gallery or provider approval was identified in the
 current official documentation. Claude marketplace and Gemini gallery routes
 remain available separately and are not claimed here as Qwen approval.
