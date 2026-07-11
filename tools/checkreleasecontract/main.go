@@ -94,17 +94,17 @@ func run() error {
 		return err
 	}
 	if copilotMarketplace.Name == "" || copilotMarketplace.Metadata.Version != server.Version {
-		return fmt.Errorf("Copilot marketplace name or version is invalid")
+		return fmt.Errorf("copilot marketplace name or version is invalid")
 	}
 	if len(copilotMarketplace.Plugins) != 1 {
-		return fmt.Errorf("Copilot marketplace must contain exactly one plugin")
+		return fmt.Errorf("copilot marketplace must contain exactly one plugin")
 	}
 	copilotPlugin := copilotMarketplace.Plugins[0]
 	if copilotPlugin.Name == "" || copilotPlugin.Source == "" || copilotPlugin.Version != server.Version {
-		return fmt.Errorf("Copilot marketplace plugin name, source, or version is invalid")
+		return fmt.Errorf("copilot marketplace plugin name, source, or version is invalid")
 	}
 	if _, err := os.Stat(filepath.Join(copilotPlugin.Source, "plugin.json")); err != nil {
-		return fmt.Errorf("Copilot marketplace plugin source %s is invalid: %w", copilotPlugin.Source, err)
+		return fmt.Errorf("copilot marketplace plugin source %s is invalid: %w", copilotPlugin.Source, err)
 	}
 
 	var rootGemini geminiManifest
