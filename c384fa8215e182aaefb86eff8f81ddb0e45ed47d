@@ -1,0 +1,1 @@
+Conductor review track 24: corrected Qwen installation documentation to avoid whole-repository marketplace misresolution. Full release, test, race, vet, registry, stub, review, and diff gates passed. Track remains archived and issue #24 remains closed.
