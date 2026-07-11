@@ -10,8 +10,12 @@
   "automerge": false,
   "enabledManagers": [
     "gomod",
-    "github-actions"
+    "github-actions",
+    "dockerfile"
   ],
+  "rebaseWhen": "behind-base-branch",
+  "prCreation": "immediate",
+  "prConcurrentLimit": 10,
   "packageRules": [
     {
       "description": "Group GitHub Actions updates",
@@ -19,6 +23,13 @@
         "github-actions"
       ],
       "groupName": "github-actions"
+    },
+    {
+      "description": "Pin GitHub Actions to immutable commit SHAs",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "pinDigests": true
     },
     {
       "description": "Group Go test and tooling dependencies",
