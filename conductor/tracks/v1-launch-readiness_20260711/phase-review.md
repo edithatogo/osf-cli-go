@@ -37,10 +37,10 @@ git diff --check
 - Review command: `$conductor-review`
 - Blocking findings: none in the completed local phases
 - Fixes applied: added executable release-contract validation and corrected stale plugin versions
-- Re-review result: pending final track review after external-gate reconciliation
+- Re-review result: local final review passed; external-gate items remain explicitly open
 
 ## Status
 
 - Completion claim: integration-ready for local release governance
 - Residual risks: provider approvals, live OSF validation, signed provenance, and v1.0 cross-platform release campaign remain external or future gates
-- Next phase: Submission and Closeout
+- Next phase: Submission and Closeout, requiring provider approvals and opt-in live validation

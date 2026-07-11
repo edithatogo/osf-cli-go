@@ -17,7 +17,7 @@
 ## Phase 3: Submission and Closeout
 
 - [x] Task: Prepare provider-ready submission materials and screenshots or logs
-- [ ] Task: Submit through the authoritative channel when authorized and record evidence
-- [ ] Task: Address review feedback iteratively and re-run all gates
-- [ ] Task: Reconcile GitHub issue #21, docs, and exact external status
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Submission and Closeout' (Protocol in workflow.md)
+- [~] Task: Submit through the authoritative channel when authorized and record evidence (provider-side approval and live OSF credentials remain external gates)
+- [x] Task: Address review feedback iteratively and re-run all gates
+- [x] Task: Reconcile GitHub issue #21, docs, and exact external status
+- [~] Task: Conductor - Automated Review and Checkpoint 'Submission and Closeout' (awaiting external gates; Protocol in workflow.md)
