@@ -52,7 +52,7 @@ jobs:
           mkdir -p dist
           go build -trimpath -ldflags "-s -w -X main.version=$version" -o "dist/osf-$GOOS-$GOARCH$suffix" ./cmd/osf
           go build -trimpath -ldflags "-s -w -X main.version=$version" -o "dist/osf-mcp-$GOOS-$GOARCH$suffix" ./cmd/osf-mcp
-          go run ./tools/checksums dist "dist/SHA256SUMS-$GOOS-$GOARCH.txt"
+          GOOS= GOARCH= go run ./tools/checksums dist "dist/SHA256SUMS-$GOOS-$GOARCH.txt"
       - uses: actions/upload-artifact@v4
         with:
           name: osf-cli-go-${{ matrix.goos }}-${{ matrix.goarch }}
