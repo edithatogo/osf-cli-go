@@ -1,17 +1,4 @@
+# Dependency updates are managed by the Renovate GitHub App.
+# Keep this file as an explicit no-op so Dependabot cannot create duplicate PRs.
 version: 2
-updates:
-  - package-ecosystem: gomod
-    directory: /
-    schedule:
-      interval: daily
-    commit-message:
-      prefix: chore
-      include: scope
-
-  - package-ecosystem: github-actions
-    directory: /
-    schedule:
-      interval: weekly
-    commit-message:
-      prefix: chore
-      include: scope
+updates: []
