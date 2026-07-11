@@ -54,9 +54,9 @@
     },
     "glama": {
       "mode": "auto_index_or_web_oauth_claim",
-      "status": "blocked_oauth_or_auto_index",
+      "status": "pending_review",
       "submitUrl": "https://glama.ai/",
-      "evidence": "dist/submission-evidence/glama/result.json"
+      "evidence": "conductor/archive/glama-quality-claim-adoption_20260706/submission-evidence.md"
     },
     "pulseMcp": {
       "mode": "official_registry_ingest_or_manual_url",
