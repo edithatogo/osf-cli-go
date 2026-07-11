@@ -3,10 +3,9 @@ message: "If you use this software in your research, please cite it as below."
 authors:
   - family-names: "Atogo"
     given-names: "Edith"
-    orcid: "https://orcid.org/0000-0000-0000-0000"
 title: "osf-cli-go: A command-line client for the Open Science Framework"
-version: 0.0.0-dev
-date-released: 2026-05-02
+version: 0.3.1
+date-released: 2026-07-11
 url: "https://github.com/edithatogo/osf-cli-go"
 license: Apache-2.0
 repository-code: "https://github.com/edithatogo/osf-cli-go"

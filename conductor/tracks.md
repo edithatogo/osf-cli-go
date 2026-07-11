@@ -77,4 +77,4 @@ The per-track `plan.md` files are the source of truth for completion state.
 
 - [x] [mcp-catalog-discoverability-sweep](tracks/mcp-catalog-discoverability-sweep_20260711/spec.md) — Complete a high-value MCP registry and catalog sweep; issue #26.
 
-- [ ] [software-preprint-readiness](tracks/software-preprint-readiness_20260711/spec.md) — Prepare and assess an OSF CLI Go software preprint; issue #27.
+- [x] [software-preprint-readiness](tracks/software-preprint-readiness_20260711/spec.md) — Prepare and assess an OSF CLI Go software preprint; issue #27.
