@@ -13,10 +13,18 @@ Validated on 2026-07-11 against the claimed Glama listing at
 - Runtime evidence: structured JSON startup logs and successful enumeration of
   all six advertised tools
 
-The browser inspector sandbox was requested without credentials to avoid
-transmitting a personal OSF token. Deployment remained pending during the
-validation window, so no tool invocation is represented as successful usage.
-The six tools remain available in Glama's generated tool index.
+The browser inspector sandbox was deployed without credentials to avoid
+transmitting a personal OSF token. Glama connected successfully, negotiated the
+server capabilities, and listed all six tools. Each tool was then invoked:
+
+- `osf_whoami` and `osf_projects_list` returned the expected OSF `401` response
+  because no credentials were supplied.
+- `osf_project_get`, `osf_components_list`, `osf_files_list`, and
+  `osf_contributors_list` were called with the non-secret placeholder ID
+  `abc12` and returned expected API errors.
+
+These calls are genuine Glama Inspector traffic. They validate invocation and
+error propagation but do not constitute authenticated live-OSF validation.
 
 The listing cross-references FYI MCP, Healthpoint MCP, and SourceRight through
 Glama related-server metadata and the README. The README also links the Glama
