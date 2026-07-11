@@ -13,9 +13,10 @@ not a claim that the 1.0 release gate is currently satisfied.
   `.github/workflows/release-artifacts.yml`; workflow run
   [29149851303](https://github.com/edithatogo/osf-cli-go/actions/runs/29149851303)
   passed all six Linux, macOS, and Windows architecture jobs.
-- [~] Signed provenance, SBOM, and artifact verification are automated by
-  `.github/workflows/release-security.yml`; a successful tag run is still
-  required for dated evidence.
+- [x] Signed provenance, SBOM, and artifact verification are automated by
+  `.github/workflows/release-security.yml`; workflow run
+  [29149912132](https://github.com/edithatogo/osf-cli-go/actions/runs/29149912132)
+  successfully published the GHCR image and completed keyless Cosign signing.
 - [ ] Compatibility and support policies are reviewed and linked from release
   notes.
 - [ ] High-risk live-validation matrix rows are run against disposable OSF data.
