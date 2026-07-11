@@ -68,7 +68,6 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [ ] [metacheck-osf-validation](tracks/metacheck-osf-validation_20260711/spec.md) — Add OSF research-output and preregistration validation workflows; source scienceverse/metacheck; issue #20.
 
 
-- [ ] [github-copilot-plugin-publication](tracks/github-copilot-plugin-publication_20260711/spec.md) — Publish the OSF plugin to GitHub Copilot marketplaces; issue #22.
 
 - [ ] [gemini-extension-gallery-publication](tracks/gemini-extension-gallery-publication_20260711/spec.md) — Publish the OSF extension to the Gemini CLI gallery; issue #23.
 
