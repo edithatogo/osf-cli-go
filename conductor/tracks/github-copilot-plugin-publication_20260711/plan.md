@@ -2,23 +2,22 @@
 
 ## Phase 1: Requirements and Contract
 
-- [ ] Task: Verify current authoritative requirements and submission surfaces
-- [ ] Task: Audit existing artifacts and identify gaps against Copilot CLI and cloud-agent plugin validation, marketplace submission, installation evidence, and provider review
-- [ ] Task: Define measurable acceptance evidence and external gates
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Requirements and Contract' (Protocol in workflow.md)
+- [x] Task: Verify current authoritative requirements and submission surfaces
+- [x] Task: Audit existing artifacts and identify gaps against Copilot CLI and cloud-agent plugin validation, marketplace submission, installation evidence, and provider review
+- [x] Task: Define measurable acceptance evidence and external gates
+- [x] Task: Conductor - Automated Review and Checkpoint 'Requirements and Contract' (Protocol in workflow.md)
 
 ## Phase 2: Build and Validation
 
-- [ ] Task: Add failing tests or validators for each accepted artifact requirement
-- [ ] Task: Implement and document the required artifacts
-- [ ] Task: Validate supported platforms, security boundaries, versions, and installation paths
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Build and Validation' (Protocol in workflow.md)
+- [x] Task: Add failing tests or validators for each accepted artifact requirement
+- [x] Task: Implement and document the required artifacts
+- [x] Task: Validate supported platforms, security boundaries, versions, and installation paths
+- [x] Task: Conductor - Automated Review and Checkpoint 'Build and Validation' (Protocol in workflow.md)
 
 ## Phase 3: Submission and Closeout
 
-- [ ] Task: Prepare provider-ready submission materials and screenshots or logs
-- [ ] Task: Submit through the authoritative channel when authorized and record evidence
-- [ ] Task: Address review feedback iteratively and re-run all gates
-- [ ] Task: Reconcile GitHub issue #22, docs, and exact external status
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Submission and Closeout' (Protocol in workflow.md)
-
+- [x] Task: Prepare provider-ready submission materials and screenshots or logs
+- [x] Task: Submit through the authoritative channel when authorized and record evidence
+- [x] Task: Address review feedback iteratively and re-run all gates
+- [x] Task: Reconcile GitHub issue #22, docs, and exact external status
+- [x] Task: Conductor - Automated Review and Checkpoint 'Submission and Closeout' (Protocol in workflow.md)

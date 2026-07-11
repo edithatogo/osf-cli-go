@@ -1,0 +1,24 @@
+{
+  "name": "osf-cli-go",
+  "owner": { "name": "edithatogo" },
+  "metadata": {
+    "description": "Plugins and MCP integrations for Open Science Framework workflows.",
+    "version": "0.3.1"
+  },
+  "plugins": [
+    {
+      "name": "osf-cli-go",
+      "source": "./plugins/github-copilot-osf",
+      "description": "Open Science Framework tools for GitHub Copilot CLI and coding agent.",
+      "version": "0.3.1",
+      "author": { "name": "edithatogo" },
+      "homepage": "https://github.com/edithatogo/osf-cli-go",
+      "repository": "https://github.com/edithatogo/osf-cli-go",
+      "license": "Apache-2.0",
+      "keywords": ["osf", "open-science", "mcp", "research"],
+      "category": "research",
+      "skills": "./skills/",
+      "mcpServers": "./.mcp.json"
+    }
+  ]
+}

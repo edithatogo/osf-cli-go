@@ -3,6 +3,17 @@
 This package contains repository and workspace MCP configuration for GitHub
 Copilot clients that support MCP servers.
 
+The repository-hosted marketplace entry is at `.github/plugin/marketplace.json`.
+From a public checkout, install it with:
+
+```text
+copilot plugin marketplace add edithatogo/osf-cli-go
+copilot plugin install osf-cli-go@osf-cli-go
+```
+
+The repository marketplace is available for installation; acceptance into any
+GitHub-maintained default marketplace is a separate provider gate.
+
 ## Repository Configuration
 
 Use `.github/mcp.json` for Copilot coding agent repository configuration.

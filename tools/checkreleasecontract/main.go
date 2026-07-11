@@ -12,6 +12,18 @@ type manifest struct {
 	Version string `json:"version"`
 }
 
+type marketplace struct {
+	Name     string `json:"name"`
+	Metadata struct {
+		Version string `json:"version"`
+	} `json:"metadata"`
+	Plugins []struct {
+		Name    string `json:"name"`
+		Source  string `json:"source"`
+		Version string `json:"version"`
+	} `json:"plugins"`
+}
+
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "release contract: %v\n", err)
@@ -21,6 +33,7 @@ func main() {
 
 func run() error {
 	required := []string{
+		".github/plugin/marketplace.json",
 		"docs/compatibility-policy.md",
 		"docs/support-policy.md",
 		"docs/live-validation-matrix.md",
@@ -52,6 +65,24 @@ func run() error {
 		if plugin.Version != server.Version {
 			return fmt.Errorf("%s version %q does not match server version %q", path, plugin.Version, server.Version)
 		}
+	}
+
+	var copilotMarketplace marketplace
+	if err := readJSON(".github/plugin/marketplace.json", &copilotMarketplace); err != nil {
+		return err
+	}
+	if copilotMarketplace.Name == "" || copilotMarketplace.Metadata.Version != server.Version {
+		return fmt.Errorf("Copilot marketplace name or version is invalid")
+	}
+	if len(copilotMarketplace.Plugins) != 1 {
+		return fmt.Errorf("Copilot marketplace must contain exactly one plugin")
+	}
+	copilotPlugin := copilotMarketplace.Plugins[0]
+	if copilotPlugin.Name == "" || copilotPlugin.Source == "" || copilotPlugin.Version != server.Version {
+		return fmt.Errorf("Copilot marketplace plugin name, source, or version is invalid")
+	}
+	if _, err := os.Stat(filepath.Join(copilotPlugin.Source, "plugin.json")); err != nil {
+		return fmt.Errorf("Copilot marketplace plugin source %s is invalid: %w", copilotPlugin.Source, err)
 	}
 
 	return nil

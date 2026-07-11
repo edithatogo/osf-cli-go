@@ -34,6 +34,7 @@ Get-Content plugins\github-copilot-osf\plugin.json | ConvertFrom-Json
 Get-Content plugins\codex-osf\.codex-plugin\plugin.json | ConvertFrom-Json
 Get-Content plugins\gemini-osf\gemini-extension.json | ConvertFrom-Json
 Get-Content plugins\qwen-osf\qwen-extension.json | ConvertFrom-Json
+Get-Content .github\plugin\marketplace.json | ConvertFrom-Json
 ```
 
 Register the local Codex plugin marketplace:
@@ -54,6 +55,9 @@ claude plugin validate $env:USERPROFILE\.claude\plugins\osf-cli-go
 GitHub Copilot:
 
 ```powershell
+copilot plugin marketplace add edithatogo/osf-cli-go
+copilot plugin marketplace browse osf-cli-go
+copilot plugin install osf-cli-go@osf-cli-go
 copilot plugin install edithatogo/osf-cli-go:plugins/github-copilot-osf
 Copy-Item plugins\github-copilot-osf\.github\mcp.json .github\mcp.json
 Copy-Item plugins\github-copilot-osf\.mcp.json .mcp.json
@@ -92,6 +96,8 @@ Build self-contained plugin archives:
 The `Plugin Archives` GitHub Actions workflow builds platform-specific ZIPs for
 manual marketplace review or release attachment.
 
-Public gallery or marketplace listing is outside this repo-local install path
-and requires each client provider's submission, review, or organization-admin
-flow.
+This repository publishes a GitHub-hosted Copilot marketplace at
+`.github/plugin/marketplace.json`. That makes the package installable from the
+public repository. It is not a claim that the package has been accepted into a
+GitHub-maintained default marketplace; that provider review or organization
+administration gate remains separately recorded.
