@@ -1,8 +1,8 @@
 {
   "track_id": "mcp-directory-adoption_20260706",
   "type": "chore",
-  "status": "new",
+  "status": "completed",
   "created_at": "2026-07-06T13:22:25Z",
-  "updated_at": "2026-07-06T13:22:25Z",
+  "updated_at": "2026-07-11T08:20:00Z",
   "description": "Submit, verify, and optimize MCP.Directory adoption for the OSF MCP server."
 }

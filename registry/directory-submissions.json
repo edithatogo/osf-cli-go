@@ -48,9 +48,9 @@
     },
     "mcpDirectory": {
       "mode": "manual_form",
-      "status": "prepared",
+      "status": "pending_review",
       "submitUrl": "https://mcp.directory/submit",
-      "evidence": "dist/submission-evidence/mcp-directory/result.json"
+      "evidence": "conductor/archive/mcp-directory-adoption_20260706/submission-evidence.md"
     },
     "glama": {
       "mode": "auto_index_or_web_oauth_claim",
