@@ -69,7 +69,7 @@ The per-track `plan.md` files are the source of truth for completion state.
 
 
 
-- [ ] [gemini-extension-gallery-publication](tracks/gemini-extension-gallery-publication_20260711/spec.md) — Publish the OSF extension to the Gemini CLI gallery; issue #23.
+- [x] [gemini-extension-gallery-publication](tracks/gemini-extension-gallery-publication_20260711/spec.md) — Publish the OSF extension to the Gemini CLI gallery; issue #23.
 
 - [ ] [qwen-extension-publication](tracks/qwen-extension-publication_20260711/spec.md) — Publish the OSF extension for Qwen Code; issue #24.
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type manifest struct {
@@ -24,6 +25,19 @@ type marketplace struct {
 	} `json:"plugins"`
 }
 
+type geminiManifest struct {
+	Name     string `json:"name"`
+	Version  string `json:"version"`
+	Settings []struct {
+		Name   string `json:"name"`
+		EnvVar string `json:"envVar"`
+		Secret bool   `json:"sensitive"`
+	} `json:"settings"`
+	MCPServers map[string]struct {
+		Command string `json:"command"`
+	} `json:"mcpServers"`
+}
+
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "release contract: %v\n", err)
@@ -34,6 +48,7 @@ func main() {
 func run() error {
 	required := []string{
 		".github/plugin/marketplace.json",
+		"gemini-extension.json",
 		"docs/compatibility-policy.md",
 		"docs/support-policy.md",
 		"docs/live-validation-matrix.md",
@@ -85,6 +100,47 @@ func run() error {
 		return fmt.Errorf("Copilot marketplace plugin source %s is invalid: %w", copilotPlugin.Source, err)
 	}
 
+	var rootGemini geminiManifest
+	if err := readJSON("gemini-extension.json", &rootGemini); err != nil {
+		return err
+	}
+	if err := validateGeminiManifest("gemini-extension.json", rootGemini, server.Version, "go"); err != nil {
+		return err
+	}
+	var packagedGemini geminiManifest
+	if err := readJSON("plugins/gemini-osf/gemini-extension.json", &packagedGemini); err != nil {
+		return err
+	}
+	if err := validateGeminiManifest("plugins/gemini-osf/gemini-extension.json", packagedGemini, server.Version, "${extensionPath}"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateGeminiManifest(path string, manifest geminiManifest, version string, command string) error {
+	if manifest.Name != "osf-cli-go" || manifest.Version != version {
+		return fmt.Errorf("%s name or version is invalid", path)
+	}
+	if len(manifest.Settings) != 3 {
+		return fmt.Errorf("%s must declare three credential settings", path)
+	}
+	seen := map[string]bool{}
+	for _, setting := range manifest.Settings {
+		if setting.Name == "" || setting.EnvVar == "" || !setting.Secret {
+			return fmt.Errorf("%s contains an invalid credential setting", path)
+		}
+		seen[setting.EnvVar] = true
+	}
+	for _, envVar := range []string{"OSF_TOKEN", "OSF_USERNAME", "OSF_PASSWORD"} {
+		if !seen[envVar] {
+			return fmt.Errorf("%s does not allowlist %s", path, envVar)
+		}
+	}
+	server, ok := manifest.MCPServers["osf"]
+	if !ok || (server.Command != command && !strings.HasPrefix(server.Command, command)) {
+		return fmt.Errorf("%s has an invalid osf MCP server command", path)
+	}
 	return nil
 }
 

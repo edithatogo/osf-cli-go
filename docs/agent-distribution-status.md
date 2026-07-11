@@ -8,7 +8,7 @@ Last reviewed: 2026-07-11
 | OpenAI Cowork | MCP server and MCPB package | Prepared; no separate approved public listing evidenced | `codex-marketplace-adoption_20260706` |
 | Anthropic Claude Code/Cowork | `plugins/claude-osf` and `.claude-plugin/marketplace.json` | Prepared; official directory submission pending | `claude-official-plugin-directory-adoption_20260706` |
 | GitHub Copilot CLI/cloud agent | `plugins/github-copilot-osf`, `.github/plugin/marketplace.json`, skill, and MCP configs | Repository-hosted marketplace available; GitHub-maintained default marketplace approval not evidenced | `github-copilot-plugin-publication_20260711` |
-| Gemini CLI | `plugins/gemini-osf` | Prepared; Extensions Gallery submission pending | `gemini-extension-gallery-publication_20260711` |
+| Gemini CLI | root `gemini-extension.json` and `plugins/gemini-osf` release package | Public repository is gallery-discoverable via `gemini-cli-extension`; gallery indexing/approval not yet evidenced | `gemini-extension-gallery-publication_20260711` |
 | Qwen Code | `plugins/qwen-osf` | Prepared; public discovery-channel submission pending verification | `qwen-extension-publication_20260711` |
 | Cursor, Cline, Roo, Windsurf, VS Code, Zed | MCP metadata and repository install paths vary | Audit and publication pending | `coding-agent-ecosystem-publication_20260711` |
 

@@ -76,6 +76,7 @@ Get-Content plugins\codex-osf\.mcp.json | ConvertFrom-Json
 Gemini CLI:
 
 ```powershell
+gemini extensions install https://github.com/edithatogo/osf-cli-go --consent
 Copy-Item -Recurse plugins\gemini-osf $env:USERPROFILE\.gemini\extensions\osf-cli-go
 Get-Content $env:USERPROFILE\.gemini\extensions\osf-cli-go\gemini-extension.json | ConvertFrom-Json
 ```
@@ -101,3 +102,7 @@ This repository publishes a GitHub-hosted Copilot marketplace at
 public repository. It is not a claim that the package has been accepted into a
 GitHub-maintained default marketplace; that provider review or organization
 administration gate remains separately recorded.
+
+Gemini CLI gallery discovery uses the root `gemini-extension.json` and the
+`gemini-cli-extension` GitHub topic. The packaged `plugins/gemini-osf` variant
+is used for self-contained release archives with a bundled `bin/osf-mcp`.
