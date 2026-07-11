@@ -1,0 +1,9 @@
+{
+  "track_id": "datahugger-doi-parity_20260711",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-07-11T09:00:00Z",
+  "updated_at": "2026-07-11T09:00:00Z",
+  "description": "Add DOI-oriented OSF retrieval parity with datahugger"
+}
+

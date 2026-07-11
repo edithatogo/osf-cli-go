@@ -40,3 +40,29 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [ ] [homebrew-tap-adoption](tracks/homebrew-tap-adoption_20260706/spec.md) — Prepare and submit Homebrew tap distribution for the OSF CLI and MCP binaries.
 - [ ] [winget-adoption](tracks/winget-adoption_20260706/spec.md) — Prepare and submit WinGet distribution for OSF CLI Go.
 - [ ] [scoop-adoption](tracks/scoop-adoption_20260706/spec.md) — Prepare and submit Scoop distribution for OSF CLI Go.
+
+- [ ] [sourceshift-osf-mcp-parity](tracks/sourceshift-osf-mcp-parity_20260711/spec.md) — Benchmark SourceShift OSF MCP and close MCP capability gaps; source SourceShift/osf-mcp-server; issue #8.
+
+- [ ] [osfclient-cli-parity](tracks/osfclient-cli-parity_20260711/spec.md) — Benchmark osfclient CLI workflows and close usability gaps; source osfclient/osfclient; issue #9.
+
+- [ ] [osfr-entity-parity](tracks/osfr-entity-parity_20260711/spec.md) — Benchmark osfr entity coverage and conflict semantics; source ropensci/osfr; issue #10.
+
+- [ ] [pyosf-sync-parity](tracks/pyosf-sync-parity_20260711/spec.md) — Benchmark pyosf synchronization and project workflows; source psychopy/pyosf; issue #11.
+
+- [ ] [datalad-osf-parity](tracks/datalad-osf-parity_20260711/spec.md) — Benchmark DataLad OSF dataset and annex workflows; source datalad/datalad-osf; issue #12.
+
+- [ ] [osf-sync-parity](tracks/osf-sync-parity_20260711/spec.md) — Benchmark OSF Sync desktop synchronization semantics; source CenterForOpenScience/osf-sync; issue #13.
+
+- [ ] [datahugger-doi-parity](tracks/datahugger-doi-parity_20260711/spec.md) — Add DOI-oriented OSF retrieval parity with datahugger; source J535D165/datahugger; issue #14.
+
+- [ ] [tooluniverse-osf-parity](tracks/tooluniverse-osf-parity_20260711/spec.md) — Add ToolUniverse-compatible OSF preprint and agent tooling; source mims-harvard/ToolUniverse; issue #15.
+
+- [ ] [research-plugins-osf-parity](tracks/research-plugins-osf-parity_20260711/spec.md) — Add research-agent OSF discovery and full-text workflow parity; source wentorai/research-plugins; issue #16.
+
+- [ ] [colrev-osf-parity](tracks/colrev-osf-parity_20260711/spec.md) — Add OSF literature-review ingestion and metadata parity; source CoLRev-Environment/colrev; issue #17.
+
+- [ ] [jasp-osf-integration-parity](tracks/jasp-osf-integration-parity_20260711/spec.md) — Benchmark JASP OSF desktop integration workflows; source jasp-stats/jasp-desktop; issue #18.
+
+- [ ] [presqt-osf-parity](tracks/presqt-osf-parity_20260711/spec.md) — Benchmark PresQT preservation and metadata-transfer workflows; source Lucy-Family-Institute/presqt; issue #19.
+
+- [ ] [metacheck-osf-validation](tracks/metacheck-osf-validation_20260711/spec.md) — Add OSF research-output and preregistration validation workflows; source scienceverse/metacheck; issue #20.
