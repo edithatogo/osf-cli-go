@@ -2,6 +2,12 @@
 
 Last reviewed: 2026-07-11
 
+Authoritative references:
+
+- [GitHub Copilot CLI plugin reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference)
+- [GitHub plugin directories](https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/plugin-directories)
+- [About Copilot plugins](https://docs.github.com/en/copilot/concepts/agents/about-plugins)
+
 ## Public repository marketplace
 
 The repository-hosted GitHub Copilot marketplace is defined by

@@ -28,6 +28,10 @@ release-contract coverage. Both were added, and documentation now provides
 the marketplace and direct-install commands while preserving the approval
 boundary.
 
+The follow-up review found that the evidence record needed durable links to
+the authoritative GitHub requirements. Those links were added to
+`docs/copilot-marketplace-evidence.md`.
+
 ## Result
 
 No blocking local findings remain.
