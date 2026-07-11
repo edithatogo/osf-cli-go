@@ -1,0 +1,1 @@
+Conductor review track 25: tightened integration validation to require OSF_TOKEN, OSF_USERNAME, and OSF_PASSWORD with exact environment references. Full release, test, race, vet, registry, stub, review, and diff checks passed. Track remains archived and issue #25 remains closed.
