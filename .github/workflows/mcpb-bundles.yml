@@ -38,7 +38,7 @@ jobs:
         run: ./scripts/build-mcpb.ps1 -UseMcpbCli
 
       - name: Upload MCPB bundle
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: mcpb-${{ runner.os }}
           path: dist/mcpb/*.mcpb
