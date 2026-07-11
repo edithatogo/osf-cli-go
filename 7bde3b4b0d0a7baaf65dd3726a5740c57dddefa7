@@ -1,0 +1,1 @@
+Track 24 review: aligned Qwen root and packaged manifests with current qwen-extension.json settings, added validation and evidence, and recorded whole-repository marketplace detection plus unavailable macOS keychain limitation. Full local gates passed; no separate Qwen-maintained gallery or approval claimed.
