@@ -1,0 +1,1 @@
+Release blocker remediation: hosted release-artifacts run 29149694269 passed Linux and macOS but exposed missing shasum on Windows. Added portable Go checksum tool; local tests, vet, lint, and diff checks pass.
