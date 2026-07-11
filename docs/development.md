@@ -56,7 +56,7 @@ mkdocs build --strict
 
 ## Coverage Reporting
 
-The CI workflow writes `coverage.out`, prints the function coverage table, appends the coverage summary to the GitHub Actions job summary, and uploads the coverage profile as a workflow artifact. External coverage publishing can be added later if the repository adopts a hosted coverage service.
+The CI workflow writes `coverage.out`, prints the function coverage table, appends the coverage summary to the GitHub Actions job summary, uploads the coverage profile as a workflow artifact, and publishes the profile to Codecov for project and patch status checks.
 
 ## Workspace Decision
 
