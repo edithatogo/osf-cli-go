@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   test:
@@ -57,4 +58,5 @@ jobs:
           files: coverage.out
           flags: go
           fail_ci_if_error: true
+          use_oidc: true
           slug: edithatogo/osf-cli-go
