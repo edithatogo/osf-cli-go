@@ -1,0 +1,1 @@
+Local blocker remediation: installed and passed govulncheck, golangci-lint, and syft; corrected validator lint errors; added release-artifacts and release-security workflows for cross-platform binaries, SBOM, provenance, and Cosign keyless signing. Docker/tag-run evidence remains external.
