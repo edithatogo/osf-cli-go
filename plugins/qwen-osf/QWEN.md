@@ -3,7 +3,9 @@
 Use the `osf` MCP server for authenticated, read-only Open Science Framework
 inspection: current user, projects, components, files, and contributors.
 
-Set `OSF_TOKEN` in the shell before starting Qwen Code.
+Set `OSF_TOKEN` in the shell before starting Qwen Code. Qwen Code stores
+sensitive extension settings in the system keychain; configure those settings
+when the host keychain is available.
 
 ## Install And Validate
 

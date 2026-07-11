@@ -49,6 +49,7 @@ func run() error {
 	required := []string{
 		".github/plugin/marketplace.json",
 		"gemini-extension.json",
+		"qwen-extension.json",
 		"docs/compatibility-policy.md",
 		"docs/support-policy.md",
 		"docs/live-validation-matrix.md",
@@ -112,6 +113,20 @@ func run() error {
 		return err
 	}
 	if err := validateGeminiManifest("plugins/gemini-osf/gemini-extension.json", packagedGemini, server.Version, "${extensionPath}"); err != nil {
+		return err
+	}
+	var rootQwen geminiManifest
+	if err := readJSON("qwen-extension.json", &rootQwen); err != nil {
+		return err
+	}
+	if err := validateGeminiManifest("qwen-extension.json", rootQwen, server.Version, "go"); err != nil {
+		return err
+	}
+	var packagedQwen geminiManifest
+	if err := readJSON("plugins/qwen-osf/qwen-extension.json", &packagedQwen); err != nil {
+		return err
+	}
+	if err := validateGeminiManifest("plugins/qwen-osf/qwen-extension.json", packagedQwen, server.Version, "${extensionPath}"); err != nil {
 		return err
 	}
 

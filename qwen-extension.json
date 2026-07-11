@@ -1,7 +1,7 @@
 {
   "name": "osf-cli-go",
   "version": "0.3.1",
-  "description": "Read-only Open Science Framework MCP tools.",
+  "description": "Read-only Open Science Framework MCP tools for Qwen Code.",
   "settings": [
     {
       "name": "OSF personal access token",
@@ -24,8 +24,8 @@
   ],
   "mcpServers": {
     "osf": {
-      "command": "${extensionPath}${/}bin${/}osf-mcp",
-      "args": [],
+      "command": "go",
+      "args": ["run", "./cmd/osf-mcp"],
       "cwd": "${extensionPath}",
       "env": {
         "OSF_TOKEN": "${OSF_TOKEN}",
