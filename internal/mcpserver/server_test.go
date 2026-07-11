@@ -218,7 +218,7 @@ func contentText(content []mcp.Content) string {
 		case *mcp.TextContent:
 			b.WriteString(value.Text)
 		default:
-			b.WriteString(fmt.Sprint(item))
+			_, _ = fmt.Fprint(&b, item)
 		}
 	}
 	return b.String()

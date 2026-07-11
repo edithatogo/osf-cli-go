@@ -65,14 +65,7 @@ type mcpbManifest struct {
 		} `json:"mcp_config"`
 	} `json:"server"`
 	Tools []struct {
-		Name        string `json:"name"`
-		InputSchema struct {
-			Type       string `json:"type"`
-			Properties map[string]struct {
-				Type string `json:"type"`
-			} `json:"properties"`
-			Required []string `json:"required"`
-		} `json:"inputSchema"`
+		Name string `json:"name"`
 	} `json:"tools"`
 	UserConfig map[string]struct {
 		Sensitive bool `json:"sensitive"`
@@ -259,48 +252,22 @@ func configNameForEnv(env string) string {
 }
 
 func checkMCPBToolSchemas(manifest mcpbManifest) error {
-	want := map[string]struct {
-		properties []string
-		required   []string
-	}{
-		"osf_whoami":            {properties: nil, required: nil},
-		"osf_projects_list":     {properties: nil, required: nil},
-		"osf_project_get":       {properties: []string{"id"}, required: []string{"id"}},
-		"osf_components_list":   {properties: []string{"id"}, required: []string{"id"}},
-		"osf_files_list":        {properties: []string{"id", "path"}, required: []string{"id"}},
-		"osf_contributors_list": {properties: []string{"id"}, required: []string{"id"}},
+	want := []string{
+		"osf_whoami",
+		"osf_projects_list",
+		"osf_project_get",
+		"osf_components_list",
+		"osf_files_list",
+		"osf_contributors_list",
 	}
 	seen := map[string]bool{}
 	for _, tool := range manifest.Tools {
-		spec, ok := want[tool.Name]
-		if !ok {
+		if !contains(want, tool.Name) {
 			return fmt.Errorf("unexpected MCPB tool %q", tool.Name)
 		}
 		seen[tool.Name] = true
-		if err := checkEqual("tool "+tool.Name+" inputSchema.type", tool.InputSchema.Type, "object"); err != nil {
-			return err
-		}
-		for _, property := range spec.properties {
-			field, ok := tool.InputSchema.Properties[property]
-			if !ok {
-				return fmt.Errorf("tool %s inputSchema missing property %q", tool.Name, property)
-			}
-			if err := checkEqual("tool "+tool.Name+" property "+property+" type", field.Type, "string"); err != nil {
-				return err
-			}
-		}
-		for property := range tool.InputSchema.Properties {
-			if !contains(spec.properties, property) {
-				return fmt.Errorf("tool %s inputSchema has unexpected property %q", tool.Name, property)
-			}
-		}
-		for _, required := range spec.required {
-			if !contains(tool.InputSchema.Required, required) {
-				return fmt.Errorf("tool %s inputSchema missing required %q", tool.Name, required)
-			}
-		}
 	}
-	for name := range want {
+	for _, name := range want {
 		if !seen[name] {
 			return fmt.Errorf("MCPB manifest missing tool %q", name)
 		}
@@ -310,10 +277,10 @@ func checkMCPBToolSchemas(manifest mcpbManifest) error {
 
 func checkSmitheryRoute(submissions directorySubmissions) error {
 	if submissions.Directories.Smithery.Status != "published" {
-		return fmt.Errorf("Smithery status = %q, want published", submissions.Directories.Smithery.Status)
+		return fmt.Errorf("smithery status = %q, want published", submissions.Directories.Smithery.Status)
 	}
 	if submissions.Directories.Smithery.Evidence.MCPURL == "" {
-		return fmt.Errorf("Smithery published status requires mcpUrl evidence")
+		return fmt.Errorf("smithery published status requires mcpUrl evidence")
 	}
 	return nil
 }

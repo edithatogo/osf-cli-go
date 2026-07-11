@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - "v0.3.0"
+      - "v0.3.1"
 
 permissions:
   contents: read
@@ -33,13 +33,13 @@ jobs:
           context: .
           file: ./Dockerfile.mcp
           push: true
-          tags: ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.3.0
+          tags: ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.3.1
           build-args: |
-            VERSION=0.3.0
+            VERSION=0.3.1
             REVISION=${{ github.sha }}
           labels: |
             io.modelcontextprotocol.server.name=io.github.edithatogo/osf-cli-go
-            org.opencontainers.image.version=0.3.0
+            org.opencontainers.image.version=0.3.1
             org.opencontainers.image.revision=${{ github.sha }}
 
       - name: Install mcp-publisher

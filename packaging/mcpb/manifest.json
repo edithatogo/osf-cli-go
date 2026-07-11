@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "osf-cli-go",
   "display_name": "OSF CLI Go",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Read-only MCP tools for authenticated Open Science Framework projects and files.",
   "long_description": "OSF CLI Go exposes read-only Model Context Protocol tools for inspecting an authenticated Open Science Framework account, projects, components, OSF Storage files, and contributors.",
   "author": {
@@ -47,93 +47,27 @@
   "tools": [
     {
       "name": "osf_whoami",
-      "description": "Return the authenticated OSF user profile.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {},
-        "additionalProperties": false
-      }
+      "description": "Return the authenticated OSF user profile."
     },
     {
       "name": "osf_projects_list",
-      "description": "List projects owned by the authenticated OSF user.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {},
-        "additionalProperties": false
-      }
+      "description": "List projects owned by the authenticated OSF user."
     },
     {
       "name": "osf_project_get",
-      "description": "Get an OSF project or component by id or URL.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "OSF project/component id or URL."
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "additionalProperties": false
-      }
+      "description": "Get an OSF project or component by id or URL."
     },
     {
       "name": "osf_components_list",
-      "description": "List immediate child components for an OSF project or component.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "OSF project/component id or URL."
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "additionalProperties": false
-      }
+      "description": "List immediate child components for an OSF project or component."
     },
     {
       "name": "osf_files_list",
-      "description": "List OSF Storage files and folders.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "OSF project/component id or URL."
-          },
-          "path": {
-            "type": "string",
-            "description": "Optional OSF Storage folder path."
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "additionalProperties": false
-      }
+      "description": "List OSF Storage files and folders."
     },
     {
       "name": "osf_contributors_list",
-      "description": "List contributors for an OSF project or component.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "OSF project/component id or URL."
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "additionalProperties": false
-      }
+      "description": "List contributors for an OSF project or component."
     }
   ],
   "user_config": {

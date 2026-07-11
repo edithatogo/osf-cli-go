@@ -7,8 +7,8 @@ Date: 2026-05-18
 - Repository: `https://github.com/edithatogo/osf-cli-go`
 - Official MCP Registry name: `io.github.edithatogo/osf-cli-go`
 - Official MCP Registry lookup: `https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.edithatogo%2Fosf-cli-go`
-- Official package: `ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.3.0`
-- Go module: `github.com/edithatogo/osf-cli-go@v0.3.0`
+- Official package: `ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.3.1`
+- Go module: `github.com/edithatogo/osf-cli-go@v0.3.1`
 - Privacy policy for OSF service data: `https://osf.io/privacy-policy`
 - Support/issues: `https://github.com/edithatogo/osf-cli-go/issues`
 
@@ -29,13 +29,13 @@ contributors. Authentication uses `OSF_TOKEN` by preference, with optional
 Go:
 
 ```powershell
-go install github.com/edithatogo/osf-cli-go/cmd/osf-mcp@v0.3.0
+go install github.com/edithatogo/osf-cli-go/cmd/osf-mcp@v0.3.1
 ```
 
 Docker/OCI:
 
 ```powershell
-docker run --rm -i -e OSF_TOKEN ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.3.0
+docker run --rm -i -e OSF_TOKEN ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.3.1
 ```
 
 MCPB:
@@ -90,7 +90,7 @@ URL plus the official MCP Registry name.
 Published with the MCPB route:
 
 ```powershell
-smithery mcp publish .\dist\mcpb\osf-cli-go-0.3.0-<runtime>.mcpb -n edithatogo/osf-cli-go
+smithery mcp publish .\dist\mcpb\osf-cli-go-0.3.1-<runtime>.mcpb -n edithatogo/osf-cli-go
 ```
 
 Receipt:
