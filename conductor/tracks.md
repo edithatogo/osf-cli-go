@@ -31,7 +31,7 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [x] [mcp-registry-plugin-distribution](tracks/mcp-registry-plugin-distribution_20260518/spec.md) — Implement MCP package/server distribution, registry submissions, and client plugins for Copilot, Claude/Cowork, Codex, Gemini CLI, and Qwen Code.
 - [x] [downstream-registry-submission-contract](archive/downstream-registry-submission-contract_20260518/spec.md) — Complete Smithery/MCPB, downstream directory, and client-plugin submission contracts after official MCP Registry publication.
 - [x] [official-mcp-github-registry-adoption](archive/official-mcp-github-registry-adoption_20260706/spec.md) — Maintain and improve Official MCP Registry and GitHub MCP Registry adoption for the OSF MCP server.
-- [x] [smithery-quality-publication-adoption](tracks/smithery-quality-publication-adoption_20260706/spec.md) — Optimize Smithery publication quality and adoption for the OSF MCP server.
+- [x] [smithery-quality-publication-adoption](archive/smithery-quality-publication-adoption_20260706/spec.md) — Optimize Smithery publication quality and adoption for the OSF MCP server.
 - [ ] [mcp-directory-adoption](tracks/mcp-directory-adoption_20260706/spec.md) — Submit, verify, and optimize MCP.Directory adoption for the OSF MCP server.
 - [ ] [glama-quality-claim-adoption](tracks/glama-quality-claim-adoption_20260706/spec.md) — Claim or improve Glama listing quality for the OSF MCP server.
 - [ ] [cursor-directory-adoption](tracks/cursor-directory-adoption_20260706/spec.md) — Submit and optimize Cursor Directory adoption for the OSF MCP server.

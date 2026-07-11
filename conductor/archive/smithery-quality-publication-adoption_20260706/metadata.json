@@ -1,8 +1,8 @@
 {
   "track_id": "smithery-quality-publication-adoption_20260706",
   "type": "chore",
-  "status": "new",
+  "status": "completed",
   "created_at": "2026-07-06T13:22:25Z",
-  "updated_at": "2026-07-06T13:22:25Z",
+  "updated_at": "2026-07-11T08:03:44Z",
   "description": "Optimize Smithery publication quality and adoption for the OSF MCP server."
 }
