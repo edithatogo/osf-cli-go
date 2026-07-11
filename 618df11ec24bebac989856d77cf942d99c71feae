@@ -1,0 +1,1 @@
+Track 23 review: corrected Gemini settings to the current explicit envVar allowlist, added root manifest required for gallery discovery, added evidence and validation, verified Gemini CLI 0.41.2 isolated install/list, and passed full local gates. External gallery indexing remains unobserved.
