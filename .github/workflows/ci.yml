@@ -53,7 +53,7 @@ jobs:
           name: coverage.out
           path: coverage.out
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           files: coverage.out
           flags: go
