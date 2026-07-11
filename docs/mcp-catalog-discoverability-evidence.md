@@ -19,7 +19,7 @@ Docker's maintained path is a PR to `docker/mcp-registry` with a
 tool inventory. Docker can build the image from this repository's
 `Dockerfile.mcp`; no credentials are included.
 
-The packet uses the public source commit `2047a2a`, the current pushed release
+The packet uses the public source commit `6610369`, the current pushed release
 contract, and the three optional OSF credential variables as secrets.
 
 ## Target matrix

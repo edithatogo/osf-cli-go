@@ -19,4 +19,6 @@ remain external gates. No unverified directory listing is called published.
 
 ## Result
 
-No blocking repository-local findings remain.
+The review found and corrected a Docker packet provenance mismatch: the
+submission now points at public commit `6610369`, which contains the packet and
+the validated release contract. No blocking repository-local findings remain.

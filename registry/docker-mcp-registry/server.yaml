@@ -16,7 +16,7 @@ about:
     components, files, contributors, and research metadata.
 source:
   project: https://github.com/edithatogo/osf-cli-go
-  commit: 2047a2a
+  commit: 6610369
 config:
   description: Configure optional Open Science Framework credentials.
   secrets:
