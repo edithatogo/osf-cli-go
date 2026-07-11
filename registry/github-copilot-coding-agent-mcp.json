@@ -9,7 +9,7 @@
         "-i",
         "-e",
         "OSF_TOKEN=${COPILOT_MCP_OSF_TOKEN}",
-        "ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.2.0"
+        "ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.3.0"
       ],
       "tools": [
         "*"

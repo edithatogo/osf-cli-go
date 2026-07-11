@@ -13,7 +13,7 @@ Validate and pack with the official MCPB CLI when available:
 ```powershell
 npm install -g @anthropic-ai/mcpb
 mcpb validate dist\mcpb\osf-cli-go
-mcpb pack dist\mcpb\osf-cli-go dist\mcpb\osf-cli-go-0.2.0-windows-amd64.mcpb
+mcpb pack dist\mcpb\osf-cli-go dist\mcpb\osf-cli-go-0.3.0-windows-amd64.mcpb
 ```
 
 The bundle contains:

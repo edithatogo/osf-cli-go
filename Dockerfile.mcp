@@ -1,16 +1,23 @@
 FROM golang:1.26-alpine AS build
 
+ARG VERSION=0.0.0-dev
+
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/osf-mcp ./cmd/osf-mcp
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /out/osf-mcp ./cmd/osf-mcp
 
 FROM gcr.io/distroless/static-debian12:nonroot
+
+ARG VERSION=0.0.0-dev
+ARG REVISION=unknown
 
 LABEL org.opencontainers.image.source="https://github.com/edithatogo/osf-cli-go"
 LABEL org.opencontainers.image.description="Read-only Open Science Framework MCP server"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
+LABEL org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.revision="${REVISION}"
 LABEL io.modelcontextprotocol.server.name="io.github.edithatogo/osf-cli-go"
 
 COPY --from=build /out/osf-mcp /osf-mcp

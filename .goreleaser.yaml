@@ -46,7 +46,7 @@ checksum:
   name_template: checksums.txt
 
 release:
-  disable: true
+  disable: false
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"

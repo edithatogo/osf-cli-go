@@ -5,8 +5,8 @@
     "shortDescription": "Read-only MCP tools for authenticated Open Science Framework projects and files.",
     "repositoryUrl": "https://github.com/edithatogo/osf-cli-go",
     "officialRegistryUrl": "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.edithatogo%2Fosf-cli-go",
-    "version": "0.2.0",
-    "package": "ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.2.0",
+    "version": "0.3.0",
+    "package": "ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.3.0",
     "transport": "stdio"
   },
   "classification": {
@@ -67,7 +67,7 @@
     "smithery": {
       "mode": "cli_or_api",
       "status": "published",
-      "submitCommand": "smithery mcp publish ./dist/mcpb/osf-cli-go-0.2.0-<runtime>.mcpb -n edithatogo/osf-cli-go",
+      "submitCommand": "smithery mcp publish ./dist/mcpb/osf-cli-go-0.3.0-<runtime>.mcpb -n edithatogo/osf-cli-go",
       "evidence": {
         "deploymentId": "3f36fe28-b4e2-456d-8cc3-051e351a6767",
         "qualifiedName": "edithatogo/osf-cli-go",

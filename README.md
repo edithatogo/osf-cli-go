@@ -9,6 +9,7 @@ A Go command-line client for the Open Science Framework (OSF).
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/edithatogo/osf-cli-go)](go.mod)
 [![Release](https://img.shields.io/github/v/release/edithatogo/osf-cli-go?include_prereleases)](https://github.com/edithatogo/osf-cli-go/releases)
+[![OSF CLI Go MCP server](https://glama.ai/mcp/servers/edithatogo/osf-cli-go/badges/score.svg)](https://glama.ai/mcp/servers/edithatogo/osf-cli-go)
 
 ## Features
 
@@ -83,6 +84,19 @@ osf export abc12 --json
 Local development configs are included for GitHub Copilot, VS Code, Claude,
 Codex, Gemini CLI, and Qwen Code. Public registry metadata is in `server.json`
 and `registry/`.
+
+### Related MCP Servers
+
+Other maintained servers in the same Glama portfolio:
+
+- [FYI MCP](https://glama.ai/mcp/servers/edithatogo/fyi-cli) for freedom-of-information request workflows.
+- [Healthpoint MCP](https://glama.ai/mcp/servers/edithatogo/healthpoint-rs) for licensed health-service directory data.
+- [SourceRight](https://glama.ai/mcp/servers/edithatogo/sourceright) for reference and citation verification.
+
+Related OSF ecosystem servers:
+
+- [OSF connector by pipeworx-io](https://glama.ai/mcp/connectors/io.github.pipeworx-io/osf) for hosted OSF connectivity.
+- [Paperclip](https://github.com/matsjfunke/paperclip) for multi-provider scholarly and OSF Preprints search.
 
 ## Output Modes
 

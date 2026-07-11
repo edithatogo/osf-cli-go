@@ -79,6 +79,11 @@ type mcpbManifest struct {
 	} `json:"user_config"`
 }
 
+type glamaMetadata struct {
+	Schema      string   `json:"$schema"`
+	Maintainers []string `json:"maintainers"`
+}
+
 func main() {
 	if err := run(); err != nil {
 		fail("%v", err)
@@ -99,6 +104,17 @@ func run() error {
 	var manifest mcpbManifest
 	if err := readJSON("packaging/mcpb/manifest.json", &manifest); err != nil {
 		return err
+	}
+
+	var glama glamaMetadata
+	if err := readJSON("glama.json", &glama); err != nil {
+		return err
+	}
+	if err := checkEqual("glama.$schema", glama.Schema, "https://glama.ai/mcp/schemas/server.json"); err != nil {
+		return err
+	}
+	if len(glama.Maintainers) != 1 || glama.Maintainers[0] != "edithatogo" {
+		return fmt.Errorf("glama maintainers = %v, want [edithatogo]", glama.Maintainers)
 	}
 
 	if err := checkEqual("serverName", submissions.Canonical.ServerName, server.Name); err != nil {
