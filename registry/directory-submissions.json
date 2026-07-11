@@ -52,6 +52,30 @@
       "submitUrl": "https://mcp.directory/submit",
       "evidence": "conductor/archive/mcp-directory-adoption_20260706/submission-evidence.md"
     },
+    "dockerMcpCatalog": {
+      "mode": "github_pull_request",
+      "status": "prepared_for_submission",
+      "submitUrl": "https://github.com/docker/mcp-registry",
+      "evidence": "registry/docker-mcp-registry/server.yaml"
+    },
+    "mcpSo": {
+      "mode": "github_issue",
+      "status": "prepared_for_submission",
+      "submitUrl": "https://mcp.so/?tab=official",
+      "evidence": "docs/mcp-catalog-discoverability-evidence.md"
+    },
+    "awesomeMcpServers": {
+      "mode": "website_form",
+      "status": "prepared_for_submission",
+      "submitUrl": "https://mcpservers.org/submit",
+      "evidence": "docs/mcp-catalog-discoverability-evidence.md"
+    },
+    "mcpize": {
+      "mode": "github_app_or_account",
+      "status": "account_required",
+      "submitUrl": "https://docs.mcpize.com/",
+      "evidence": "docs/mcp-catalog-discoverability-evidence.md"
+    },
     "glama": {
       "mode": "auto_index_or_web_oauth_claim",
       "status": "published",

@@ -1,0 +1,31 @@
+name: osf-cli-go
+type: server
+meta:
+  category: research
+  tags:
+    - osf
+    - open-science
+    - research
+    - data
+    - files
+    - docker-gateway
+about:
+  title: OSF CLI Go
+  description: |
+    Read-only MCP tools for authenticated Open Science Framework projects,
+    components, files, contributors, and research metadata.
+source:
+  project: https://github.com/edithatogo/osf-cli-go
+  commit: 2047a2a
+config:
+  description: Configure optional Open Science Framework credentials.
+  secrets:
+    - name: osf-cli-go.osf_token
+      env: OSF_TOKEN
+      example: YOUR_OSF_TOKEN
+    - name: osf-cli-go.osf_username
+      env: OSF_USERNAME
+      example: YOUR_OSF_USERNAME
+    - name: osf-cli-go.osf_password
+      env: OSF_PASSWORD
+      example: YOUR_OSF_PASSWORD

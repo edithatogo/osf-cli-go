@@ -75,6 +75,6 @@ The per-track `plan.md` files are the source of truth for completion state.
 
 - [x] [coding-agent-ecosystem-publication](tracks/coding-agent-ecosystem-publication_20260711/spec.md) — Package and publish OSF integrations for additional coding agents; issue #25.
 
-- [ ] [mcp-catalog-discoverability-sweep](tracks/mcp-catalog-discoverability-sweep_20260711/spec.md) — Complete a high-value MCP registry and catalog sweep; issue #26.
+- [x] [mcp-catalog-discoverability-sweep](tracks/mcp-catalog-discoverability-sweep_20260711/spec.md) — Complete a high-value MCP registry and catalog sweep; issue #26.
 
 - [ ] [software-preprint-readiness](tracks/software-preprint-readiness_20260711/spec.md) — Prepare and assess an OSF CLI Go software preprint; issue #27.

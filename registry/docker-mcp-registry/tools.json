@@ -1,0 +1,26 @@
+[
+  {
+    "name": "osf_whoami",
+    "description": "Identify the authenticated OSF account."
+  },
+  {
+    "name": "osf_projects_list",
+    "description": "List accessible OSF projects."
+  },
+  {
+    "name": "osf_project_get",
+    "description": "Inspect one OSF project."
+  },
+  {
+    "name": "osf_components_list",
+    "description": "List components for an OSF project."
+  },
+  {
+    "name": "osf_files_list",
+    "description": "List files for an OSF project or component."
+  },
+  {
+    "name": "osf_contributors_list",
+    "description": "List contributors for an OSF project."
+  }
+]
