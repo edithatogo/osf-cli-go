@@ -67,7 +67,6 @@ The per-track `plan.md` files are the source of truth for completion state.
 
 - [ ] [metacheck-osf-validation](tracks/metacheck-osf-validation_20260711/spec.md) — Add OSF research-output and preregistration validation workflows; source scienceverse/metacheck; issue #20.
 
-- [~] [v1-launch-readiness](tracks/v1-launch-readiness_20260711/spec.md) — Define and satisfy the OSF CLI Go 1.0 launch contract; issue #21.
 
 - [ ] [github-copilot-plugin-publication](tracks/github-copilot-plugin-publication_20260711/spec.md) — Publish the OSF plugin to GitHub Copilot marketplaces; issue #22.
 
