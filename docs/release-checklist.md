@@ -37,6 +37,10 @@ Use this checklist before tagging a release or publishing binaries.
 - Confirm the release docs do not describe planned commands as already implemented.
 - Confirm `OSF_TOKEN` remains the preferred auth path and that `OSF_USERNAME`/`OSF_PASSWORD` fallback limitations, SSO/2FA caveats, and guided token bootstrap behavior are documented.
 - Confirm live OSF tests remain opt-in and are not implied by default release validation.
+- Review `docs/compatibility-policy.md`, `docs/support-policy.md`, and
+  `docs/live-validation-matrix.md`.
+- Attach `docs/release-candidate-evidence.md` with every release-candidate
+  decision and record any explicit waivers.
 
 ## Publishing
 

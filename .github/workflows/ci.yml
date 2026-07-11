@@ -34,6 +34,8 @@ jobs:
         run: go run ./tools/checkreviews
       - name: Registry submission contract
         run: go run ./tools/checkregistries
+      - name: Release readiness contract
+        run: go run ./tools/checkreleasecontract
       - name: Coverage
         run: |
           go test ./... -coverprofile=coverage.out

@@ -2,7 +2,9 @@
 
 ## Supported Versions
 
-The project is pre-release. Security fixes are handled on the active default branch.
+The active default branch and the latest stable release are supported. Until
+`v1.0.0` is published, security fixes are handled on the active default branch
+and the latest `0.x` release where a backport is practical.
 
 ## Reporting Vulnerabilities
 
