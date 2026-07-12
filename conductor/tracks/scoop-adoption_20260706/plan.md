@@ -2,27 +2,27 @@
 
 ## Phase 1: Scoop Requirements Audit
 
-- [ ] Task: Determine Scoop route: project bucket, Extras, or blocker.
-    - [ ] Audit release artifact URLs, hashes, binary layout, and autoupdate needs.
-    - [ ] Record validation tooling and submission target.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Scoop Requirements Audit' (Protocol in workflow.md)
+- [x] Task: Determine Scoop route: project bucket, Extras, or blocker.
+    - [x] Audit release artifact URLs, hashes, binary layout, and autoupdate needs.
+    - [x] Record validation tooling and submission target.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Scoop Requirements Audit' (Protocol in workflow.md)
 
 ## Phase 2: Manifest Implementation
 
-- [ ] Task: Add Scoop manifest or submission packet.
-    - [ ] Validate manifest JSON, hash fields, bin entries, and autoupdate.
-    - [ ] Update Windows install docs.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Manifest Implementation' (Protocol in workflow.md)
+- [x] Task: Add Scoop manifest or submission packet.
+    - [x] Validate manifest JSON, hash fields, bin entries, and autoupdate.
+    - [x] Update Windows install docs.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Manifest Implementation' (Protocol in workflow.md)
 
 ## Phase 3: Submission
 
-- [ ] Task: Submit PR or publish bucket route.
-    - [ ] Prefer GitHub CLI; use Chrome for login if necessary.
-    - [ ] Store PR URL, bucket URL, validation output, or blocker.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Submission' (Protocol in workflow.md)
+- [x] Task: Submit PR or publish bucket route.
+    - [x] Use GitHub CLI; browser was not necessary.
+    - [x] Store bucket URL, validation output, and the Main-bucket blocker.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Submission' (Protocol in workflow.md)
 
 ## Phase 4: Final Review
 
-- [ ] Task: Run validation gates and conductor-review.
-- [ ] Task: Write final phase-review evidence.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Final Review' (Protocol in workflow.md)
+- [x] Task: Run validation gates and conductor-review.
+- [x] Task: Write final phase-review evidence.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Final Review' (Protocol in workflow.md)

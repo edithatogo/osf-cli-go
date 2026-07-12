@@ -2,24 +2,24 @@
 
 ## Phase 1: WinGet Requirements Audit
 
-- [ ] Task: Verify current WinGet manifest requirements and package identifier.
-    - [ ] Audit release artifacts, checksums, license, tags, and installer type.
-    - [ ] Record blockers for missing releases or signing.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'WinGet Requirements Audit' (Protocol in workflow.md)
+- [x] Task: Verify current WinGet manifest requirements and package identifier.
+    - [x] Audit release artifacts, checksums, license, tags, and installer type.
+    - [x] Record blockers for missing releases or signing.
+- [x] Task: Conductor - Automated Review and Checkpoint 'WinGet Requirements Audit' (Protocol in workflow.md)
 
 ## Phase 2: Manifest Preparation
 
-- [ ] Task: Generate WinGet manifests or submission packet.
-    - [ ] Add schema/tool validation where available.
-    - [ ] Update Windows install docs.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Manifest Preparation' (Protocol in workflow.md)
+- [x] Task: Generate WinGet manifests or submission packet.
+    - [x] Add YAML and release hash validation; Windows `winget validate` remains an upstream gate.
+    - [x] Update Windows install docs.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Manifest Preparation' (Protocol in workflow.md)
 
 ## Phase 3: Submission
 
-- [ ] Task: Submit PR to WinGet package repository or record blocker.
-    - [ ] Prefer GitHub CLI; use Chrome for login if necessary.
-    - [ ] Store PR URL, validation result, review queue, or blocker.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Submission' (Protocol in workflow.md)
+- [~] Task: Submit PR to WinGet package repository or record blocker.
+    - [x] Use GitHub CLI; browser was not necessary.
+    - [x] PR opened: https://github.com/microsoft/winget-pkgs/pull/401414
+- [~] Task: Conductor - Automated Review and Checkpoint 'Submission' (Protocol in workflow.md)
 
 ## Phase 4: Final Review
 

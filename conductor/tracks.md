@@ -39,7 +39,7 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [ ] [codex-marketplace-adoption](tracks/codex-marketplace-adoption_20260706/spec.md) — Submit and optimize the OSF Codex plugin for Codex Marketplace adoption.
 - [x] [homebrew-tap-adoption](tracks/homebrew-tap-adoption_20260706/spec.md) — Prepare and publish Homebrew tap distribution for the OSF CLI and MCP binaries.
 - [ ] [winget-adoption](tracks/winget-adoption_20260706/spec.md) — Prepare and submit WinGet distribution for OSF CLI Go.
-- [ ] [scoop-adoption](tracks/scoop-adoption_20260706/spec.md) — Prepare and submit Scoop distribution for OSF CLI Go.
+- [x] [scoop-adoption](tracks/scoop-adoption_20260706/spec.md) — Publish Scoop distribution for OSF CLI Go through the project-owned bucket.
 
 - [ ] [sourceshift-osf-mcp-parity](tracks/sourceshift-osf-mcp-parity_20260711/spec.md) — Benchmark SourceShift OSF MCP and close MCP capability gaps; source SourceShift/osf-mcp-server; issue #8.
 
