@@ -22,15 +22,22 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/edithatogo/osf-cli-go-osf-mcp
+          tags: |
+            type=semver,pattern={{version}}
+            type=ref,event=branch
       - name: Build and publish image with SBOM and provenance
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.mcp
           push: true
-          tags: ghcr.io/edithatogo/osf-cli-go-osf-mcp:${{ github.ref_name }}
+          tags: ${{ steps.meta.outputs.tags }}
           build-args: |
-            VERSION=${{ github.ref_name }}
+            VERSION=${{ steps.meta.outputs.version }}
             REVISION=${{ github.sha }}
           provenance: mode=max
           sbom: true
@@ -38,5 +45,5 @@ jobs:
         uses: sigstore/cosign-installer@v4.1.2
       - name: Sign published image keylessly
         env:
-          IMAGE: ghcr.io/edithatogo/osf-cli-go-osf-mcp:${{ github.ref_name }}
+          IMAGE: ${{ steps.meta.outputs.tags }}
         run: cosign sign --yes "$IMAGE"

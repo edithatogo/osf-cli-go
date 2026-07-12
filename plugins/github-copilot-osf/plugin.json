@@ -1,6 +1,6 @@
 {
   "name": "osf-cli-go",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Open Science Framework tools for GitHub Copilot CLI and coding agent.",
   "author": {
     "name": "edithatogo"

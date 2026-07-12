@@ -4,7 +4,7 @@ authors:
   - family-names: "Atogo"
     given-names: "Edith"
 title: "osf-cli-go: A command-line client for the Open Science Framework"
-version: 0.3.1
+version: 0.3.2
 date-released: 2026-07-11
 url: "https://github.com/edithatogo/osf-cli-go"
 license: Apache-2.0
