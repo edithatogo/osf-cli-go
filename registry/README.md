@@ -14,8 +14,8 @@ Required local files:
 Publish flow:
 
 ```powershell
-docker build -f Dockerfile.mcp -t ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.3.1 .
-docker push ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.3.1
+docker build -f Dockerfile.mcp -t ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.3.2 .
+docker push ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.3.2
 mcp-publisher login github
 mcp-publisher publish
 ```
@@ -23,8 +23,8 @@ mcp-publisher publish
 CI publish flow:
 
 ```powershell
-git tag v0.3.1
-git push origin v0.3.1
+git tag v0.3.2
+git push origin v0.3.2
 ```
 
 The `.github/workflows/mcp-registry.yml` workflow builds and pushes the GHCR
@@ -33,10 +33,10 @@ GitHub OIDC.
 
 Published official MCP Registry entry:
 - `io.github.edithatogo/osf-cli-go`
-- version `0.3.1`
-- package `ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.3.1`
+- version `0.3.2`
+- package `ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.3.2`
 - workflow run `https://github.com/edithatogo/osf-cli-go/actions/runs/26027015142`
-- Go module tag `v0.3.1`
+- Go module tag `v0.3.2`
 
 The image label `io.modelcontextprotocol.server.name` must match
 `server.json` name: `io.github.edithatogo/osf-cli-go`.

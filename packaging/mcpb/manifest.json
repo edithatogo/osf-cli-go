@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "osf-cli-go",
   "display_name": "OSF CLI Go",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Read-only MCP tools for authenticated Open Science Framework projects and files.",
   "long_description": "OSF CLI Go exposes read-only Model Context Protocol tools for inspecting an authenticated Open Science Framework account, projects, components, OSF Storage files, and contributors.",
   "author": {

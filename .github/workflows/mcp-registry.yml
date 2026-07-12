@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - "v0.3.1"
+      - "v*"
 
 permissions:
   contents: read
@@ -27,19 +27,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/edithatogo/osf-cli-go-osf-mcp
+          tags: type=semver,pattern={{version}}
+
       - name: Build and push MCP image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.mcp
           push: true
-          tags: ghcr.io/edithatogo/osf-cli-go-osf-mcp:0.3.1
+          tags: ${{ steps.meta.outputs.tags }}
           build-args: |
-            VERSION=0.3.1
+            VERSION=${{ steps.meta.outputs.version }}
             REVISION=${{ github.sha }}
           labels: |
             io.modelcontextprotocol.server.name=io.github.edithatogo/osf-cli-go
-            org.opencontainers.image.version=0.3.1
+            org.opencontainers.image.version=${{ steps.meta.outputs.version }}
             org.opencontainers.image.revision=${{ github.sha }}
 
       - name: Install mcp-publisher
