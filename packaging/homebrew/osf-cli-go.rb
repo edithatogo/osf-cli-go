@@ -25,7 +25,7 @@ class OsfCliGo < Formula
   end
 
   def install
-    bin.install Dir["osf-*"] => "osf"
+    bin.install Dir["osf-*"].first => "osf"
   end
 
   test do
