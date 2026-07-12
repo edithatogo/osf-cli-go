@@ -33,9 +33,9 @@ The submit-ready package definitions are kept under `packaging/`:
 - Scoop manifest: `packaging/scoop/osf-cli-go.json`
 - WinGet manifests: `packaging/winget/`
 
-The Homebrew formula will be available through the project tap after the tap
-submission is accepted. Scoop and WinGet submissions use the Windows release
-assets and their recorded SHA-256 hashes.
+The Homebrew formula is available through the project tap. Scoop is available
+through the project-owned bucket. The WinGet submission is under review; all
+Windows routes use the v0.3.2 release assets and their recorded SHA-256 hashes.
 
 ## Cross-Platform Builds
 
