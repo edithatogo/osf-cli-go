@@ -2,6 +2,11 @@ name: Release Security Metadata
 
 on:
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Image tag to sign when manually rerunning security metadata
+        required: false
+        type: string
   push:
     tags:
       - "v*"
@@ -45,5 +50,9 @@ jobs:
         uses: sigstore/cosign-installer@v4.1.2
       - name: Sign published image keylessly
         env:
-          IMAGE: ${{ steps.meta.outputs.tags }}
-        run: cosign sign --yes "$IMAGE"
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          DEFAULT_IMAGE_TAG: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          image_tag="${IMAGE_TAG:-$DEFAULT_IMAGE_TAG}"
+          cosign sign --yes "ghcr.io/edithatogo/osf-cli-go-osf-mcp:${image_tag}"
