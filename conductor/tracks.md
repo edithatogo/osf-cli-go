@@ -37,7 +37,7 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [ ] [cursor-directory-adoption](tracks/cursor-directory-adoption_20260706/spec.md) — Submit and optimize Cursor Directory adoption for the OSF MCP server.
 - [ ] [claude-official-plugin-directory-adoption](tracks/claude-official-plugin-directory-adoption_20260706/spec.md) — Prepare and submit the OSF Claude plugin to the official Claude plugin directory.
 - [ ] [codex-marketplace-adoption](tracks/codex-marketplace-adoption_20260706/spec.md) — Submit and optimize the OSF Codex plugin for Codex Marketplace adoption.
-- [ ] [homebrew-tap-adoption](tracks/homebrew-tap-adoption_20260706/spec.md) — Prepare and submit Homebrew tap distribution for the OSF CLI and MCP binaries.
+- [x] [homebrew-tap-adoption](tracks/homebrew-tap-adoption_20260706/spec.md) — Prepare and publish Homebrew tap distribution for the OSF CLI and MCP binaries.
 - [ ] [winget-adoption](tracks/winget-adoption_20260706/spec.md) — Prepare and submit WinGet distribution for OSF CLI Go.
 - [ ] [scoop-adoption](tracks/scoop-adoption_20260706/spec.md) — Prepare and submit Scoop distribution for OSF CLI Go.
 
