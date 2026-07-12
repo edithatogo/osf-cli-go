@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
+	"github.com/edithatogo/osf-cli-go/internal/buildinfo"
 	"github.com/spf13/cobra"
 )
 
@@ -109,6 +110,7 @@ func newRootCommandWithClient(stdout, stderr io.Writer, client readonlyClient) *
 }
 
 func versionString() string {
+	effectiveVersion := buildinfo.Version(version)
 	metadata := make([]string, 0, 2)
 	if buildCommit != "" {
 		metadata = append(metadata, "commit "+buildCommit)
@@ -118,10 +120,10 @@ func versionString() string {
 	}
 
 	if len(metadata) == 0 {
-		return version
+		return effectiveVersion
 	}
 
-	return fmt.Sprintf("%s (%s)", version, strings.Join(metadata, ", "))
+	return fmt.Sprintf("%s (%s)", effectiveVersion, strings.Join(metadata, ", "))
 }
 
 func resolveOutputMode(cmd *cobra.Command) (string, error) {
