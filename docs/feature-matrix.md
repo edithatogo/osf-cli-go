@@ -37,6 +37,7 @@ This generated matrix is backed by `docs/feature-matrix.json`. Status meanings: 
 | GitHub Copilot | plugin; skill; repository MCP | n/a | repository config | marketplace and repository requirements | prepared | Verify provider-side approval | `conductor/tracks/registry-submission-scorecard_20260713/spec.md` | #53 |
 | Cursor, Cline, LobeHub | configs; plugin artifacts; MCPB | n/a | stdio and remote options | clean-client install validation and receipts | track | Execute provider-specific submissions | `conductor/tracks/registry-submission-scorecard_20260713/spec.md` | #53 |
 | Gemini and Qwen | extension manifests and packages | n/a | embedded MCP config | version alignment and gallery rules | prepared | Verify indexing evidence | `conductor/tracks/registry-submission-scorecard_20260713/spec.md` | #53 |
+| DataLad interoperability | export; files download --tree | OSF project and storage primitives | read-only project/file tools | no implicit Git, DataLad, or git-annex state; safe local writes | track | Define optional git-annex and Git remote interoperability contract | `conductor/tracks/datalad-osf-parity_20260711/spec.md` | #69 |
 | OSF ecosystem parity | 13 source-tool tracks | competitor comparison | dated source evidence | each gap implemented, deferred, or rejected | track | Complete parity tracks and close SourceShift | `conductor/tracks/feature-matrix_20260713/spec.md` | #51 |
 
 ## Matrix rules

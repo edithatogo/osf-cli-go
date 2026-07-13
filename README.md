@@ -87,6 +87,12 @@ a non-empty query and accepts a limit from 1 to 100, while
 `osf_preprints_list` accepts an optional provider and the same bounded limit.
 Both return structured JSON through the MCP server and never perform writes.
 
+For DataLad workflows, OSF CLI Go provides the general-purpose OSF API and
+safe file primitives used around a dataset, including `osf export` and
+`osf files download --tree`. It does not install or configure DataLad, Git
+remotes, or git-annex special remotes; those integrations remain a separately
+scoped interoperability boundary.
+
 Local development configs are included for GitHub Copilot, VS Code, Claude,
 Codex, Gemini CLI, and Qwen Code. Public registry metadata is in `server.json`
 and `registry/`.

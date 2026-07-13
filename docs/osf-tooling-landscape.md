@@ -12,7 +12,7 @@ and repositories that merely mention the OSF API.
 | [osfclient/osfclient](https://github.com/osfclient/osfclient) | Mature Python library and CLI for OSF Storage | [#9](https://github.com/edithatogo/osf-cli-go/issues/9) |
 | [ropensci/osfr](https://github.com/ropensci/osfr) | Broad R entity coverage and explicit conflict behavior | [#10](https://github.com/edithatogo/osf-cli-go/issues/10) |
 | [psychopy/pyosf](https://github.com/psychopy/pyosf) | Project synchronization workflows | [#11](https://github.com/edithatogo/osf-cli-go/issues/11) |
-| [datalad/datalad-osf](https://github.com/datalad/datalad-osf) | DataLad datasets, remotes, and annex-oriented workflows | [#12](https://github.com/edithatogo/osf-cli-go/issues/12) |
+| [datalad/datalad-osf](https://github.com/datalad/datalad-osf) | DataLad datasets, Git remotes, and git-annex-oriented workflows | [#12](https://github.com/edithatogo/osf-cli-go/issues/12) closed; dated comparison evidence in the archived DataLad track |
 | [CenterForOpenScience/osf-sync](https://github.com/CenterForOpenScience/osf-sync) | Desktop synchronization semantics | [#13](https://github.com/edithatogo/osf-cli-go/issues/13) |
 | [J535D165/datahugger](https://github.com/J535D165/datahugger) | DOI-oriented cross-repository retrieval | [#14](https://github.com/edithatogo/osf-cli-go/issues/14) |
 | [mims-harvard/ToolUniverse](https://github.com/mims-harvard/ToolUniverse) | AI-scientist OSF Preprints tools | [#15](https://github.com/edithatogo/osf-cli-go/issues/15) |
