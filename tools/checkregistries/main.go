@@ -77,6 +77,27 @@ type glamaMetadata struct {
 	Maintainers []string `json:"maintainers"`
 }
 
+type submissionScorecard struct {
+	SchemaVersion int               `json:"schemaVersion"`
+	ReviewedDate  string            `json:"reviewedDate"`
+	Version       string            `json:"version"`
+	Targets       []scorecardTarget `json:"targets"`
+}
+
+type scorecardTarget struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	State       string   `json:"state"`
+	Score       int      `json:"score"`
+	ScoreTarget int      `json:"scoreTarget"`
+	Evidence    []string `json:"evidence"`
+	Receipt     string   `json:"receipt"`
+	PublicURL   string   `json:"publicUrl"`
+	NextAction  string   `json:"nextAction"`
+	Blocker     string   `json:"blocker"`
+	Waivers     []string `json:"waivers"`
+}
+
 func main() {
 	if err := run(); err != nil {
 		fail("%v", err)
@@ -187,6 +208,66 @@ func run() error {
 	}
 	if err := checkRegistryReadme(server, pkg, submissions); err != nil {
 		return err
+	}
+	var scorecard submissionScorecard
+	if err := readJSON("registry/submission-scorecard.json", &scorecard); err != nil {
+		return err
+	}
+	if err := checkSubmissionScorecard(scorecard, server.Version); err != nil {
+		return err
+	}
+	return nil
+}
+
+func checkSubmissionScorecard(scorecard submissionScorecard, version string) error {
+	if scorecard.SchemaVersion != 1 {
+		return fmt.Errorf("submission scorecard schemaVersion = %d, want 1", scorecard.SchemaVersion)
+	}
+	if scorecard.ReviewedDate == "" {
+		return fmt.Errorf("submission scorecard reviewedDate must not be empty")
+	}
+	if scorecard.Version != version {
+		return fmt.Errorf("submission scorecard version = %q, want %q", scorecard.Version, version)
+	}
+	want := []string{"openai-codex-cowork", "anthropic-claude-cowork", "github-copilot", "cursor", "cline", "lobehub", "gemini-cli", "qwen-code", "official-mcp-registry", "smithery", "glama", "mcp-directory", "docker-mcp-catalog", "mcp-so", "mcpservers-org", "mcpize", "pulse-mcp", "future-targets"}
+	seen := map[string]bool{}
+	for _, target := range scorecard.Targets {
+		if !contains(want, target.ID) {
+			return fmt.Errorf("submission scorecard has unexpected target %q", target.ID)
+		}
+		if seen[target.ID] {
+			return fmt.Errorf("submission scorecard duplicates target %q", target.ID)
+		}
+		seen[target.ID] = true
+		if target.Name == "" || target.NextAction == "" || len(target.Evidence) == 0 {
+			return fmt.Errorf("submission scorecard target %q needs name, evidence, and nextAction", target.ID)
+		}
+		if target.Score < 0 || target.Score > 100 || target.ScoreTarget < 0 || target.ScoreTarget > 100 {
+			return fmt.Errorf("submission scorecard target %q has invalid score %d/%d", target.ID, target.Score, target.ScoreTarget)
+		}
+		switch target.State {
+		case "prepared", "submitted", "pending_review", "published", "approved", "rejected", "blocked":
+		default:
+			return fmt.Errorf("submission scorecard target %q has invalid state %q", target.ID, target.State)
+		}
+		if target.State == "published" || target.State == "approved" {
+			if target.Receipt == "" || target.PublicURL == "" {
+				return fmt.Errorf("submission scorecard target %q claims %q without receipt and publicUrl", target.ID, target.State)
+			}
+		} else if target.Blocker == "" {
+			return fmt.Errorf("submission scorecard target %q needs blocker unless published or approved", target.ID)
+		}
+		if target.ScoreTarget == 100 && target.Score < 100 && len(target.Waivers) == 0 {
+			return fmt.Errorf("submission scorecard target %q is below target without an explicit waiver", target.ID)
+		}
+	}
+	for _, id := range want {
+		if !seen[id] {
+			return fmt.Errorf("submission scorecard missing target %q", id)
+		}
+	}
+	if len(scorecard.Targets) != len(want) {
+		return fmt.Errorf("submission scorecard target count = %d, want %d", len(scorecard.Targets), len(want))
 	}
 	return nil
 }

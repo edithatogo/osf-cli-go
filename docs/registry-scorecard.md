@@ -1,6 +1,10 @@
 # Registry and coding-agent scorecard
 
-Last reviewed: 2026-07-13
+Last reviewed: 2026-07-14
+
+The machine-readable source of truth for the current review is
+[`registry/submission-scorecard.json`](../registry/submission-scorecard.json),
+validated by `go run ./tools/checkregistries`.
 
 This is an execution scorecard, not a claim that any provider has awarded a
 score. The target is 100% of applicable requirements; `N/A` must have a written
