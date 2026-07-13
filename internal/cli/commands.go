@@ -541,6 +541,7 @@ func newPreprintsSearchCommand(client readonlyClient) *cobra.Command {
 
 func newSearchCommand(client readonlyClient) *cobra.Command {
 	var limit int
+	var bibtex bool
 	cmd := &cobra.Command{
 		Use:   "search <query>",
 		Short: "Search OSF projects and components",
@@ -550,10 +551,15 @@ func newSearchCommand(client readonlyClient) *cobra.Command {
 			if err != nil {
 				return err
 			}
-
 			results, err := client.SearchOSF(cmd.Context(), args[0], limit)
 			if err != nil {
 				return err
+			}
+			if bibtex {
+				if outputMode == outputModeJSON {
+					return fmt.Errorf("cannot combine --bibtex with JSON output")
+				}
+				return writeSearchBibTeX(cmd.OutOrStdout(), results)
 			}
 
 			rows := make([]projectRecord, 0, len(results))
@@ -580,7 +586,46 @@ func newSearchCommand(client readonlyClient) *cobra.Command {
 		},
 	}
 	cmd.Flags().IntVar(&limit, "limit", 20, "maximum records to return; use 0 for all pages")
+	cmd.Flags().BoolVar(&bibtex, "bibtex", false, "emit search results as BibTeX")
 	return cmd
+}
+
+func writeSearchBibTeX(w io.Writer, results []osfapi.SearchResult) error {
+	for _, result := range results {
+		if result.ID == "" {
+			continue
+		}
+		if _, err := fmt.Fprintf(w, "@misc{%s,\n", bibTeXValue(result.ID)); err != nil {
+			return err
+		}
+		fields := []struct {
+			name  string
+			value string
+		}{
+			{"title", result.Title},
+			{"abstract", result.Description},
+			{"keywords", strings.Join(result.Keywords, ", ")},
+			{"year", result.Year},
+			{"url", result.URL},
+		}
+		for _, field := range fields {
+			if field.value == "" {
+				continue
+			}
+			if _, err := fmt.Fprintf(w, "  %s = {%s},\n", field.name, bibTeXValue(field.value)); err != nil {
+				return err
+			}
+		}
+		if _, err := io.WriteString(w, "}\n\n"); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func bibTeXValue(value string) string {
+	value = strings.NewReplacer("\\", "\\\\", "{", "\\{", "}", "\\}", "\n", " ").Replace(value)
+	return value
 }
 
 func newRegistrationsCommand(client readonlyClient) *cobra.Command {

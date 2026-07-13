@@ -566,9 +566,18 @@ func (c *Client) SearchOSF(ctx context.Context, query string, limit ...int) ([]S
 			Description: n.Attributes.Description,
 			Category:    n.Attributes.Category,
 			URL:         n.Links.Self,
+			Keywords:    append([]string(nil), n.Attributes.Tags...),
+			Year:        yearFromDate(n.Attributes.DateCreated),
 		})
 	}
 	return results, nil
+}
+
+func yearFromDate(value string) string {
+	if len(value) >= 4 {
+		return value[:4]
+	}
+	return value
 }
 
 func optionalLimit(values []int) int {

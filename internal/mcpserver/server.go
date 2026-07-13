@@ -136,12 +136,14 @@ type FilesResult struct {
 }
 
 type SearchResult struct {
-	ID          string `json:"id"`
-	Type        string `json:"type,omitempty"`
-	Title       string `json:"title,omitempty"`
-	Description string `json:"description,omitempty"`
-	Category    string `json:"category,omitempty"`
-	URL         string `json:"url,omitempty"`
+	ID          string   `json:"id"`
+	Type        string   `json:"type,omitempty"`
+	Title       string   `json:"title,omitempty"`
+	Description string   `json:"description,omitempty"`
+	Category    string   `json:"category,omitempty"`
+	URL         string   `json:"url,omitempty"`
+	Keywords    []string `json:"keywords,omitempty"`
+	Year        string   `json:"year,omitempty"`
 }
 
 type SearchResults struct {
@@ -294,7 +296,7 @@ func (s *Server) Search(ctx context.Context, _ *mcp.CallToolRequest, in SearchIn
 	}
 	out := make([]SearchResult, 0, len(results))
 	for _, result := range results {
-		out = append(out, SearchResult{ID: result.ID, Type: result.Type, Title: result.Title, Description: result.Description, Category: result.Category, URL: result.URL})
+		out = append(out, SearchResult{ID: result.ID, Type: result.Type, Title: result.Title, Description: result.Description, Category: result.Category, URL: result.URL, Keywords: result.Keywords, Year: result.Year})
 	}
 	return nil, SearchResults{Results: out}, nil
 }

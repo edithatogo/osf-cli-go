@@ -3,6 +3,7 @@ package osfapi
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -1315,7 +1316,7 @@ func TestSearchOSF(t *testing.T) {
 		if got, want := r.URL.Query().Get("q"), "open science"; got != want {
 			t.Fatalf("q = %q, want %q", got, want)
 		}
-		writeFixture(t, w, "node_list_page1.json")
+		_, _ = fmt.Fprint(w, `{"data":[{"id":"item-1","type":"nodes","attributes":{"title":"List Item One","description":"An abstract","category":"component","tags":["open science","review"],"date_created":"2024-03-15T00:00:00Z"},"links":{"self":"https://osf.io/item-1/"}}],"links":{}}`)
 	}))
 	defer srv.Close()
 
@@ -1333,6 +1334,9 @@ func TestSearchOSF(t *testing.T) {
 	}
 	if results[0].Type != "nodes" || results[0].Title != "List Item One" {
 		t.Fatalf("typed result = %+v", results[0])
+	}
+	if results[0].Year != "2024" || len(results[0].Keywords) != 2 {
+		t.Fatalf("bibliographic fields = %+v", results[0])
 	}
 }
 
