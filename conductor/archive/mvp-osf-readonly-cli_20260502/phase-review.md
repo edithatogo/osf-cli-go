@@ -4,7 +4,7 @@
 
 - Track: `mvp-osf-readonly-cli_20260502`
 - Phase: Parent MVP roadmap review
-- Date: 2026-05-02
+- Date: 2026-07-13
 
 ## Implemented Behavior
 
@@ -20,12 +20,20 @@
 - Production markers found: none.
 - Ignored paths verified: scanner tests passed.
 - Self-scan exclusion verified: scanner tests passed.
-- Validation evidence link or location: local validation run on 2026-05-02.
+- Validation evidence link or location: current repository gates run on
+  2026-07-13.
 
 ## Validation Commands
 
-```powershell
-scripts/check.ps1 -AllowRaceSkip
+```text
+go test ./...
+go test -race ./...
+go vet ./...
+go run ./tools/checkstubs
+go run ./tools/checkreviews
+go run ./tools/checkfeaturematrix
+go run ./tools/checkregistries
+go run ./tools/checkreleasecontract
 git diff --check
 ```
 
@@ -50,5 +58,7 @@ git diff --check
 
 - Completion claim: offline-tested.
 - Completion rule: anti-stub and review-evidence scans passed.
-- Residual risks: live OSF behavior and race tests remain CI/live-environment gates. This Windows host lacks `gcc`, so local validation used `-AllowRaceSkip`.
-- Next phase: run GitHub Actions after push and perform opt-in live OSF validation with `OSF_TOKEN`.
+- Residual risks: live OSF behavior remains opt-in and requires `OSF_TOKEN` and
+  a validation project; no credentials were used in this review.
+- Next phase: none for this completed parent MVP track. Continue through the
+  active follow-on tracks and perform opt-in live OSF validation separately.

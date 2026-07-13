@@ -21,13 +21,15 @@ Create a useful first release of `osf` that can authenticate with OSF, inspect a
 - Download implementation for OSF Storage.
 - Offline unit tests using fixture responses.
 
-## Out Of Scope
+## Out Of Scope For The Original MVP
 
 - Project creation.
 - File upload.
 - Metadata mutation.
 - PDF export.
-- Shell completions and release packaging.
+- Project creation, file upload, metadata mutation, and PDF export remained
+  outside the original MVP. Shell completions and release packaging were later
+  delivered by follow-on tracks and are now part of the repository contract.
 
 ## Design Notes
 

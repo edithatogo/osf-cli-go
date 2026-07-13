@@ -5,7 +5,6 @@ The per-track `plan.md` files are the source of truth for completion state.
 
 ---
 
-- [x] [mvp-osf-readonly-cli](tracks/mvp-osf-readonly-cli_20260502/spec.md) — MVP read-only OSF CLI foundation.
 - [x] [cli-contract-routing](tracks/cli-contract-routing_20260502/spec.md) — Cobra command contract, global flags, exit codes, help, and output behavior.
 - [x] [api-client-fixtures](tracks/api-client-fixtures_20260502/spec.md) — OSF API v2 client, JSON:API pagination, typed errors, and fixture contracts.
 - [x] [auth-public-access](tracks/auth-public-access_20260502/spec.md) — Token handling, public unauthenticated behavior, redaction, and `auth whoami`.
