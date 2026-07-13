@@ -19,6 +19,7 @@
 - [Commands](commands.md) lists the current CLI command surface.
 - [Examples](examples.md) provides copyable workflow examples.
 - [Development](development.md) documents local validation and repository hardening expectations.
+- [1.0 launch review](v1-launch-review.md) records dated readiness evidence and explicit waivers.
 
 ## Status
 

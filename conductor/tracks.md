@@ -64,6 +64,6 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [ ] [cline-mcp-marketplace-adoption](tracks/cline-mcp-marketplace-adoption_20260713/spec.md) — Submit OSF MCP server to the official Cline MCP Marketplace; issue #47.
 - [ ] [lobehub-mcp-marketplace-adoption](tracks/lobehub-mcp-marketplace-adoption_20260713/spec.md) — Submit OSF MCP server to LobeHub Marketplace; issue #48.
 - [ ] [additional-mcp-registry-sweep](tracks/additional-mcp-registry-sweep_20260713/spec.md) — Evaluate additional MCP registries and agent marketplaces; issue #49.
-- [ ] [v1-hardening-maturity](tracks/v1-hardening-maturity_20260713/spec.md) — Harden and mature the repository toward a defensible 1.0 launch; issue #52.
+- [x] [v1-hardening-maturity](tracks/v1-hardening-maturity_20260713/spec.md) — Harden and mature the repository toward a defensible 1.0 launch; issue #52.
 - [ ] [registry-submission-scorecard](tracks/registry-submission-scorecard_20260713/spec.md) — Maximize coding-agent and registry submission quality and scores; issue #53.
 - [ ] [mcp-quality-evaluation-harness](tracks/mcp-quality-evaluation-harness_20260713/spec.md) — Build repeatable MCP quality and compatibility evaluation; issue #54.
