@@ -1,0 +1,1 @@
+Track 8 implementation: corrected packaging/winget/Edithatogo.OSFCLI.Go.yaml to canonical WinGet version manifest shape with DefaultLocale: en-US; recorded upstream PR #401414 validation failure and Microsoft CLA/review blocker; all local gates passed.
