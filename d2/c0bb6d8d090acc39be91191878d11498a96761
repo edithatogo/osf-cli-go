@@ -1,0 +1,1 @@
+Review evidence: ToolUniverse parity API/CLI/MCP implementation and registry synchronization passed targeted tests and checkregistries. Blank queries are rejected; search is bounded to 1-100 results; results include OSF publication metadata and source provenance; no credentials or writes are used.
