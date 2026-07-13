@@ -78,3 +78,9 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [x] [mcp-catalog-discoverability-sweep](tracks/mcp-catalog-discoverability-sweep_20260711/spec.md) — Complete a high-value MCP registry and catalog sweep; issue #26.
 
 - [x] [software-preprint-readiness](tracks/software-preprint-readiness_20260711/spec.md) — Prepare and assess an OSF CLI Go software preprint; issue #27.
+
+- [ ] [paperclip-research-retrieval-parity](tracks/paperclip-research-retrieval-parity_20260713/spec.md) — Benchmark Paperclip research retrieval parity; issue #45.
+- [ ] [osf-api-schema-discovery](tracks/osf-api-schema-discovery_20260713/spec.md) — Benchmark OSF API schema discovery and MCP documentation search; issue #46.
+- [ ] [cline-mcp-marketplace-adoption](tracks/cline-mcp-marketplace-adoption_20260713/spec.md) — Submit OSF MCP server to the official Cline MCP Marketplace; issue #47.
+- [ ] [lobehub-mcp-marketplace-adoption](tracks/lobehub-mcp-marketplace-adoption_20260713/spec.md) — Submit OSF MCP server to LobeHub Marketplace; issue #48.
+- [ ] [additional-mcp-registry-sweep](tracks/additional-mcp-registry-sweep_20260713/spec.md) — Evaluate additional MCP registries and agent marketplaces; issue #49.
