@@ -4,13 +4,15 @@
 
 - Track: `cli-contract-routing_20260502`
 - Phase: CLI contract and Cobra routing
-- Date: 2026-05-02
+- Date: 2026-07-13
 
 ## Implemented Behavior
 
 - Cobra root command with `Run(args, stdout, stderr) int` retained as the testable entrypoint.
 - Help, version, unknown command handling, `--output table|json`, and `--json` behavior covered by tests.
-- Planned commands are represented honestly as unavailable in this build, not as completed behavior.
+- The contract is consumed by the current implemented command tree, including
+  projects, components, files, export, search, preprints, registrations,
+  browser opening, identity, and shell completion commands.
 
 ## Anti-Stub Evidence
 
@@ -18,12 +20,21 @@
 - Production markers found: none.
 - Ignored paths verified: `tools/checkstubs` tests cover test files, fixtures, testdata, and scanner self-exclusion.
 - Self-scan exclusion verified: `tools/checkstubs` package tests passed.
-- Validation evidence link or location: local `scripts/check.ps1` run on 2026-05-02.
+- Validation evidence link or location: current repository gates run on
+  2026-07-13.
 
 ## Validation Commands
 
-```powershell
-scripts/check.ps1
+```text
+go test ./...
+go test -race ./...
+go vet ./...
+go run ./tools/checkstubs
+go run ./tools/checkreviews
+go run ./tools/checkfeaturematrix
+go run ./tools/checkregistries
+go run ./tools/checkreleasecontract
+govulncheck ./...
 git diff --check
 ```
 
@@ -38,5 +49,7 @@ git diff --check
 
 - Completion claim: offline-tested.
 - Completion rule: anti-stub scan passed.
-- Residual risks: live shell completion behavior is not part of this phase.
-- Next phase: read-only commands can consume the CLI contract.
+- Residual risks: live OSF behavior remains opt-in; the CLI contract itself is
+  covered by offline and race-tested command behavior.
+- Next phase: none for this completed track; follow-on tracks own new command
+  families and live validation.
