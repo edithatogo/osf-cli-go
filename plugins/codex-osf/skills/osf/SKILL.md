@@ -15,7 +15,7 @@ only when a token is unavailable.
 From the repository root:
 
 ```powershell
-codex plugin marketplace add .\.agents\plugins
+    codex plugin marketplace add .
 Get-Content plugins\codex-osf\.codex-plugin\plugin.json | ConvertFrom-Json
 Get-Content plugins\codex-osf\.mcp.json | ConvertFrom-Json
 ```

@@ -25,6 +25,27 @@ type marketplace struct {
 	} `json:"plugins"`
 }
 
+type codexMarketplace struct {
+	Name    string `json:"name"`
+	Plugins []struct {
+		Name   string `json:"name"`
+		Source struct {
+			Source string `json:"source"`
+			Path   string `json:"path"`
+		} `json:"source"`
+	} `json:"plugins"`
+}
+
+type claudeMarketplace struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	Plugins []struct {
+		Name    string `json:"name"`
+		Source  string `json:"source"`
+		Version string `json:"version"`
+	} `json:"plugins"`
+}
+
 type geminiManifest struct {
 	Name     string `json:"name"`
 	Version  string `json:"version"`
@@ -113,6 +134,38 @@ func run() error {
 	}
 	if _, err := os.Stat(filepath.Join(copilotPlugin.Source, "plugin.json")); err != nil {
 		return fmt.Errorf("copilot marketplace plugin source %s is invalid: %w", copilotPlugin.Source, err)
+	}
+
+	var codex codexMarketplace
+	if err := readJSON(".agents/plugins/marketplace.json", &codex); err != nil {
+		return err
+	}
+	if codex.Name == "" || len(codex.Plugins) != 1 {
+		return fmt.Errorf("codex marketplace name or plugin count is invalid")
+	}
+	codexPlugin := codex.Plugins[0]
+	if codexPlugin.Name == "" || codexPlugin.Source.Source != "local" || codexPlugin.Source.Path == "" {
+		return fmt.Errorf("codex marketplace plugin source is invalid")
+	}
+	codexPath := filepath.Clean(codexPlugin.Source.Path)
+	if _, err := os.Stat(filepath.Join(codexPath, ".codex-plugin/plugin.json")); err != nil {
+		return fmt.Errorf("codex marketplace plugin source %s is invalid: %w", codexPlugin.Source.Path, err)
+	}
+
+	var claudeCatalog claudeMarketplace
+	if err := readJSON(".agents/plugins/.claude-plugin/marketplace.json", &claudeCatalog); err != nil {
+		return err
+	}
+	if claudeCatalog.Name == "" || claudeCatalog.Version != server.Version || len(claudeCatalog.Plugins) != 1 {
+		return fmt.Errorf("claude-compatible marketplace name, version, or plugin count is invalid")
+	}
+	claudePlugin := claudeCatalog.Plugins[0]
+	claudePath := filepath.Clean(filepath.Join(".agents/plugins/.claude-plugin", claudePlugin.Source))
+	if claudePlugin.Name == "" || claudePlugin.Version != server.Version {
+		return fmt.Errorf("claude-compatible marketplace plugin name or version is invalid")
+	}
+	if _, err := os.Stat(filepath.Join(claudePath, ".codex-plugin/plugin.json")); err != nil {
+		return fmt.Errorf("claude-compatible marketplace plugin source %s is invalid: %w", claudePlugin.Source, err)
 	}
 
 	var rootGemini geminiManifest
