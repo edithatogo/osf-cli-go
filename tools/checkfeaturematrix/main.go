@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -32,6 +33,8 @@ type row struct {
 	Track    string `json:"track,omitempty"`
 	Issue    string `json:"issue,omitempty"`
 }
+
+var issueReferencePattern = regexp.MustCompile(`^#[1-9][0-9]*$`)
 
 func main() {
 	write := flag.Bool("write", false, "write the generated Markdown presentation")
@@ -101,6 +104,12 @@ func validate(m matrix) error {
 		}
 		if item.Status == "track" && (strings.TrimSpace(item.Next) == "" || strings.TrimSpace(item.Track) == "") {
 			return fmt.Errorf("track row %q requires next and track", item.Area)
+		}
+		if item.Status == "track" && !issueReferencePattern.MatchString(strings.TrimSpace(item.Issue)) {
+			return fmt.Errorf("track row %q requires an issue reference such as #123", item.Area)
+		}
+		if item.Issue != "" && !issueReferencePattern.MatchString(strings.TrimSpace(item.Issue)) {
+			return fmt.Errorf("row %q has invalid issue reference %q", item.Area, item.Issue)
 		}
 		if item.Track != "" {
 			if _, err := os.Stat(item.Track); err != nil {
