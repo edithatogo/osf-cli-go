@@ -1722,6 +1722,36 @@ func TestSearchOutput(t *testing.T) {
 	}
 }
 
+func TestSearchBibTeXOutput(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{
+		searchResults: []osfapi.SearchResult{{
+			ID: "osf-1", Type: "nodes", Title: "Open {Science}", Description: "An abstract",
+			Keywords: []string{"open science", "review"}, Year: "2024", URL: "https://osf.io/osf-1/",
+		}},
+	}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"search", "science", "--bibtex"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("search bibtex returned %d, want 0: %s", code, stderr.String())
+	}
+	for _, expected := range []string{
+		"@misc{osf-1,", "title = {Open \\{Science\\}}", "abstract = {An abstract}",
+		"keywords = {open science, review}", "year = {2024}", "url = {https://osf.io/osf-1/}",
+	} {
+		if !strings.Contains(stdout.String(), expected) {
+			t.Fatalf("stdout = %q, want %q", stdout.String(), expected)
+		}
+	}
+	stdout.Reset()
+	stderr.Reset()
+	if code = runWithClient([]string{"search", "science", "--bibtex", "--json"}, &stdout, &stderr, client); code == 0 || !strings.Contains(stderr.String(), "cannot combine --bibtex") {
+		t.Fatalf("bibtex/json returned %d, stderr=%q", code, stderr.String())
+	}
+}
+
 func TestWhoamiAlias(t *testing.T) {
 	t.Parallel()
 

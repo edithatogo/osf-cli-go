@@ -73,9 +73,11 @@ type Node struct {
 
 // NodeAttributes carries display and category fields for OSF nodes.
 type NodeAttributes struct {
-	Title       string `json:"title"`
-	Description string `json:"description,omitempty"`
-	Category    string `json:"category,omitempty"`
+	Title       string   `json:"title"`
+	Description string   `json:"description,omitempty"`
+	Category    string   `json:"category,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
+	DateCreated string   `json:"date_created,omitempty"`
 }
 
 // Preprint models an OSF preprint result with discovery metadata.
@@ -146,12 +148,14 @@ type FileVersionAttributes struct {
 
 // SearchResult models one OSF search result across supported resource types.
 type SearchResult struct {
-	ID          string `json:"id"`
-	Type        string `json:"type"`
-	Title       string `json:"title,omitempty"`
-	Description string `json:"description,omitempty"`
-	Category    string `json:"category,omitempty"`
-	URL         string `json:"url,omitempty"`
+	ID          string   `json:"id"`
+	Type        string   `json:"type"`
+	Title       string   `json:"title,omitempty"`
+	Description string   `json:"description,omitempty"`
+	Category    string   `json:"category,omitempty"`
+	URL         string   `json:"url,omitempty"`
+	Keywords    []string `json:"keywords,omitempty"`
+	Year        string   `json:"year,omitempty"`
 }
 
 // RegistrationRequest describes the draft registration fields submitted for a node.
