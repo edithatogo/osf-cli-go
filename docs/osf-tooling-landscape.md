@@ -20,7 +20,7 @@ and repositories that merely mention the OSF API.
 | [CoLRev-Environment/colrev](https://github.com/CoLRev-Environment/colrev) | Literature-review ingestion, OSF search, and metadata normalization | [#17](https://github.com/edithatogo/osf-cli-go/issues/17); dated comparison evidence in the archived CoLRev track |
 | [jasp-stats/jasp-desktop](https://github.com/jasp-stats/jasp-desktop) | Mature desktop OSF browsing, authenticated file workflows, folder management, and provider checksum awareness | [#18](https://github.com/edithatogo/osf-cli-go/issues/18); dated comparison evidence in the JASP track |
 | [Lucy-Family-Institute/presqt](https://github.com/Lucy-Family-Institute/presqt) | Preservation, transfer, and metadata enrichment | [#19](https://github.com/edithatogo/osf-cli-go/issues/19) |
-| [scienceverse/metacheck](https://github.com/scienceverse/metacheck) | Research-output and preregistration checks | [#20](https://github.com/edithatogo/osf-cli-go/issues/20) |
+| [scienceverse/metacheck](https://github.com/scienceverse/metacheck) | Experimental R research-output checks, OSF retrieval, and preregistration-oriented modules | [#20](https://github.com/edithatogo/osf-cli-go/issues/20); dated comparison evidence in the Metacheck track |
 
 ## Recommended improvements
 

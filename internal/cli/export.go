@@ -80,6 +80,7 @@ func newExportCommand(client readonlyClient) *cobra.Command {
 						Name:        f.Attributes.Name,
 						Kind:        f.Attributes.Kind,
 						Size:        f.Attributes.Size,
+						MD5:         f.Attributes.Extra.Hashes.MD5,
 						DownloadURL: f.DownloadURL(),
 					})
 				}

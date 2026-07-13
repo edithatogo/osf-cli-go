@@ -249,6 +249,15 @@ osf export abc123 --json
 osf export https://osf.io/abc123 --json
 ```
 
+### `osf validate <guid-or-url>`
+
+Run a read-only metadata profile and emit stable findings for automation.
+
+```bash
+osf validate abc123 --profile research-output --json
+osf validate abc123 --profile preregistration --json
+```
+
 ### `osf completion <bash|zsh|fish|powershell>`
 
 Generate shell completion scripts.

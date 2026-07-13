@@ -21,6 +21,7 @@ A Go command-line client for the Open Science Framework (OSF).
 - `osf search`, `osf search --bibtex`, `osf preprints list|search`, and `osf resolve` — Search/export OSF literature metadata, discover preprints, and resolve OSF DOI destinations
 - `osf registrations create` — Create draft registrations for an existing node
 - `osf export` — Export a node snapshot as JSON or a summary table
+- `osf validate` — Check OSF node metadata with deterministic research-output or preregistration profiles
 - `osf-mcp` — Stdio MCP server exposing read-only OSF tools for agent clients
 - `osf completion bash|zsh|fish|powershell` — Shell completion scripts
 - JSON and human-readable output modes

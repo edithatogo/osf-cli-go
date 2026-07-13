@@ -199,6 +199,19 @@ osf export abc123
 osf export https://osf.io/abc123 --json
 ```
 
+### `osf validate <guid-or-url>`
+
+Produce deterministic, read-only metadata findings for an OSF node.
+
+```bash
+osf validate abc123 --profile research-output --json
+osf validate abc123 --profile preregistration --json
+```
+
+The command checks title, description, contributors, and either storage
+presence or registration category. It does not inspect paper text, invoke an
+LLM, modify OSF, or claim that a research method is scientifically valid.
+
 ## Browser And Shell Integration
 
 ### `osf open <guid-or-url>`
