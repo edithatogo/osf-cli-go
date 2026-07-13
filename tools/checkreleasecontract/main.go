@@ -47,6 +47,7 @@ func main() {
 
 func run() error {
 	required := []string{
+		".plugin/plugin.json",
 		".github/plugin/marketplace.json",
 		"gemini-extension.json",
 		"qwen-extension.json",
@@ -71,6 +72,13 @@ func run() error {
 	var server manifest
 	if err := readJSON("server.json", &server); err != nil {
 		return err
+	}
+	var openPlugin manifest
+	if err := readJSON(".plugin/plugin.json", &openPlugin); err != nil {
+		return err
+	}
+	if openPlugin.Version != server.Version {
+		return fmt.Errorf(".plugin/plugin.json version %q does not match server version %q", openPlugin.Version, server.Version)
 	}
 	pluginPaths := []string{
 		"plugins/codex-osf/.codex-plugin/plugin.json",
