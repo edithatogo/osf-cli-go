@@ -46,7 +46,7 @@ The per-track `plan.md` files are the source of truth for completion state.
 
 - [ ] [presqt-osf-parity](tracks/presqt-osf-parity_20260711/spec.md) — Benchmark PresQT preservation and metadata-transfer workflows; source Lucy-Family-Institute/presqt; issue #19.
 
-- [ ] [metacheck-osf-validation](tracks/metacheck-osf-validation_20260711/spec.md) — Add OSF research-output and preregistration validation workflows; source scienceverse/metacheck; issue #20.
+- [~] [metacheck-osf-validation](tracks/metacheck-osf-validation_20260711/spec.md) — Add OSF research-output and preregistration validation workflows; source scienceverse/metacheck; issue #20.
 
 
 
