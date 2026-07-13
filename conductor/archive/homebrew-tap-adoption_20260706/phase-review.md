@@ -15,6 +15,16 @@ Complete for the project-owned tap publication path.
 - Source package definition: `packaging/homebrew/osf-cli-go.rb`
 - Release assets and checksums: [release v0.3.2](https://github.com/edithatogo/osf-cli-go/releases/tag/v0.3.2)
 
+## Review Validation
+
+- `brew audit --formula edithatogo/osf/osf-cli-go`: passed.
+- `brew style --formula edithatogo/osf/osf-cli-go`: passed.
+- `brew test edithatogo/osf/osf-cli-go`: passed.
+- `go test ./...`, `go test -race ./...`, `go vet ./...`, anti-stub,
+  review, registry, release-contract, and `govulncheck` checks: passed.
+- Homebrew 6 rejects local-path syntax for `brew audit`; the supported tap
+  formula-name invocation above was used instead.
+
 ## Remaining external work
 
 Upstream Homebrew/core submission is not required for the project tap route.
