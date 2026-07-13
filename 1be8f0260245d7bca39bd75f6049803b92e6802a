@@ -1,0 +1,1 @@
+Conductor review and archive: track 7 Homebrew tap adoption is archived after confirming the public project tap, installed version 0.3.2, formula audit/style/test, and full repository validation. Homebrew 6 local-path audit syntax is unsupported; tap formula-name audit passed. No upstream Homebrew/core submission is required for the project-owned tap route.
