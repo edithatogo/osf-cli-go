@@ -18,7 +18,7 @@ A Go command-line client for the Open Science Framework (OSF).
 - `osf projects list|get` — List and inspect projects
 - `osf components list` — List project components
 - `osf files list|download|upload|mkdir|rm` — Browse, download, upload, create folders, and delete OSF Storage files
-- `osf search`, `osf preprints list|search`, and `osf resolve` — Search OSF content, discover preprints, and resolve OSF DOI destinations
+- `osf search`, `osf search --bibtex`, `osf preprints list|search`, and `osf resolve` — Search/export OSF literature metadata, discover preprints, and resolve OSF DOI destinations
 - `osf registrations create` — Create draft registrations for an existing node
 - `osf export` — Export a node snapshot as JSON or a summary table
 - `osf-mcp` — Stdio MCP server exposing read-only OSF tools for agent clients
@@ -70,6 +70,7 @@ osf files download --file <file-id> ./output/
 osf files download --tree abc12 ./output/
 osf files upload --node abc12 ./report.pdf
 osf search "open science"
+osf search "open science" --bibtex
 osf preprints list
 osf preprints search "open science" --provider osf
 osf resolve 10.1234/example
@@ -92,6 +93,11 @@ a non-empty query and accepts a limit from 1 to 100, while
 returns publication date, published state, DOI, and OSF HTML URL with a limit
 from 1 to 100. These tools return structured JSON through the MCP server and
 never perform writes.
+
+OSF search results include stable IDs, title, abstract, keywords, year, and URL.
+Use `osf search <query> --bibtex` to emit deterministic BibTeX records for
+literature-review workflows. The command does not resolve contributor names or
+download PDFs automatically.
 
 For DataLad workflows, OSF CLI Go provides the general-purpose OSF API and
 safe file primitives used around a dataset, including `osf export` and

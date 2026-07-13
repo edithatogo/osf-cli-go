@@ -32,7 +32,7 @@ The current packages are already split in a way that supports a later MCP track 
    - The read-only tool set includes `osf_whoami`, `osf_projects_list`, `osf_project_get`, `osf_components_list`, `osf_files_list`, `osf_contributors_list`, `osf_search`, `osf_preprints_list`, `osf_preprints_search`, and `osf_doi_resolve`.
 
 2. Structured tool results
-   - OSF resources are mapped to JSON-style MCP structured output in `internal/mcpserver`.
+   - OSF resources are mapped to JSON-style MCP structured output in `internal/mcpserver`, including bibliographic search metadata such as keywords and year.
    - Keep presentation helpers in `internal/cli` and `internal/output`.
 
 3. Shared auth contract

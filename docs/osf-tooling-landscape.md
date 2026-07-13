@@ -17,7 +17,7 @@ and repositories that merely mention the OSF API.
 | [J535D165/datahugger](https://github.com/J535D165/datahugger) | DOI-oriented cross-repository retrieval | [#14](https://github.com/edithatogo/osf-cli-go/issues/14) closed; dated comparison evidence in the archived Datahugger track |
 | [mims-harvard/ToolUniverse](https://github.com/mims-harvard/ToolUniverse) | AI-scientist OSF Preprints search and literature-agent ecosystem | [#15](https://github.com/edithatogo/osf-cli-go/issues/15); dated comparison evidence in the archived ToolUniverse track |
 | [wentorai/research-plugins](https://github.com/wentorai/research-plugins) | Agent skills for OSF discovery and full text | [#16](https://github.com/edithatogo/osf-cli-go/issues/16) |
-| [CoLRev-Environment/colrev](https://github.com/CoLRev-Environment/colrev) | Literature-review ingestion and metadata normalization | [#17](https://github.com/edithatogo/osf-cli-go/issues/17) |
+| [CoLRev-Environment/colrev](https://github.com/CoLRev-Environment/colrev) | Literature-review ingestion, OSF search, and metadata normalization | [#17](https://github.com/edithatogo/osf-cli-go/issues/17); dated comparison evidence in the archived CoLRev track |
 | [jasp-stats/jasp-desktop](https://github.com/jasp-stats/jasp-desktop) | Mature desktop OSF browsing and file workflows | [#18](https://github.com/edithatogo/osf-cli-go/issues/18) |
 | [Lucy-Family-Institute/presqt](https://github.com/Lucy-Family-Institute/presqt) | Preservation, transfer, and metadata enrichment | [#19](https://github.com/edithatogo/osf-cli-go/issues/19) |
 | [scienceverse/metacheck](https://github.com/scienceverse/metacheck) | Research-output and preregistration checks | [#20](https://github.com/edithatogo/osf-cli-go/issues/20) |
