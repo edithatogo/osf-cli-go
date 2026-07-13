@@ -1,0 +1,20 @@
+{
+  "name": "osf-cli-go",
+  "version": "0.3.2",
+  "description": "Read-only Open Science Framework MCP tools for Cursor and compatible agent hosts.",
+  "author": {
+    "name": "edithatogo",
+    "url": "https://github.com/edithatogo"
+  },
+  "homepage": "https://github.com/edithatogo/osf-cli-go",
+  "repository": "https://github.com/edithatogo/osf-cli-go",
+  "license": "Apache-2.0",
+  "keywords": [
+    "osf",
+    "open-science",
+    "mcp",
+    "research",
+    "cursor"
+  ],
+  "mcpServers": "./.mcp.json"
+}
