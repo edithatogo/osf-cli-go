@@ -1,0 +1,8 @@
+{
+  "track_id": "mcp-quality-evaluation-harness_20260713",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-07-13T00:00:00Z",
+  "updated_at": "2026-07-13T00:00:00Z",
+  "description": "Add MCP tool quality and compatibility evaluation harness"
+}

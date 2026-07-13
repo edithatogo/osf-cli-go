@@ -22,12 +22,16 @@ The implementation source of truth is issue
 track. A `v1.0.0` tag must not be created until every gate is either satisfied
 or explicitly waived in a release-candidate review.
 
+The working evidence set is maintained in the [feature
+matrix](feature-matrix.md), [registry scorecard](registry-scorecard.md), and
+the [1.0 hardening and maturity track](../conductor/tracks/v1-hardening-maturity_20260713/spec.md).
+
 ## Recommended sequence
 
-1. Complete the 13 source-tool parity tracks and collapse overlapping changes.
+1. Complete the source-tool parity tracks and update the feature matrix.
 2. Freeze candidate CLI and MCP contracts and publish a release candidate.
-3. Run the security, reliability, live-OSF, and cross-platform campaigns.
-4. Complete package-manager, plugin, and registry distribution.
+3. Run the hardening, quality-harness, security, reliability, live-OSF, and cross-platform campaigns.
+4. Complete package-manager, plugin, and registry distribution using the scorecard.
 5. Publish migration, support, and governance documents.
 6. Run a clean release review and publish `v1.0.0` with signed provenance.
 

@@ -1,0 +1,8 @@
+{
+  "track_id": "v1-hardening-maturity_20260713",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-07-13T00:00:00Z",
+  "updated_at": "2026-07-13T00:00:00Z",
+  "description": "Harden and mature OSF CLI Go toward 1.0"
+}
