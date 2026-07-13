@@ -1,8 +1,0 @@
-{
-  "track_id": "sourceshift-osf-mcp-parity_20260711",
-  "type": "feature",
-  "status": "completed",
-  "created_at": "2026-07-11T09:00:00Z",
-  "updated_at": "2026-07-13T00:00:00Z",
-  "description": "Benchmark SourceShift OSF MCP and close MCP capability gaps"
-}
