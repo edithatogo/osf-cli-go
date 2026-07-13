@@ -5,7 +5,6 @@ The per-track `plan.md` files are the source of truth for completion state.
 
 ---
 
-- [x] [api-client-fixtures](tracks/api-client-fixtures_20260502/spec.md) — OSF API v2 client, JSON:API pagination, typed errors, and fixture contracts.
 - [x] [auth-public-access](tracks/auth-public-access_20260502/spec.md) — Token handling, public unauthenticated behavior, redaction, and `auth whoami`.
 - [x] [readonly-commands](tracks/readonly-commands_20260502/spec.md) — Project/component/file read-only commands.
 - [x] [download-safety](tracks/download-safety_20260502/spec.md) — Safe streaming downloads, conflict policies, manifests, and path protection.
