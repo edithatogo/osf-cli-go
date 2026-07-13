@@ -43,8 +43,6 @@ The per-track `plan.md` files are the source of truth for completion state.
 
 - [ ] [research-plugins-osf-parity](tracks/research-plugins-osf-parity_20260711/spec.md) — Add research-agent OSF discovery and full-text workflow parity; source wentorai/research-plugins; issue #16.
 
-- [x] [colrev-osf-parity](tracks/colrev-osf-parity_20260711/spec.md) — Add OSF literature-review ingestion and metadata parity; source CoLRev-Environment/colrev; issue #17.
-
 - [ ] [jasp-osf-integration-parity](tracks/jasp-osf-integration-parity_20260711/spec.md) — Benchmark JASP OSF desktop integration workflows; source jasp-stats/jasp-desktop; issue #18.
 
 - [ ] [presqt-osf-parity](tracks/presqt-osf-parity_20260711/spec.md) — Benchmark PresQT preservation and metadata-transfer workflows; source Lucy-Family-Institute/presqt; issue #19.
