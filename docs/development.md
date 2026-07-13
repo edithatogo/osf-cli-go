@@ -32,6 +32,7 @@ go test ./...
 go vet ./...
 go run ./tools/checkstubs
 go run ./tools/checkreviews
+go run ./tools/checkfeaturematrix
 go test ./... "-coverprofile=coverage.out"
 go tool cover "-func=coverage.out"
 ```

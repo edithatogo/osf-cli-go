@@ -35,6 +35,8 @@ jobs:
         run: go run ./tools/checkreviews
       - name: Registry submission contract
         run: go run ./tools/checkregistries
+      - name: Feature matrix contract
+        run: go run ./tools/checkfeaturematrix
       - name: Release readiness contract
         run: go run ./tools/checkreleasecontract
       - name: Coverage

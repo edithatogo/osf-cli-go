@@ -1,4 +1,4 @@
-.PHONY: fmt test race vet stubs reviews coverage build check lint vuln
+.PHONY: fmt test race vet stubs reviews matrix coverage build check lint vuln
 
 fmt:
 	go fmt ./...
@@ -18,6 +18,9 @@ stubs:
 reviews:
 	go run ./tools/checkreviews
 
+matrix:
+	go run ./tools/checkfeaturematrix
+
 coverage:
 	go test ./... -coverprofile=coverage.out
 	go tool cover -func=coverage.out
@@ -31,4 +34,4 @@ lint:
 vuln:
 	govulncheck ./...
 
-check: fmt test race vet stubs reviews coverage
+check: fmt test race vet stubs reviews matrix coverage

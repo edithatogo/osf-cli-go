@@ -8,8 +8,8 @@
 
 ## Phase 2: Governance
 
-- [ ] Task: Add matrix consistency checks for tool and manifest drift
-- [ ] Task: Link every unresolved row to an issue and Conductor track
+- [x] Task: Add matrix consistency checks for version, status, and track drift
+- [x] Task: Link every unresolved row to an issue and Conductor track
 - [ ] Task: Conductor - Automated Review and Checkpoint 'Governance' (Protocol in workflow.md)
 
 ## Phase 3: Closeout
