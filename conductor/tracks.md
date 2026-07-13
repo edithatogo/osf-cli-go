@@ -39,8 +39,6 @@ The per-track `plan.md` files are the source of truth for completion state.
 
 - [ ] [pyosf-sync-parity](tracks/pyosf-sync-parity_20260711/spec.md) — Benchmark pyosf synchronization and project workflows; source psychopy/pyosf; issue #11.
 
-- [ ] [datalad-osf-parity](tracks/datalad-osf-parity_20260711/spec.md) — Benchmark DataLad OSF dataset and annex workflows; source datalad/datalad-osf; issue #12.
-
 - [ ] [osf-sync-parity](tracks/osf-sync-parity_20260711/spec.md) — Benchmark OSF Sync desktop synchronization semantics; source CenterForOpenScience/osf-sync; issue #13.
 
 - [ ] [datahugger-doi-parity](tracks/datahugger-doi-parity_20260711/spec.md) — Add DOI-oriented OSF retrieval parity with datahugger; source J535D165/datahugger; issue #14.
