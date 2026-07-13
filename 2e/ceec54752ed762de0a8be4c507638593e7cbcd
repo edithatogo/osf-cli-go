@@ -1,0 +1,1 @@
+Track mcp-quality-evaluation-harness_20260713 completed locally. Added checkmcpquality with manifest, tool inventory, client configuration, security/bounds, and MCP server test checks; emitted docs/mcp-quality-report.json; integrated release and registry gates; live OSF validation remains opt-in.
