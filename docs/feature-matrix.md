@@ -18,15 +18,15 @@ This generated matrix is backed by `docs/feature-matrix.json`. Status meanings: 
 | Registrations | registrations create | draft registration creation | not exposed | authenticated write; no publish action | track | Add read-only MCP registration tools first | `conductor/tracks/osf-api-coverage_20260502/spec.md` | #20 |
 | Storage listing | files list | provider and folder traversal | osf_files_list | traversal protection; structured metadata | implemented |  | `` |  |
 | Storage integrity metadata | files list --json | optional attributes.extra.hashes.md5 | osf_files_list md5 | provider-supplied checksum only; no implicit download | implemented | Maintain checksum compatibility | `conductor/archive/jasp-osf-integration-parity_20260711/spec.md` | #18 |
-| File download | files download | streaming download | not exposed | atomic writes; conflicts; manifests; path safety | track | Approve MCP download resource boundary | `conductor/tracks/mcp-server-roadmap_20260502/spec.md` |  |
-| File upload | files upload | WaterButler upload | not exposed | conflict policy; auth; explicit write | track | Design MCP write confirmation | `conductor/tracks/mcp-server-roadmap_20260502/spec.md` |  |
+| File download | files download | streaming download | not exposed | atomic writes; conflicts; manifests; path safety | track | Approve MCP download resource boundary | `conductor/tracks/mcp-server-roadmap_20260502/spec.md` | #21 |
+| File upload | files upload | WaterButler upload | not exposed | conflict policy; auth; explicit write | track | Design MCP write confirmation | `conductor/tracks/mcp-server-roadmap_20260502/spec.md` | #21 |
 | Folder creation | files mkdir | WaterButler folder create | not exposed | path validation and auth | implemented |  | `` |  |
 | File deletion | files rm | WaterButler delete | not exposed | confirmation and auth | implemented |  | `` |  |
-| File versions | no dedicated command | version listing | not exposed | stable typed model | track | Expose read-only versions consistently | `conductor/tracks/osf-api-coverage_20260502/spec.md` |  |
-| Add-ons | files addons | node add-on listing | not exposed | read-only | track | Add MCP read-only add-on tool | `conductor/tracks/osf-api-coverage_20260502/spec.md` |  |
-| Wiki pages | no dedicated command | wiki listing | not exposed | read-only | track | Add CLI and MCP wiki read tools | `conductor/tracks/osf-api-coverage_20260502/spec.md` |  |
-| Comments, logs, identifiers | no dedicated commands | entity listing | not exposed | read-only | track | Prioritize entity parity by user demand | `conductor/tracks/osf-api-coverage_20260502/spec.md` |  |
-| Export | export | composed node snapshot | not exposed | deterministic JSON and pagination | track | Define MCP export size and resource limits | `conductor/tracks/mcp-server-roadmap_20260502/spec.md` |  |
+| File versions | no dedicated command | version listing | not exposed | stable typed model | track | Expose read-only versions consistently | `conductor/tracks/osf-api-coverage_20260502/spec.md` | #80 |
+| Add-ons | files addons | node add-on listing | not exposed | read-only | track | Add MCP read-only add-on tool | `conductor/tracks/osf-api-coverage_20260502/spec.md` | #80 |
+| Wiki pages | no dedicated command | wiki listing | not exposed | read-only | track | Add CLI and MCP wiki read tools | `conductor/tracks/osf-api-coverage_20260502/spec.md` | #80 |
+| Comments, logs, identifiers | no dedicated commands | entity listing | not exposed | read-only | track | Prioritize entity parity by user demand | `conductor/tracks/osf-api-coverage_20260502/spec.md` | #80 |
+| Export | export | composed node snapshot | not exposed | deterministic JSON and pagination | track | Define MCP export size and resource limits | `conductor/tracks/mcp-server-roadmap_20260502/spec.md` | #21 |
 | OSF metadata validation | validate --profile research-output|preregistration | node, contributor, and storage metadata | not exposed | read-only deterministic findings; no LLM or scientific validity claim | implemented | Maintain finding schema compatibility | `conductor/archive/metacheck-osf-validation_20260711/spec.md` | #20 |
 | Shell integration | completion bash/zsh/fish/powershell; open | n/a | stdio transport | supported-platform contract | implemented |  | `` |  |
 | Output | table and --json | typed Go models | structured MCP content | stable schemas and errors | track | Add compatibility regression harness | `conductor/tracks/mcp-quality-evaluation-harness_20260713/spec.md` | #54 |
