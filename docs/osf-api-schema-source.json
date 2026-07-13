@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "sourceRepository": "https://github.com/CenterForOpenScience/developer.osf.io",
+  "sourcePath": "swagger-spec/swagger.yaml",
+  "sourceRef": "master",
+  "sourceCommit": "52215db60cc8dd95f86841b467d2ed339fd67dec",
+  "sourceUrl": "https://raw.githubusercontent.com/CenterForOpenScience/developer.osf.io/52215db60cc8dd95f86841b467d2ed339fd67dec/swagger-spec/swagger.yaml",
+  "retrievedDate": "2026-07-14",
+  "license": "CC BY-NC 4.0",
+  "handling": "remote-source-manifest",
+  "decision": "deferred",
+  "deferIssue": "#46",
+  "trackedTags": [
+    "nodes",
+    "files",
+    "preprints",
+    "preprint_providers",
+    "registrations",
+    "registration_schemas",
+    "search",
+    "users",
+    "wikis"
+  ],
+  "rationale": "Expose a pinned, auditable source manifest first. Do not vendor or generate a replacement runtime client until endpoint ownership, licensing, update cadence, and compatibility policy are explicitly approved."
+}

@@ -22,6 +22,14 @@ type qualityReport struct {
 	} `json:"summary"`
 }
 
+type apiSchemaSource struct {
+	SchemaVersion int    `json:"schemaVersion"`
+	SourceCommit  string `json:"sourceCommit"`
+	SourceURL     string `json:"sourceUrl"`
+	Decision      string `json:"decision"`
+	DeferIssue    string `json:"deferIssue"`
+}
+
 type marketplace struct {
 	Name     string `json:"name"`
 	Metadata struct {
@@ -90,6 +98,7 @@ func run() error {
 		"docs/compatibility-policy.md",
 		"docs/cli-json-contract.md",
 		"docs/mcp-schema-contract.md",
+		"docs/osf-api-schema-source.json",
 		"docs/migration-v1.md",
 		"docs/threat-model.md",
 		"docs/operations-runbook.md",
@@ -123,6 +132,13 @@ func run() error {
 	}
 	if quality.SchemaVersion != 1 || quality.Version != server.Version || quality.Summary.Status != "passed" || quality.Summary.Failed != 0 {
 		return fmt.Errorf("MCP quality report is not a passing report for server version %q", server.Version)
+	}
+	var schemaSource apiSchemaSource
+	if err := readJSON("docs/osf-api-schema-source.json", &schemaSource); err != nil {
+		return err
+	}
+	if schemaSource.SchemaVersion != 1 || len(schemaSource.SourceCommit) != 40 || !strings.Contains(schemaSource.SourceURL, schemaSource.SourceCommit) || schemaSource.Decision != "deferred" || schemaSource.DeferIssue != "#46" {
+		return fmt.Errorf("OSF API schema source manifest is invalid")
 	}
 	pluginPaths := []string{
 		"plugins/codex-osf/.codex-plugin/plugin.json",
