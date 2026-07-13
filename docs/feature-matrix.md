@@ -11,7 +11,7 @@ This generated matrix is backed by `docs/feature-matrix.json`. Status meanings: 
 | Projects: create/update/delete | projects create, projects update, projects delete | create; patch; delete node | intentionally not exposed | confirmation for destructive actions; MCP remains read-only | track | Design MCP write authorization and rollback | `conductor/tracks/mcp-server-roadmap_20260502/spec.md` | #21 |
 | Components | components list | child node pagination | osf_components_list | deterministic pagination | implemented |  | `` |  |
 | Contributors | API-backed CLI surface | contributor listing | osf_contributors_list | stable structured fields | implemented |  | `` |  |
-| Search | search | OSF search pagination and limit | osf_search | required query; maximum limit 100 | implemented | Maintain SourceShift parity evidence | `conductor/tracks/sourceshift-osf-mcp-parity_20260711/spec.md` | #8 |
+| Search | search | OSF search pagination and limit | osf_search | required query; maximum limit 100 | implemented | Maintain SourceShift parity evidence on releases | `conductor/archive/sourceshift-osf-mcp-parity_20260711/spec.md` | #8 |
 | Preprints | preprints list | provider filter and limit | osf_preprints_list | bounded result sets | implemented |  | `` |  |
 | Registrations | registrations create | draft registration creation | not exposed | authenticated write; no publish action | track | Add read-only MCP registration tools first | `conductor/tracks/osf-api-coverage_20260502/spec.md` | #20 |
 | Storage listing | files list | provider and folder traversal | osf_files_list | traversal protection; structured metadata | implemented |  | `` |  |

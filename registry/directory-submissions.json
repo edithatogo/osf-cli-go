@@ -2,7 +2,7 @@
   "canonical": {
     "serverName": "io.github.edithatogo/osf-cli-go",
     "title": "OSF CLI Go",
-    "shortDescription": "Read-only MCP tools for authenticated Open Science Framework projects and files.",
+    "shortDescription": "Read-only MCP tools for authenticated Open Science Framework discovery, projects, and files.",
     "repositoryUrl": "https://github.com/edithatogo/osf-cli-go",
     "officialRegistryUrl": "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.edithatogo%2Fosf-cli-go",
     "version": "0.3.2",

@@ -82,6 +82,11 @@ osf export abc12 --json
 `osf_components_list`, `osf_files_list`, `osf_contributors_list`,
 `osf_search`, and `osf_preprints_list`.
 
+The parity discovery tools are bounded and deterministic: `osf_search` requires
+a non-empty query and accepts a limit from 1 to 100, while
+`osf_preprints_list` accepts an optional provider and the same bounded limit.
+Both return structured JSON through the MCP server and never perform writes.
+
 Local development configs are included for GitHub Copilot, VS Code, Claude,
 Codex, Gemini CLI, and Qwen Code. Public registry metadata is in `server.json`
 and `registry/`.
