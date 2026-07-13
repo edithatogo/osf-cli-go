@@ -41,8 +41,6 @@ The per-track `plan.md` files are the source of truth for completion state.
 
 - [ ] [osf-sync-parity](tracks/osf-sync-parity_20260711/spec.md) — Benchmark OSF Sync desktop synchronization semantics; source CenterForOpenScience/osf-sync; issue #13.
 
-- [x] [tooluniverse-osf-parity](tracks/tooluniverse-osf-parity_20260711/spec.md) — Add ToolUniverse-compatible OSF preprint and agent tooling; source mims-harvard/ToolUniverse; issue #15.
-
 - [ ] [research-plugins-osf-parity](tracks/research-plugins-osf-parity_20260711/spec.md) — Add research-agent OSF discovery and full-text workflow parity; source wentorai/research-plugins; issue #16.
 
 - [ ] [colrev-osf-parity](tracks/colrev-osf-parity_20260711/spec.md) — Add OSF literature-review ingestion and metadata parity; source CoLRev-Environment/colrev; issue #17.
