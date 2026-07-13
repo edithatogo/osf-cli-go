@@ -130,6 +130,10 @@ osf files list abc123 <folder-id>
 osf files list abc123 --json
 ```
 
+JSON listings include an optional `md5` value when OSF provides
+`attributes.extra.hashes.md5`; the CLI does not download files to calculate a
+checksum.
+
 ### `osf files download`
 
 Download files or folder trees.

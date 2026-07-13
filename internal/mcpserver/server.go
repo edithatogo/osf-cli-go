@@ -111,6 +111,7 @@ type FileOutput struct {
 	Name        string `json:"name,omitempty"`
 	Kind        string `json:"kind,omitempty"`
 	Size        int64  `json:"size,omitempty"`
+	MD5         string `json:"md5,omitempty"`
 	SelfURL     string `json:"selfUrl,omitempty"`
 	DownloadURL string `json:"downloadUrl,omitempty"`
 }
@@ -478,6 +479,7 @@ func toFileOutputs(files []osfapi.StorageFile) []FileOutput {
 			Name:        file.Attributes.Name,
 			Kind:        file.Attributes.Kind,
 			Size:        file.Attributes.Size,
+			MD5:         file.Attributes.Extra.Hashes.MD5,
 			SelfURL:     file.Links.Self,
 			DownloadURL: file.DownloadURL(),
 		})

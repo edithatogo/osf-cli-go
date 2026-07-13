@@ -127,6 +127,18 @@ func TestFilesListSplitsStoragePath(t *testing.T) {
 	if got, want := client.gotFileSegments, []string{"data", "raw"}; len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
 		t.Fatalf("segments = %#v, want %#v", got, want)
 	}
+	content, ok := result.StructuredContent.(map[string]any)
+	if !ok {
+		t.Fatalf("structured content is %T, want map[string]any", result.StructuredContent)
+	}
+	files, ok := content["files"].([]any)
+	if !ok || len(files) != 1 {
+		t.Fatalf("structured files = %#v, want one file", content["files"])
+	}
+	file, ok := files[0].(map[string]any)
+	if !ok || file["md5"] != "abc123" {
+		t.Fatalf("structured file = %#v, want md5", files[0])
+	}
 }
 
 func TestFilesListRejectsTraversal(t *testing.T) {
@@ -374,7 +386,7 @@ func (f *fakeOSFClient) ListStorageFiles(_ context.Context, id string, segments 
 	return []osfapi.StorageFile{{
 		ID:         "file-1",
 		Type:       "files",
-		Attributes: osfapi.StorageFileAttributes{Name: "data.csv", Kind: "file", Size: 12},
+		Attributes: osfapi.StorageFileAttributes{Name: "data.csv", Kind: "file", Size: 12, Extra: osfapi.StorageFileExtra{Hashes: osfapi.StorageFileHashes{MD5: "abc123"}}},
 		Links:      osfapi.Links{Self: "https://files.osf.io/file-1", Download: "https://files.osf.io/file-1?download=1"},
 	}}, nil
 }

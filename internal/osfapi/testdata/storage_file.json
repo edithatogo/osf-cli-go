@@ -5,7 +5,12 @@
     "attributes": {
       "name": "analysis.csv",
       "kind": "file",
-      "size": 12
+      "size": 12,
+      "extra": {
+        "hashes": {
+          "md5": "9e107d9d372bb6826bd81d3542a419d6"
+        }
+      }
     },
     "links": {
       "download": "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-1?download=1"
