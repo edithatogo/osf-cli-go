@@ -259,6 +259,8 @@ func checkMCPBToolSchemas(manifest mcpbManifest) error {
 		"osf_components_list",
 		"osf_files_list",
 		"osf_contributors_list",
+		"osf_search",
+		"osf_preprints_list",
 	}
 	seen := map[string]bool{}
 	for _, tool := range manifest.Tools {

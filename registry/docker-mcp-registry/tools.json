@@ -22,5 +22,13 @@
   {
     "name": "osf_contributors_list",
     "description": "List contributors for an OSF project."
+  },
+  {
+    "name": "osf_search",
+    "description": "Search public and authenticated OSF content."
+  },
+  {
+    "name": "osf_preprints_list",
+    "description": "List OSF preprints, optionally filtered by provider."
   }
 ]

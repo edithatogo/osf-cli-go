@@ -30,6 +30,8 @@ func TestServerExposesReadOnlyTools(t *testing.T) {
 		"osf_components_list",
 		"osf_files_list",
 		"osf_contributors_list",
+		"osf_search",
+		"osf_preprints_list",
 	}
 	got := map[string]bool{}
 	for _, name := range names {
@@ -52,6 +54,8 @@ func TestServerToolInputSchemasMatchPackagedContract(t *testing.T) {
 		"osf_components_list":   {"id"},
 		"osf_files_list":        {"id", "path"},
 		"osf_contributors_list": {"id"},
+		"osf_search":            {"query", "limit"},
+		"osf_preprints_list":    {"provider", "limit"},
 	}
 	for tool, err := range session.Tools(t.Context(), nil) {
 		if err != nil {
@@ -133,6 +137,40 @@ func TestFilesListRejectsTraversal(t *testing.T) {
 	}
 	if !result.IsError {
 		t.Fatal("tool succeeded, want MCP tool error")
+	}
+}
+
+func TestSearchRequiresQueryAndPassesLimit(t *testing.T) {
+	client := &fakeOSFClient{}
+	session := connectTestServer(t, client)
+	result, err := session.CallTool(t.Context(), &mcp.CallToolParams{
+		Name: "osf_search", Arguments: map[string]any{"query": " reproducibility ", "limit": 10},
+	})
+	if err != nil || result.IsError {
+		t.Fatalf("search failed: result=%#v err=%v", result, err)
+	}
+	if client.gotQuery != "reproducibility" || client.gotLimit != 10 {
+		t.Fatalf("search args = %q, %d; want reproducibility, 10", client.gotQuery, client.gotLimit)
+	}
+	result, err = session.CallTool(t.Context(), &mcp.CallToolParams{
+		Name: "osf_search", Arguments: map[string]any{"query": " "},
+	})
+	if err != nil || !result.IsError {
+		t.Fatalf("blank search query result=%#v err=%v, want tool error", result, err)
+	}
+}
+
+func TestPreprintsPassProviderAndLimit(t *testing.T) {
+	client := &fakeOSFClient{}
+	session := connectTestServer(t, client)
+	result, err := session.CallTool(t.Context(), &mcp.CallToolParams{
+		Name: "osf_preprints_list", Arguments: map[string]any{"provider": "osf", "limit": 5},
+	})
+	if err != nil || result.IsError {
+		t.Fatalf("preprints failed: result=%#v err=%v", result, err)
+	}
+	if client.gotProvider != "osf" || client.gotLimit != 5 {
+		t.Fatalf("preprint args = %q, %d; want osf, 5", client.gotProvider, client.gotLimit)
 	}
 }
 
@@ -227,6 +265,9 @@ func contentText(content []mcp.Content) string {
 type fakeOSFClient struct {
 	gotNodeID       string
 	gotFileSegments []string
+	gotQuery        string
+	gotProvider     string
+	gotLimit        int
 	failErr         error
 }
 
@@ -290,6 +331,24 @@ func (f *fakeOSFClient) ListStorageFiles(_ context.Context, id string, segments 
 		Attributes: osfapi.StorageFileAttributes{Name: "data.csv", Kind: "file", Size: 12},
 		Links:      osfapi.Links{Self: "https://files.osf.io/file-1", Download: "https://files.osf.io/file-1?download=1"},
 	}}, nil
+}
+
+func (f *fakeOSFClient) SearchOSF(_ context.Context, query string, limit ...int) ([]osfapi.SearchResult, error) {
+	if f.failErr != nil {
+		return nil, f.failErr
+	}
+	f.gotQuery = query
+	f.gotLimit = limit[0]
+	return []osfapi.SearchResult{{ID: "project-1", Type: "nodes", Title: "Alpha", URL: "https://osf.io/project-1/"}}, nil
+}
+
+func (f *fakeOSFClient) ListPreprints(_ context.Context, provider string, limit ...int) ([]osfapi.Node, error) {
+	if f.failErr != nil {
+		return nil, f.failErr
+	}
+	f.gotProvider = provider
+	f.gotLimit = limit[0]
+	return []osfapi.Node{node("preprint-1", "Preprint")}, nil
 }
 
 func node(id, title string) osfapi.Node {

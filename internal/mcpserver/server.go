@@ -20,6 +20,8 @@ type OSFClient interface {
 	ListNodeChildren(context.Context, string) ([]osfapi.Node, error)
 	ListNodeContributors(context.Context, string) ([]osfapi.Contributor, error)
 	ListStorageFiles(context.Context, string, ...string) ([]osfapi.StorageFile, error)
+	SearchOSF(context.Context, string, ...int) ([]osfapi.SearchResult, error)
+	ListPreprints(context.Context, string, ...int) ([]osfapi.Node, error)
 }
 
 type Server struct {
@@ -39,6 +41,16 @@ type NodeInput struct {
 type FilesInput struct {
 	ID   string `json:"id" jsonschema:"OSF project/component id or URL"`
 	Path string `json:"path,omitempty" jsonschema:"optional path below OSF Storage"`
+}
+
+type SearchInput struct {
+	Query string `json:"query" jsonschema:"OSF search query"`
+	Limit int    `json:"limit,omitempty" jsonschema:"maximum number of results; zero uses the server default"`
+}
+
+type PreprintsInput struct {
+	Provider string `json:"provider,omitempty" jsonschema:"optional preprint provider filter"`
+	Limit    int    `json:"limit,omitempty" jsonschema:"maximum number of results; zero uses the server default"`
 }
 
 type UserOutput struct {
@@ -96,6 +108,19 @@ type FilesResult struct {
 	Files []FileOutput `json:"files"`
 }
 
+type SearchResult struct {
+	ID          string `json:"id"`
+	Type        string `json:"type,omitempty"`
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
+	Category    string `json:"category,omitempty"`
+	URL         string `json:"url,omitempty"`
+}
+
+type SearchResults struct {
+	Results []SearchResult `json:"results"`
+}
+
 // New returns an MCP server with read-only OSF tools registered.
 func New(client OSFClient, opts Options) *mcp.Server {
 	version := strings.TrimSpace(opts.Version)
@@ -134,6 +159,14 @@ func New(client OSFClient, opts Options) *mcp.Server {
 		Name:        "osf_contributors_list",
 		Description: "List contributors for an OSF project or component.",
 	}, service.ListContributors)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "osf_search",
+		Description: "Search public and authenticated OSF content.",
+	}, service.Search)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "osf_preprints_list",
+		Description: "List OSF preprints, optionally filtered by provider.",
+	}, service.ListPreprints)
 
 	return server
 }
@@ -204,6 +237,48 @@ func (s *Server) ListContributors(ctx context.Context, _ *mcp.CallToolRequest, i
 		return nil, ContributorsResult{}, mcpError(err)
 	}
 	return nil, ContributorsResult{Contributors: toContributorOutputs(contributors)}, nil
+}
+
+func (s *Server) Search(ctx context.Context, _ *mcp.CallToolRequest, in SearchInput) (*mcp.CallToolResult, SearchResults, error) {
+	query := strings.TrimSpace(in.Query)
+	if query == "" {
+		return nil, SearchResults{}, mcpError(errors.New("query is required"))
+	}
+	limit, err := boundedLimit(in.Limit)
+	if err != nil {
+		return nil, SearchResults{}, mcpError(err)
+	}
+	results, err := s.client.SearchOSF(ctx, query, limit)
+	if err != nil {
+		return nil, SearchResults{}, mcpError(err)
+	}
+	out := make([]SearchResult, 0, len(results))
+	for _, result := range results {
+		out = append(out, SearchResult{ID: result.ID, Type: result.Type, Title: result.Title, Description: result.Description, Category: result.Category, URL: result.URL})
+	}
+	return nil, SearchResults{Results: out}, nil
+}
+
+func (s *Server) ListPreprints(ctx context.Context, _ *mcp.CallToolRequest, in PreprintsInput) (*mcp.CallToolResult, NodesResult, error) {
+	limit, err := boundedLimit(in.Limit)
+	if err != nil {
+		return nil, NodesResult{}, mcpError(err)
+	}
+	preprints, err := s.client.ListPreprints(ctx, strings.TrimSpace(in.Provider), limit)
+	if err != nil {
+		return nil, NodesResult{}, mcpError(err)
+	}
+	return nil, NodesResult{Nodes: toNodeOutputs(preprints)}, nil
+}
+
+func boundedLimit(limit int) (int, error) {
+	if limit < 0 {
+		return 0, errors.New("limit must be zero or greater")
+	}
+	if limit > 100 {
+		return 0, errors.New("limit must be 100 or less")
+	}
+	return limit, nil
 }
 
 func mcpError(err error) error {
