@@ -16,13 +16,13 @@
 
 ## Phase 3: Submission
 
-- [~] Task: Submit PR to WinGet package repository or record blocker.
+- [x] Task: Submit PR to WinGet package repository or record blocker.
     - [x] Use GitHub CLI; browser was not necessary.
     - [x] PR opened: https://github.com/microsoft/winget-pkgs/pull/401414
-- [~] Task: Conductor - Automated Review and Checkpoint 'Submission' (Protocol in workflow.md)
+- [x] Task: Conductor - Automated Review and Checkpoint 'Submission' (Protocol in workflow.md)
 
 ## Phase 4: Final Review
 
-- [ ] Task: Run validation gates and conductor-review.
-- [ ] Task: Write final phase-review evidence.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Final Review' (Protocol in workflow.md)
+- [x] Task: Run validation gates and conductor-review.
+- [x] Task: Write final phase-review evidence.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Final Review' (Protocol in workflow.md)
