@@ -1695,7 +1695,7 @@ func TestPreprintsSearchOutput(t *testing.T) {
 	if client.gotPreprintQuery != "open science" || client.gotPreprintProvider != "osf" || client.gotPreprintLimit != 10 {
 		t.Fatalf("search args = %q, %q, %d", client.gotPreprintQuery, client.gotPreprintProvider, client.gotPreprintLimit)
 	}
-	for _, expected := range []string{"Open Science", "2026-01-02", "10.1234/p1", "https://osf.io/p1/"} {
+	for _, expected := range []string{"Open Science", "2026-01-02", "10.1234/p1", "https://osf.io/p1/", "OSF Preprints"} {
 		if !strings.Contains(stdout.String(), expected) {
 			t.Fatalf("stdout = %q, want %q", stdout.String(), expected)
 		}

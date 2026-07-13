@@ -89,6 +89,7 @@ type PreprintOutput struct {
 	Published     bool   `json:"published"`
 	DOI           string `json:"doi,omitempty"`
 	URL           string `json:"url,omitempty"`
+	Source        string `json:"source"`
 }
 
 type PreprintsResult struct {
@@ -333,6 +334,7 @@ func (s *Server) SearchPreprints(ctx context.Context, _ *mcp.CallToolRequest, in
 			Published:     preprint.Attributes.IsPublished,
 			DOI:           preprint.Attributes.DOI,
 			URL:           preprint.Links.HTML,
+			Source:        "OSF Preprints",
 		})
 	}
 	return nil, PreprintsResult{Preprints: out}, nil
