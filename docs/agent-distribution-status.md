@@ -1,6 +1,11 @@
 # Agent distribution status
 
-Last reviewed: 2026-07-13
+Last reviewed: 2026-07-14
+
+The dated, machine-validated score for every provider and registry target is
+maintained in [`registry/submission-scorecard.json`](../registry/submission-scorecard.json).
+Scores represent local readiness against the published rubric; provider
+approval is recorded only with a provider receipt and public listing URL.
 
 | Surface | Local artifact | External status | Track |
 |---|---|---|---|

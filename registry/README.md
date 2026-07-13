@@ -3,6 +3,12 @@
 This directory records the package and submission surfaces for the OSF MCP
 server.
 
+The machine-readable cross-provider readiness contract is
+[`submission-scorecard.json`](submission-scorecard.json). It records a dated
+readiness score, evidence, next action, and blocker for every target. A score
+is never treated as provider approval without a provider receipt and public
+listing URL.
+
 ## Official MCP Registry
 
 Primary package route: OCI image on GitHub Container Registry.

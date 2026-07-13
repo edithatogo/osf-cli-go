@@ -19,6 +19,7 @@ func TestRunPassesWithRepoFixtures(t *testing.T) {
 	copyFixture(t, filepath.Join("..", "..", "packaging", "mcpb", "manifest.json"), filepath.Join(dir, "packaging", "mcpb", "manifest.json"))
 	copyFixture(t, filepath.Join("..", "..", "registry", "README.md"), filepath.Join(dir, "registry", "README.md"))
 	copyFixture(t, filepath.Join("..", "..", "glama.json"), filepath.Join(dir, "glama.json"))
+	copyFixture(t, filepath.Join("..", "..", "registry", "submission-scorecard.json"), filepath.Join(dir, "registry", "submission-scorecard.json"))
 
 	if err := os.Chdir(dir); err != nil {
 		t.Fatalf("Chdir: %v", err)
@@ -46,6 +47,7 @@ func TestRunFailsWhenOfficialRegistryURLIsWrong(t *testing.T) {
 	copyFixture(t, filepath.Join("..", "..", "packaging", "mcpb", "manifest.json"), filepath.Join(dir, "packaging", "mcpb", "manifest.json"))
 	copyFixture(t, filepath.Join("..", "..", "registry", "README.md"), filepath.Join(dir, "registry", "README.md"))
 	copyFixture(t, filepath.Join("..", "..", "glama.json"), filepath.Join(dir, "glama.json"))
+	copyFixture(t, filepath.Join("..", "..", "registry", "submission-scorecard.json"), filepath.Join(dir, "registry", "submission-scorecard.json"))
 
 	path := filepath.Join(dir, "registry", "directory-submissions.json")
 	data, err := os.ReadFile(path)
@@ -71,6 +73,26 @@ func TestRunFailsWhenOfficialRegistryURLIsWrong(t *testing.T) {
 
 	if err := run(); err == nil || !strings.Contains(err.Error(), "officialRegistryUrl") {
 		t.Fatalf("run() error = %v, want officialRegistryUrl validation failure", err)
+	}
+}
+
+func TestSubmissionScorecardRejectsPublishedWithoutReceipt(t *testing.T) {
+	scorecard := submissionScorecard{
+		SchemaVersion: 1,
+		ReviewedDate:  "2026-07-14",
+		Version:       "0.3.2",
+		Targets: []scorecardTarget{{
+			ID:          "openai-codex-cowork",
+			Name:        "OpenAI Codex/Cowork",
+			State:       "published",
+			Score:       100,
+			ScoreTarget: 100,
+			Evidence:    []string{"evidence"},
+			NextAction:  "next",
+		}},
+	}
+	if err := checkSubmissionScorecard(scorecard, "0.3.2"); err == nil || !strings.Contains(err.Error(), "without receipt") {
+		t.Fatalf("checkSubmissionScorecard() error = %v, want missing receipt failure", err)
 	}
 }
 
