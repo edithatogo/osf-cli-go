@@ -1,6 +1,6 @@
 # OSF tooling landscape
 
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-13
 
 This inventory tracks public repositories that expose substantial reusable OSF
 functionality. It excludes one-off download scripts, demos, deprecated mirrors,
@@ -8,7 +8,7 @@ and repositories that merely mention the OSF API.
 
 | Repository | Distinct area to assess | Roadmap |
 |---|---|---|
-| [SourceShift/osf-mcp-server](https://github.com/SourceShift/osf-mcp-server) | Direct MCP competitor; search, registrations, preprints, and file management | [#8](https://github.com/edithatogo/osf-cli-go/issues/8) |
+| [SourceShift/osf-mcp-server](https://github.com/SourceShift/osf-mcp-server) | Direct MCP competitor; search, registrations, preprints, and file management | [#8](https://github.com/edithatogo/osf-cli-go/issues/8); comparison evidence in the SourceShift track |
 | [osfclient/osfclient](https://github.com/osfclient/osfclient) | Mature Python library and CLI for OSF Storage | [#9](https://github.com/edithatogo/osf-cli-go/issues/9) |
 | [ropensci/osfr](https://github.com/ropensci/osfr) | Broad R entity coverage and explicit conflict behavior | [#10](https://github.com/edithatogo/osf-cli-go/issues/10) |
 | [psychopy/pyosf](https://github.com/psychopy/pyosf) | Project synchronization workflows | [#11](https://github.com/edithatogo/osf-cli-go/issues/11) |

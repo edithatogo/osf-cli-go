@@ -79,7 +79,8 @@ osf export abc12 --json
 
 `osf-mcp` runs a stdio MCP server with read-only tools:
 `osf_whoami`, `osf_projects_list`, `osf_project_get`,
-`osf_components_list`, `osf_files_list`, and `osf_contributors_list`.
+`osf_components_list`, `osf_files_list`, `osf_contributors_list`,
+`osf_search`, and `osf_preprints_list`.
 
 Local development configs are included for GitHub Copilot, VS Code, Claude,
 Codex, Gemini CLI, and Qwen Code. Public registry metadata is in `server.json`

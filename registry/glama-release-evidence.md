@@ -20,7 +20,9 @@ server capabilities, and listed all six tools. Each tool was then invoked:
 - `osf_whoami` and `osf_projects_list` returned the expected OSF `401` response
   because no credentials were supplied.
 - `osf_project_get`, `osf_components_list`, `osf_files_list`, and
-  `osf_contributors_list` were called with the non-secret placeholder ID
+  `osf_contributors_list` were called with the non-secret placeholder ID.
+- `osf_search` and `osf_preprints_list` were exercised through the local MCP
+  harness with deterministic fake OSF responses; no credentials were used.
   `abc12` and returned expected API errors.
 
 These calls are genuine Glama Inspector traffic. They validate invocation and
