@@ -18,7 +18,7 @@ A Go command-line client for the Open Science Framework (OSF).
 - `osf projects list|get` — List and inspect projects
 - `osf components list` — List project components
 - `osf files list|download|upload|mkdir|rm` — Browse, download, upload, create folders, and delete OSF Storage files
-- `osf search` and `osf preprints list` — Search OSF and list preprints
+- `osf search`, `osf preprints list`, and `osf resolve` — Search, list preprints, and resolve OSF DOI destinations
 - `osf registrations create` — Create draft registrations for an existing node
 - `osf export` — Export a node snapshot as JSON or a summary table
 - `osf-mcp` — Stdio MCP server exposing read-only OSF tools for agent clients
@@ -71,6 +71,7 @@ osf files download --tree abc12 ./output/
 osf files upload --node abc12 ./report.pdf
 osf search "open science"
 osf preprints list
+osf resolve 10.1234/example
 osf registrations create abc12 --schema <schema-id> --title "Analysis plan"
 osf export abc12 --json
 ```

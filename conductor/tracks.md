@@ -41,7 +41,7 @@ The per-track `plan.md` files are the source of truth for completion state.
 
 - [ ] [osf-sync-parity](tracks/osf-sync-parity_20260711/spec.md) — Benchmark OSF Sync desktop synchronization semantics; source CenterForOpenScience/osf-sync; issue #13.
 
-- [ ] [datahugger-doi-parity](tracks/datahugger-doi-parity_20260711/spec.md) — Add DOI-oriented OSF retrieval parity with datahugger; source J535D165/datahugger; issue #14.
+- [~] [datahugger-doi-parity](tracks/datahugger-doi-parity_20260711/spec.md) — Add DOI-oriented OSF retrieval parity with datahugger; source J535D165/datahugger; issue #14.
 
 - [ ] [tooluniverse-osf-parity](tracks/tooluniverse-osf-parity_20260711/spec.md) — Add ToolUniverse-compatible OSF preprint and agent tooling; source mims-harvard/ToolUniverse; issue #15.
 

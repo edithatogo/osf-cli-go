@@ -125,6 +125,11 @@ func (c *Client) GetStorageFile(ctx context.Context, id string) (StorageFile, er
 	return doc.Data, nil
 }
 
+// ResolveDOI resolves an OSF DOI without using the OSF API credentials.
+func (c *Client) ResolveDOI(ctx context.Context, identifier string) (DOIResolution, error) {
+	return ResolveDOI(ctx, identifier)
+}
+
 // ListFileVersions loads all versions for a file.
 func (c *Client) ListFileVersions(ctx context.Context, fileID string) ([]FileVersion, error) {
 	return collectPages[FileVersion](ctx, c, "/v2/files/"+url.PathEscape(fileID)+"/versions/")
