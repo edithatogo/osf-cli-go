@@ -1,0 +1,1 @@
+Conductor review follow-up: local WinGet implementation is complete, but track cleanup is deferred because upstream PR #401414 still requires Microsoft CLA acceptance and maintainer revalidation. No publication claim made.
