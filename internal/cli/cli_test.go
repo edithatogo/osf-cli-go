@@ -1425,6 +1425,7 @@ type fakeReadonlyClient struct {
 	node                     osfapi.Node
 	children                 []osfapi.Node
 	preprints                []osfapi.Node
+	searchedPreprints        []osfapi.Preprint
 	addons                   []osfapi.Node
 	searchResults            []osfapi.SearchResult
 	files                    []osfapi.StorageFile
@@ -1446,6 +1447,7 @@ type fakeReadonlyClient struct {
 	gotDeletedFile           string
 	gotPreprintProvider      string
 	gotPreprintLimit         int
+	gotPreprintQuery         string
 	gotSearchLimit           int
 	gotAddonNodeID           string
 	gotRegistrationNode      string
@@ -1529,6 +1531,15 @@ func (f *fakeReadonlyClient) ListPreprints(_ context.Context, provider string, l
 		f.gotPreprintLimit = limit[0]
 	}
 	return append([]osfapi.Node(nil), f.preprints...), nil
+}
+
+func (f *fakeReadonlyClient) SearchPreprints(_ context.Context, query, provider string, limit ...int) ([]osfapi.Preprint, error) {
+	f.gotPreprintQuery = query
+	f.gotPreprintProvider = provider
+	if len(limit) > 0 {
+		f.gotPreprintLimit = limit[0]
+	}
+	return append([]osfapi.Preprint(nil), f.searchedPreprints...), nil
 }
 
 func (f *fakeReadonlyClient) SearchOSF(_ context.Context, query string, limit ...int) ([]osfapi.SearchResult, error) {
@@ -1662,6 +1673,32 @@ func TestPreprintsListOutput(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "Preprint") {
 		t.Fatalf("stdout = %q, want Preprint", stdout.String())
+	}
+}
+
+func TestPreprintsSearchOutput(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{
+		searchedPreprints: []osfapi.Preprint{{
+			ID: "p1", Type: "preprints",
+			Attributes: osfapi.PreprintAttributes{Title: "Open Science", DatePublished: "2026-01-02", IsPublished: true, DOI: "10.1234/p1"},
+			Links:      osfapi.Links{HTML: "https://osf.io/p1/"},
+		}},
+	}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"preprints", "search", "open science", "--provider", "osf"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("preprints search returned %d, want 0: %s", code, stderr.String())
+	}
+	if client.gotPreprintQuery != "open science" || client.gotPreprintProvider != "osf" || client.gotPreprintLimit != 10 {
+		t.Fatalf("search args = %q, %q, %d", client.gotPreprintQuery, client.gotPreprintProvider, client.gotPreprintLimit)
+	}
+	for _, expected := range []string{"Open Science", "2026-01-02", "10.1234/p1", "https://osf.io/p1/"} {
+		if !strings.Contains(stdout.String(), expected) {
+			t.Fatalf("stdout = %q, want %q", stdout.String(), expected)
+		}
 	}
 }
 

@@ -261,6 +261,7 @@ func checkMCPBToolSchemas(manifest mcpbManifest) error {
 		"osf_contributors_list",
 		"osf_search",
 		"osf_preprints_list",
+		"osf_preprints_search",
 		"osf_doi_resolve",
 	}
 	seen := map[string]bool{}

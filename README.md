@@ -18,7 +18,7 @@ A Go command-line client for the Open Science Framework (OSF).
 - `osf projects list|get` — List and inspect projects
 - `osf components list` — List project components
 - `osf files list|download|upload|mkdir|rm` — Browse, download, upload, create folders, and delete OSF Storage files
-- `osf search`, `osf preprints list`, and `osf resolve` — Search, list preprints, and resolve OSF DOI destinations
+- `osf search`, `osf preprints list|search`, and `osf resolve` — Search OSF content, discover preprints, and resolve OSF DOI destinations
 - `osf registrations create` — Create draft registrations for an existing node
 - `osf export` — Export a node snapshot as JSON or a summary table
 - `osf-mcp` — Stdio MCP server exposing read-only OSF tools for agent clients
@@ -71,6 +71,7 @@ osf files download --tree abc12 ./output/
 osf files upload --node abc12 ./report.pdf
 osf search "open science"
 osf preprints list
+osf preprints search "open science" --provider osf
 osf resolve 10.1234/example
 osf registrations create abc12 --schema <schema-id> --title "Analysis plan"
 osf export abc12 --json
@@ -81,12 +82,16 @@ osf export abc12 --json
 `osf-mcp` runs a stdio MCP server with read-only tools:
 `osf_whoami`, `osf_projects_list`, `osf_project_get`,
 `osf_components_list`, `osf_files_list`, `osf_contributors_list`,
-`osf_search`, and `osf_preprints_list`.
+`osf_search`, `osf_preprints_list`, `osf_preprints_search`, and
+`osf_doi_resolve`.
 
 The parity discovery tools are bounded and deterministic: `osf_search` requires
 a non-empty query and accepts a limit from 1 to 100, while
 `osf_preprints_list` accepts an optional provider and the same bounded limit.
-Both return structured JSON through the MCP server and never perform writes.
+`osf_preprints_search` requires a title query, accepts an optional provider, and
+returns publication date, published state, DOI, and OSF HTML URL with a limit
+from 1 to 100. These tools return structured JSON through the MCP server and
+never perform writes.
 
 For DataLad workflows, OSF CLI Go provides the general-purpose OSF API and
 safe file primitives used around a dataset, including `osf export` and

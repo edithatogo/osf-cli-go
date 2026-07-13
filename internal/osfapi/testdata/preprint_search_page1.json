@@ -1,0 +1,21 @@
+{
+  "data": [
+    {
+      "id": "preprint-1",
+      "type": "preprints",
+      "attributes": {
+        "title": "Open Science Example",
+        "date_published": "2026-01-02T00:00:00Z",
+        "is_published": true,
+        "doi": "10.1234/preprint-1"
+      },
+      "links": {
+        "self": "https://api.osf.io/v2/preprints/preprint-1/",
+        "html": "https://osf.io/preprint-1/"
+      }
+    }
+  ],
+  "links": {
+    "self": "https://api.osf.io/v2/preprints/?filter%5Btitle%5D=open%20science&filter%5Bprovider%5D=osf"
+  }
+}

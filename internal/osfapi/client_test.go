@@ -1271,6 +1271,40 @@ func TestListPreprints(t *testing.T) {
 	}
 }
 
+func TestSearchPreprints(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Path; got != "/v2/preprints/" {
+			t.Fatalf("path = %q", got)
+		}
+		if got, want := r.URL.Query().Get("filter[title]"), "open science"; got != want {
+			t.Fatalf("filter[title] = %q, want %q", got, want)
+		}
+		if got, want := r.URL.Query().Get("filter[provider]"), "osf"; got != want {
+			t.Fatalf("filter[provider] = %q, want %q", got, want)
+		}
+		writeFixture(t, w, "preprint_search_page1.json")
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	preprints, err := client.SearchPreprints(t.Context(), "open science", "osf", 1)
+	if err != nil {
+		t.Fatalf("SearchPreprints returned error: %v", err)
+	}
+	if len(preprints) != 1 || preprints[0].ID != "preprint-1" {
+		t.Fatalf("preprints = %+v", preprints)
+	}
+	if got := preprints[0].Attributes.DOI; got != "10.1234/preprint-1" {
+		t.Fatalf("doi = %q", got)
+	}
+}
+
 func TestSearchOSF(t *testing.T) {
 	t.Parallel()
 
