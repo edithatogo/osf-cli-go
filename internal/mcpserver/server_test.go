@@ -32,6 +32,7 @@ func TestServerExposesReadOnlyTools(t *testing.T) {
 		"osf_contributors_list",
 		"osf_search",
 		"osf_preprints_list",
+		"osf_preprints_search",
 		"osf_doi_resolve",
 	}
 	got := map[string]bool{}
@@ -57,6 +58,7 @@ func TestServerToolInputSchemasMatchPackagedContract(t *testing.T) {
 		"osf_contributors_list": {"id"},
 		"osf_search":            {"query", "limit"},
 		"osf_preprints_list":    {"provider", "limit"},
+		"osf_preprints_search":  {"query", "provider", "limit"},
 		"osf_doi_resolve":       {"identifier"},
 	}
 	for tool, err := range session.Tools(t.Context(), nil) {
@@ -176,6 +178,26 @@ func TestPreprintsPassProviderAndLimit(t *testing.T) {
 	}
 }
 
+func TestPreprintSearchRequiresQueryAndPassesFilters(t *testing.T) {
+	client := &fakeOSFClient{}
+	session := connectTestServer(t, client)
+	result, err := session.CallTool(t.Context(), &mcp.CallToolParams{
+		Name: "osf_preprints_search", Arguments: map[string]any{"query": "open science", "provider": "osf", "limit": 7},
+	})
+	if err != nil || result.IsError {
+		t.Fatalf("preprint search failed: result=%#v err=%v", result, err)
+	}
+	if client.gotPreprintQuery != "open science" || client.gotProvider != "osf" || client.gotLimit != 7 {
+		t.Fatalf("preprint search args = %q, %q, %d", client.gotPreprintQuery, client.gotProvider, client.gotLimit)
+	}
+	result, err = session.CallTool(t.Context(), &mcp.CallToolParams{
+		Name: "osf_preprints_search", Arguments: map[string]any{"query": " "},
+	})
+	if err != nil || !result.IsError {
+		t.Fatalf("blank preprint search result=%#v err=%v, want tool error", result, err)
+	}
+}
+
 func TestDOIResolveRequiresIdentifierAndReturnsResolution(t *testing.T) {
 	client := &fakeOSFClient{}
 	session := connectTestServer(t, client)
@@ -285,13 +307,14 @@ func contentText(content []mcp.Content) string {
 }
 
 type fakeOSFClient struct {
-	gotNodeID       string
-	gotFileSegments []string
-	gotQuery        string
-	gotProvider     string
-	gotLimit        int
-	gotDOI          string
-	failErr         error
+	gotNodeID        string
+	gotFileSegments  []string
+	gotQuery         string
+	gotPreprintQuery string
+	gotProvider      string
+	gotLimit         int
+	gotDOI           string
+	failErr          error
 }
 
 func (f *fakeOSFClient) CurrentUser(context.Context) (osfapi.User, error) {
@@ -372,6 +395,20 @@ func (f *fakeOSFClient) ListPreprints(_ context.Context, provider string, limit 
 	f.gotProvider = provider
 	f.gotLimit = limit[0]
 	return []osfapi.Node{node("preprint-1", "Preprint")}, nil
+}
+
+func (f *fakeOSFClient) SearchPreprints(_ context.Context, query, provider string, limit ...int) ([]osfapi.Preprint, error) {
+	if f.failErr != nil {
+		return nil, f.failErr
+	}
+	f.gotPreprintQuery = query
+	f.gotProvider = provider
+	f.gotLimit = limit[0]
+	return []osfapi.Preprint{{
+		ID: "preprint-1", Type: "preprints",
+		Attributes: osfapi.PreprintAttributes{Title: "Open Science", DOI: "10.1234/preprint-1", IsPublished: true},
+		Links:      osfapi.Links{HTML: "https://osf.io/preprint-1/"},
+	}}, nil
 }
 
 func (f *fakeOSFClient) ResolveDOI(_ context.Context, identifier string) (osfapi.DOIResolution, error) {

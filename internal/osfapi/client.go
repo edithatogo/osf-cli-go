@@ -536,6 +536,20 @@ func (c *Client) ListPreprints(ctx context.Context, provider string, limit ...in
 	return collectPagesLimit[Node](ctx, c, endpoint, optionalLimit(limit))
 }
 
+// SearchPreprints searches OSF preprints by title and optionally provider.
+func (c *Client) SearchPreprints(ctx context.Context, query, provider string, limit ...int) ([]Preprint, error) {
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return nil, fmt.Errorf("preprint search query is required")
+	}
+	endpoint := "/v2/preprints/"
+	endpoint = appendQuery(endpoint, "filter[title]", query)
+	if provider != "" {
+		endpoint = appendQuery(endpoint, "filter[provider]", provider)
+	}
+	return collectPagesLimit[Preprint](ctx, c, endpoint, optionalLimit(limit))
+}
+
 // SearchOSF performs a search across OSF content.
 func (c *Client) SearchOSF(ctx context.Context, query string, limit ...int) ([]SearchResult, error) {
 	endpoint := "/v2/search/?q=" + url.QueryEscape(query)

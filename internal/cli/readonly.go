@@ -30,6 +30,7 @@ type readonlyClient interface {
 	CreateFolder(context.Context, string, string) error
 	DeleteFile(context.Context, string, string) error
 	ListPreprints(context.Context, string, ...int) ([]osfapi.Node, error)
+	SearchPreprints(context.Context, string, string, ...int) ([]osfapi.Preprint, error)
 	SearchOSF(context.Context, string, ...int) ([]osfapi.SearchResult, error)
 	ListNodeAddons(context.Context, string) ([]osfapi.Node, error)
 	CreateRegistration(context.Context, string, osfapi.RegistrationRequest) (osfapi.Node, error)
@@ -149,6 +150,10 @@ func (c *defaultReadonlyClient) DeleteFile(ctx context.Context, providerURL, fil
 
 func (c *defaultReadonlyClient) ListPreprints(ctx context.Context, provider string, limit ...int) ([]osfapi.Node, error) {
 	return c.api.ListPreprints(ctx, provider, limit...)
+}
+
+func (c *defaultReadonlyClient) SearchPreprints(ctx context.Context, query, provider string, limit ...int) ([]osfapi.Preprint, error) {
+	return c.api.SearchPreprints(ctx, query, provider, limit...)
 }
 
 func (c *defaultReadonlyClient) SearchOSF(ctx context.Context, query string, limit ...int) ([]osfapi.SearchResult, error) {

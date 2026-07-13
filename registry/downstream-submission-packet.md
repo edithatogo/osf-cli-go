@@ -61,6 +61,7 @@ Plugin/extension ZIPs:
 - `osf_contributors_list`
 - `osf_search`
 - `osf_preprints_list`
+- `osf_preprints_search`
 
 ## Manual Submission Targets
 

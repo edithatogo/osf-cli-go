@@ -78,6 +78,10 @@
       "description": "List OSF preprints, optionally filtered by provider."
     },
     {
+      "name": "osf_preprints_search",
+      "description": "Search OSF preprints by title, optionally filtered by provider."
+    },
+    {
       "name": "osf_doi_resolve",
       "description": "Resolve a DOI to an OSF web resource without downloading or writing data."
     }

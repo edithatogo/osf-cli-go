@@ -27,6 +27,16 @@ type projectRecord struct {
 	URL         string `json:"url,omitempty"`
 }
 
+type preprintRecord struct {
+	ID            string `json:"id"`
+	Title         string `json:"title"`
+	DatePublished string `json:"date_published,omitempty"`
+	Published     bool   `json:"published"`
+	DOI           string `json:"doi,omitempty"`
+	URL           string `json:"url,omitempty"`
+	Source        string `json:"source"`
+}
+
 type fileRecord struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -426,10 +436,11 @@ func newFilesListCommand(client readonlyClient) *cobra.Command {
 func newPreprintsCommand(client readonlyClient) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "preprints",
-		Short: "List OSF preprints",
-		Long:  "List OSF preprints.",
+		Short: "Discover OSF preprints",
+		Long:  "List or search OSF preprints.",
 	}
 	cmd.AddCommand(newPreprintsListCommand(client))
+	cmd.AddCommand(newPreprintsSearchCommand(client))
 	return cmd
 }
 
@@ -475,6 +486,56 @@ func newPreprintsListCommand(client readonlyClient) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&provider, "provider", "", "filter by preprint provider")
 	cmd.Flags().IntVar(&limit, "limit", 20, "maximum records to return; use 0 for all pages")
+	return cmd
+}
+
+func newPreprintsSearchCommand(client readonlyClient) *cobra.Command {
+	var provider string
+	var limit int
+	cmd := &cobra.Command{
+		Use:   "search <query>",
+		Short: "Search preprints by title",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if strings.TrimSpace(args[0]) == "" {
+				return fmt.Errorf("query is required")
+			}
+			if limit < 1 || limit > 100 {
+				return fmt.Errorf("limit must be between 1 and 100")
+			}
+			outputMode, err := resolveOutputMode(cmd)
+			if err != nil {
+				return err
+			}
+
+			preprints, err := client.SearchPreprints(cmd.Context(), args[0], provider, limit)
+			if err != nil {
+				return err
+			}
+			rows := make([]preprintRecord, 0, len(preprints))
+			for _, preprint := range preprints {
+				rows = append(rows, preprintRecord{
+					ID:            preprint.ID,
+					Title:         preprint.Attributes.Title,
+					DatePublished: preprint.Attributes.DatePublished,
+					Published:     preprint.Attributes.IsPublished,
+					DOI:           preprint.Attributes.DOI,
+					URL:           preprint.Links.HTML,
+					Source:        "OSF Preprints",
+				})
+			}
+			if outputMode == outputModeJSON {
+				return output.WriteJSON(cmd.OutOrStdout(), rows)
+			}
+			tableRows := make([][]string, 0, len(rows))
+			for _, row := range rows {
+				tableRows = append(tableRows, []string{row.ID, row.Title, row.DatePublished, strconv.FormatBool(row.Published), row.DOI, row.URL, row.Source})
+			}
+			return output.WriteTable(cmd.OutOrStdout(), []string{"ID", "TITLE", "DATE_PUBLISHED", "PUBLISHED", "DOI", "URL", "SOURCE"}, tableRows)
+		},
+	}
+	cmd.Flags().StringVar(&provider, "provider", "", "filter by preprint provider")
+	cmd.Flags().IntVar(&limit, "limit", 10, "maximum records to return (1-100)")
 	return cmd
 }
 

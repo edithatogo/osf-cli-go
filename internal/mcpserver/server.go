@@ -22,6 +22,7 @@ type OSFClient interface {
 	ListStorageFiles(context.Context, string, ...string) ([]osfapi.StorageFile, error)
 	SearchOSF(context.Context, string, ...int) ([]osfapi.SearchResult, error)
 	ListPreprints(context.Context, string, ...int) ([]osfapi.Node, error)
+	SearchPreprints(context.Context, string, string, ...int) ([]osfapi.Preprint, error)
 	ResolveDOI(context.Context, string) (osfapi.DOIResolution, error)
 }
 
@@ -54,6 +55,12 @@ type PreprintsInput struct {
 	Limit    int    `json:"limit,omitempty" jsonschema:"maximum number of results; zero uses the server default"`
 }
 
+type PreprintSearchInput struct {
+	Query    string `json:"query" jsonschema:"title search query"`
+	Provider string `json:"provider,omitempty" jsonschema:"optional preprint provider filter"`
+	Limit    int    `json:"limit,omitempty" jsonschema:"maximum number of results; zero uses the server default"`
+}
+
 type DOIInput struct {
 	Identifier string `json:"identifier" jsonschema:"DOI, doi.org URL, or OSF DOI URL"`
 }
@@ -72,6 +79,21 @@ type NodeOutput struct {
 	Description string `json:"description,omitempty"`
 	Category    string `json:"category,omitempty"`
 	SelfURL     string `json:"selfUrl,omitempty"`
+}
+
+type PreprintOutput struct {
+	ID            string `json:"id"`
+	Type          string `json:"type,omitempty"`
+	Title         string `json:"title,omitempty"`
+	DatePublished string `json:"datePublished,omitempty"`
+	Published     bool   `json:"published"`
+	DOI           string `json:"doi,omitempty"`
+	URL           string `json:"url,omitempty"`
+	Source        string `json:"source"`
+}
+
+type PreprintsResult struct {
+	Preprints []PreprintOutput `json:"preprints"`
 }
 
 type ContributorOutput struct {
@@ -177,6 +199,10 @@ func New(client OSFClient, opts Options) *mcp.Server {
 		Name:        "osf_preprints_list",
 		Description: "List OSF preprints, optionally filtered by provider.",
 	}, service.ListPreprints)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "osf_preprints_search",
+		Description: "Search OSF preprints by title, optionally filtered by provider.",
+	}, service.SearchPreprints)
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "osf_doi_resolve",
 		Description: "Resolve a DOI to an OSF web resource without downloading or writing data.",
@@ -285,6 +311,35 @@ func (s *Server) ListPreprints(ctx context.Context, _ *mcp.CallToolRequest, in P
 	return nil, NodesResult{Nodes: toNodeOutputs(preprints)}, nil
 }
 
+func (s *Server) SearchPreprints(ctx context.Context, _ *mcp.CallToolRequest, in PreprintSearchInput) (*mcp.CallToolResult, PreprintsResult, error) {
+	query := strings.TrimSpace(in.Query)
+	if query == "" {
+		return nil, PreprintsResult{}, mcpError(errors.New("query is required"))
+	}
+	limit, err := boundedSearchLimit(in.Limit)
+	if err != nil {
+		return nil, PreprintsResult{}, mcpError(err)
+	}
+	preprints, err := s.client.SearchPreprints(ctx, query, strings.TrimSpace(in.Provider), limit)
+	if err != nil {
+		return nil, PreprintsResult{}, mcpError(err)
+	}
+	out := make([]PreprintOutput, 0, len(preprints))
+	for _, preprint := range preprints {
+		out = append(out, PreprintOutput{
+			ID:            preprint.ID,
+			Type:          preprint.Type,
+			Title:         preprint.Attributes.Title,
+			DatePublished: preprint.Attributes.DatePublished,
+			Published:     preprint.Attributes.IsPublished,
+			DOI:           preprint.Attributes.DOI,
+			URL:           preprint.Links.HTML,
+			Source:        "OSF Preprints",
+		})
+	}
+	return nil, PreprintsResult{Preprints: out}, nil
+}
+
 func (s *Server) ResolveDOI(ctx context.Context, _ *mcp.CallToolRequest, in DOIInput) (*mcp.CallToolResult, DOIResult, error) {
 	identifier := strings.TrimSpace(in.Identifier)
 	if identifier == "" {
@@ -303,6 +358,16 @@ func boundedLimit(limit int) (int, error) {
 	}
 	if limit > 100 {
 		return 0, errors.New("limit must be 100 or less")
+	}
+	return limit, nil
+}
+
+func boundedSearchLimit(limit int) (int, error) {
+	if limit == 0 {
+		return 10, nil
+	}
+	if limit < 1 || limit > 100 {
+		return 0, errors.New("limit must be between 1 and 100")
 	}
 	return limit, nil
 }

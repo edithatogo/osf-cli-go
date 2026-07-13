@@ -13,6 +13,7 @@ type document[T any] struct {
 // Links carries the JSON:API link set used by OSF responses.
 type Links struct {
 	Self     string `json:"self,omitempty"`
+	HTML     string `json:"html,omitempty"`
 	Next     string `json:"next,omitempty"`
 	Prev     string `json:"prev,omitempty"`
 	Related  string `json:"related,omitempty"`
@@ -75,6 +76,22 @@ type NodeAttributes struct {
 	Title       string `json:"title"`
 	Description string `json:"description,omitempty"`
 	Category    string `json:"category,omitempty"`
+}
+
+// Preprint models an OSF preprint result with discovery metadata.
+type Preprint struct {
+	ID         string             `json:"id"`
+	Type       string             `json:"type"`
+	Attributes PreprintAttributes `json:"attributes"`
+	Links      Links              `json:"links"`
+}
+
+// PreprintAttributes carries the fields exposed by the OSF preprint search API.
+type PreprintAttributes struct {
+	Title         string `json:"title"`
+	DatePublished string `json:"date_published,omitempty"`
+	IsPublished   bool   `json:"is_published"`
+	DOI           string `json:"doi,omitempty"`
 }
 
 // Contributor models a node contributor entry.
