@@ -681,6 +681,12 @@ func TestWriteRootContractWithJSON(t *testing.T) {
 	if contract.Commands[0].Status != "implemented" || contract.Commands[1].Status != "implemented" {
 		t.Fatalf("unexpected command statuses: %#v", contract.Commands)
 	}
+	wantNames := []string{"auth", "projects", "components", "files", "export", "validate", "search", "preprints", "registrations", "resolve", "open", "whoami", "completion"}
+	for i, want := range wantNames {
+		if contract.Commands[i].Name != want || contract.Commands[i].Status != "implemented" {
+			t.Fatalf("command %d = %#v, want implemented %q", i, contract.Commands[i], want)
+		}
+	}
 }
 
 func TestIsUsageError(t *testing.T) {

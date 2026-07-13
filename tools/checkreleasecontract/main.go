@@ -79,10 +79,16 @@ func run() error {
 		"integrations/windsurf/mcp_config.json",
 		"integrations/zed/settings.json",
 		"docs/compatibility-policy.md",
+		"docs/cli-json-contract.md",
+		"docs/mcp-schema-contract.md",
+		"docs/migration-v1.md",
+		"docs/threat-model.md",
+		"docs/operations-runbook.md",
 		"docs/support-policy.md",
 		"docs/live-validation-matrix.md",
 		"docs/release-candidate-evidence.md",
 		"docs/v1-launch-roadmap.md",
+		"docs/v1-launch-review.md",
 	}
 	for _, path := range required {
 		if _, err := os.Stat(path); err != nil {
