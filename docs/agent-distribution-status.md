@@ -3,7 +3,7 @@
 Last reviewed: 2026-07-14
 
 The dated, machine-validated score for every provider and registry target is
-maintained in [`registry/submission-scorecard.json`](../registry/submission-scorecard.json).
+maintained in [`registry/submission-scorecard.json`](https://github.com/edithatogo/osf-cli-go/blob/master/registry/submission-scorecard.json).
 Scores represent local readiness against the published rubric; provider
 approval is recorded only with a provider receipt and public listing URL.
 

@@ -24,7 +24,7 @@ or explicitly waived in a release-candidate review.
 
 The working evidence set is maintained in the [feature
 matrix](feature-matrix.md), [registry scorecard](registry-scorecard.md), and
-the [1.0 hardening and maturity track](../conductor/archive/v1-hardening-maturity_20260713/spec.md).
+the [1.0 hardening and maturity track](https://github.com/edithatogo/osf-cli-go/blob/master/conductor/archive/v1-hardening-maturity_20260713/spec.md).
 
 ## Recommended sequence
 
