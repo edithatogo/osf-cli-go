@@ -32,6 +32,7 @@ func TestServerExposesReadOnlyTools(t *testing.T) {
 		"osf_contributors_list",
 		"osf_search",
 		"osf_preprints_list",
+		"osf_doi_resolve",
 	}
 	got := map[string]bool{}
 	for _, name := range names {
@@ -56,6 +57,7 @@ func TestServerToolInputSchemasMatchPackagedContract(t *testing.T) {
 		"osf_contributors_list": {"id"},
 		"osf_search":            {"query", "limit"},
 		"osf_preprints_list":    {"provider", "limit"},
+		"osf_doi_resolve":       {"identifier"},
 	}
 	for tool, err := range session.Tools(t.Context(), nil) {
 		if err != nil {
@@ -174,6 +176,26 @@ func TestPreprintsPassProviderAndLimit(t *testing.T) {
 	}
 }
 
+func TestDOIResolveRequiresIdentifierAndReturnsResolution(t *testing.T) {
+	client := &fakeOSFClient{}
+	session := connectTestServer(t, client)
+	result, err := session.CallTool(t.Context(), &mcp.CallToolParams{
+		Name: "osf_doi_resolve", Arguments: map[string]any{"identifier": "10.1234/example"},
+	})
+	if err != nil || result.IsError {
+		t.Fatalf("DOI resolve failed: result=%#v err=%v", result, err)
+	}
+	if client.gotDOI != "10.1234/example" {
+		t.Fatalf("DOI = %q, want 10.1234/example", client.gotDOI)
+	}
+	result, err = session.CallTool(t.Context(), &mcp.CallToolParams{
+		Name: "osf_doi_resolve", Arguments: map[string]any{"identifier": " "},
+	})
+	if err != nil || !result.IsError {
+		t.Fatalf("blank DOI result=%#v err=%v, want tool error", result, err)
+	}
+}
+
 func TestToolFailureRedactsSecretMaterial(t *testing.T) {
 	session := connectTestServer(t, &fakeOSFClient{
 		failErr: errors.New("request failed Authorization: Bearer osf_live_token_abc123def456ghi789xyz OSF_PASSWORD=password-123"),
@@ -268,6 +290,7 @@ type fakeOSFClient struct {
 	gotQuery        string
 	gotProvider     string
 	gotLimit        int
+	gotDOI          string
 	failErr         error
 }
 
@@ -349,6 +372,14 @@ func (f *fakeOSFClient) ListPreprints(_ context.Context, provider string, limit 
 	f.gotProvider = provider
 	f.gotLimit = limit[0]
 	return []osfapi.Node{node("preprint-1", "Preprint")}, nil
+}
+
+func (f *fakeOSFClient) ResolveDOI(_ context.Context, identifier string) (osfapi.DOIResolution, error) {
+	if f.failErr != nil {
+		return osfapi.DOIResolution{}, f.failErr
+	}
+	f.gotDOI = identifier
+	return osfapi.DOIResolution{DOI: identifier, ResolvedURL: "https://osf.io/project-1/"}, nil
 }
 
 func node(id, title string) osfapi.Node {

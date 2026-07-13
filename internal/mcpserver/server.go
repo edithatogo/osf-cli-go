@@ -22,6 +22,7 @@ type OSFClient interface {
 	ListStorageFiles(context.Context, string, ...string) ([]osfapi.StorageFile, error)
 	SearchOSF(context.Context, string, ...int) ([]osfapi.SearchResult, error)
 	ListPreprints(context.Context, string, ...int) ([]osfapi.Node, error)
+	ResolveDOI(context.Context, string) (osfapi.DOIResolution, error)
 }
 
 type Server struct {
@@ -51,6 +52,10 @@ type SearchInput struct {
 type PreprintsInput struct {
 	Provider string `json:"provider,omitempty" jsonschema:"optional preprint provider filter"`
 	Limit    int    `json:"limit,omitempty" jsonschema:"maximum number of results; zero uses the server default"`
+}
+
+type DOIInput struct {
+	Identifier string `json:"identifier" jsonschema:"DOI, doi.org URL, or OSF DOI URL"`
 }
 
 type UserOutput struct {
@@ -121,6 +126,11 @@ type SearchResults struct {
 	Results []SearchResult `json:"results"`
 }
 
+type DOIResult struct {
+	DOI         string `json:"doi"`
+	ResolvedURL string `json:"resolvedUrl"`
+}
+
 // New returns an MCP server with read-only OSF tools registered.
 func New(client OSFClient, opts Options) *mcp.Server {
 	version := strings.TrimSpace(opts.Version)
@@ -167,6 +177,10 @@ func New(client OSFClient, opts Options) *mcp.Server {
 		Name:        "osf_preprints_list",
 		Description: "List OSF preprints, optionally filtered by provider.",
 	}, service.ListPreprints)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "osf_doi_resolve",
+		Description: "Resolve a DOI to an OSF web resource without downloading or writing data.",
+	}, service.ResolveDOI)
 
 	return server
 }
@@ -269,6 +283,18 @@ func (s *Server) ListPreprints(ctx context.Context, _ *mcp.CallToolRequest, in P
 		return nil, NodesResult{}, mcpError(err)
 	}
 	return nil, NodesResult{Nodes: toNodeOutputs(preprints)}, nil
+}
+
+func (s *Server) ResolveDOI(ctx context.Context, _ *mcp.CallToolRequest, in DOIInput) (*mcp.CallToolResult, DOIResult, error) {
+	identifier := strings.TrimSpace(in.Identifier)
+	if identifier == "" {
+		return nil, DOIResult{}, mcpError(errors.New("identifier is required"))
+	}
+	resolution, err := s.client.ResolveDOI(ctx, identifier)
+	if err != nil {
+		return nil, DOIResult{}, mcpError(err)
+	}
+	return nil, DOIResult{DOI: resolution.DOI, ResolvedURL: resolution.ResolvedURL}, nil
 }
 
 func boundedLimit(limit int) (int, error) {

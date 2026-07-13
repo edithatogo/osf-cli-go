@@ -29,7 +29,7 @@ The current packages are already split in a way that supports a later MCP track 
 
 1. Read-only server facade
    - Implemented in `internal/mcpserver` and `cmd/osf-mcp`.
-   - The read-only tool set includes `osf_whoami`, `osf_projects_list`, `osf_project_get`, `osf_components_list`, `osf_files_list`, `osf_contributors_list`, `osf_search`, and `osf_preprints_list`.
+   - The read-only tool set includes `osf_whoami`, `osf_projects_list`, `osf_project_get`, `osf_components_list`, `osf_files_list`, `osf_contributors_list`, `osf_search`, `osf_preprints_list`, and `osf_doi_resolve`.
 
 2. Structured tool results
    - OSF resources are mapped to JSON-style MCP structured output in `internal/mcpserver`.

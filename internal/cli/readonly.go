@@ -163,6 +163,10 @@ func (c *defaultReadonlyClient) CreateRegistration(ctx context.Context, nodeID s
 	return c.api.CreateRegistration(ctx, nodeID, request)
 }
 
+func (c *defaultReadonlyClient) ResolveDOI(ctx context.Context, identifier string) (osfapi.DOIResolution, error) {
+	return osfapi.ResolveDOI(ctx, identifier)
+}
+
 func parseNodeIDOrURL(input string) (string, error) {
 	trimmed := strings.TrimSpace(input)
 	if trimmed == "" {

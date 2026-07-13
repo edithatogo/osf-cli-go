@@ -631,8 +631,8 @@ func TestWriteRootContractWithJSON(t *testing.T) {
 	if err := json.Unmarshal(buf.Bytes(), &contract); err != nil {
 		t.Fatalf("stdout is not valid JSON: %v\n%s", err, buf.String())
 	}
-	if len(contract.Commands) != 11 {
-		t.Fatalf("command count = %d, want 11", len(contract.Commands))
+	if len(contract.Commands) != 12 {
+		t.Fatalf("command count = %d, want 12", len(contract.Commands))
 	}
 	if contract.Commands[0].Status != "implemented" || contract.Commands[1].Status != "implemented" {
 		t.Fatalf("unexpected command statuses: %#v", contract.Commands)
@@ -1575,6 +1575,10 @@ func (f *fakeReadonlyClient) DeleteFile(_ context.Context, providerURL, fileName
 	f.gotProviderURL = providerURL
 	f.gotDeletedFile = fileName
 	return nil
+}
+
+func (f *fakeReadonlyClient) ResolveDOI(context.Context, string) (osfapi.DOIResolution, error) {
+	return osfapi.DOIResolution{DOI: "10.1234/example", ResolvedURL: "https://osf.io/project-1/"}, nil
 }
 
 func (f *fakeReadonlyClient) OpenDownload(_ context.Context, downloadURL string) (io.ReadCloser, error) {

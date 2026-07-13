@@ -14,7 +14,7 @@ and repositories that merely mention the OSF API.
 | [psychopy/pyosf](https://github.com/psychopy/pyosf) | Project synchronization workflows | [#11](https://github.com/edithatogo/osf-cli-go/issues/11) |
 | [datalad/datalad-osf](https://github.com/datalad/datalad-osf) | DataLad datasets, Git remotes, and git-annex-oriented workflows | [#12](https://github.com/edithatogo/osf-cli-go/issues/12) closed; dated comparison evidence in the archived DataLad track |
 | [CenterForOpenScience/osf-sync](https://github.com/CenterForOpenScience/osf-sync) | Desktop synchronization semantics | [#13](https://github.com/edithatogo/osf-cli-go/issues/13) |
-| [J535D165/datahugger](https://github.com/J535D165/datahugger) | DOI-oriented cross-repository retrieval | [#14](https://github.com/edithatogo/osf-cli-go/issues/14) |
+| [J535D165/datahugger](https://github.com/J535D165/datahugger) | DOI-oriented cross-repository retrieval | [#14](https://github.com/edithatogo/osf-cli-go/issues/14) closed; dated comparison evidence in the archived Datahugger track |
 | [mims-harvard/ToolUniverse](https://github.com/mims-harvard/ToolUniverse) | AI-scientist OSF Preprints tools | [#15](https://github.com/edithatogo/osf-cli-go/issues/15) |
 | [wentorai/research-plugins](https://github.com/wentorai/research-plugins) | Agent skills for OSF discovery and full text | [#16](https://github.com/edithatogo/osf-cli-go/issues/16) |
 | [CoLRev-Environment/colrev](https://github.com/CoLRev-Environment/colrev) | Literature-review ingestion and metadata normalization | [#17](https://github.com/edithatogo/osf-cli-go/issues/17) |
