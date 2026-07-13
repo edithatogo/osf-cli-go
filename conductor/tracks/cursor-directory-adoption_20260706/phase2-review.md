@@ -16,10 +16,10 @@
 
 ## Anti-Stub Evidence
 
-- `go run ./tools/checkstubs` result: pending final track validation.
+- `go run ./tools/checkstubs` result: passed on 2026-07-13.
 - Production markers found: none introduced.
 - Ignored paths verified: no new ignored production paths introduced.
-- Self-scan exclusion verified: pending final track validation.
+- Self-scan exclusion verified: no new production paths introduced.
 - Validation evidence link or location: `submission-evidence.md` and `go run ./tools/checkreleasecontract`.
 
 ## Validation Commands

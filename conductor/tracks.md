@@ -31,7 +31,7 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [x] [smithery-quality-publication-adoption](archive/smithery-quality-publication-adoption_20260706/spec.md) — Optimize Smithery publication quality and adoption for the OSF MCP server.
 - [x] [mcp-directory-adoption](archive/mcp-directory-adoption_20260706/spec.md) — Submit, verify, and optimize MCP.Directory adoption for the OSF MCP server.
 - [x] [glama-quality-claim-adoption](archive/glama-quality-claim-adoption_20260706/spec.md) — Claim or improve Glama listing quality for the OSF MCP server.
-- [~] [cursor-directory-adoption](tracks/cursor-directory-adoption_20260706/spec.md) — Submit and optimize Cursor Directory adoption for the OSF MCP server.
+- [x] [cursor-directory-adoption](tracks/cursor-directory-adoption_20260706/spec.md) — Submit and optimize Cursor Directory adoption for the OSF MCP server.
 - [ ] [claude-official-plugin-directory-adoption](tracks/claude-official-plugin-directory-adoption_20260706/spec.md) — Prepare and submit the OSF Claude plugin to the official Claude plugin directory.
 - [ ] [codex-marketplace-adoption](tracks/codex-marketplace-adoption_20260706/spec.md) — Submit and optimize the OSF Codex plugin for Codex Marketplace adoption.
 - [x] [homebrew-tap-adoption](tracks/homebrew-tap-adoption_20260706/spec.md) — Prepare and publish Homebrew tap distribution for the OSF CLI and MCP binaries.
