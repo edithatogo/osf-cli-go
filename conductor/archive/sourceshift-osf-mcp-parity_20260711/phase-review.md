@@ -19,7 +19,7 @@
 - Production markers found: none.
 - Ignored paths verified: tests, fixtures, and generated artifacts only.
 - Self-scan exclusion verified: pass.
-- Validation evidence link or location: `conductor/validation/` and this track's closeout evidence.
+- Validation evidence link or location: this archived phase-review artifact, the comparison in `sourceshift-comparison.md`, and the validation workflow recorded in the merge commit.
 
 ## Validation Commands
 
