@@ -33,8 +33,6 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [x] [glama-quality-claim-adoption](archive/glama-quality-claim-adoption_20260706/spec.md) — Claim or improve Glama listing quality for the OSF MCP server.
 - [x] [codex-marketplace-adoption](archive/codex-marketplace-adoption_20260706/spec.md) — Submit and optimize the OSF Codex plugin for Codex Marketplace adoption.
 
-- [~] [sourceshift-osf-mcp-parity](tracks/sourceshift-osf-mcp-parity_20260711/spec.md) — Benchmark SourceShift OSF MCP and close MCP capability gaps; source SourceShift/osf-mcp-server; issue #8.
-
 - [ ] [osfclient-cli-parity](tracks/osfclient-cli-parity_20260711/spec.md) — Benchmark osfclient CLI workflows and close usability gaps; source osfclient/osfclient; issue #9.
 
 - [ ] [osfr-entity-parity](tracks/osfr-entity-parity_20260711/spec.md) — Benchmark osfr entity coverage and conflict semantics; source ropensci/osfr; issue #10.
