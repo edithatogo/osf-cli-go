@@ -2,54 +2,46 @@
 
 Last reviewed: 2026-07-13
 
-Status meanings: **Implemented** is covered by repository code and tests;
-**Prepared** means a distribution artifact exists but provider-side approval is
-not evidenced; **Track** means the capability is intentionally planned; and
-**External gate** means local work is complete but authentication or maintainer
-action remains.
+This generated matrix is backed by `docs/feature-matrix.json`. Status meanings: **external-gate** is Local work is complete, but authentication or maintainer action remains.; **implemented** is Covered by repository code and deterministic tests.; **prepared** is A local distribution artifact exists, but provider-side approval is not evidenced.; **track** is Intentionally planned and linked to follow-up work.
 
-| Area | CLI | API client | MCP | Safety/quality contract | Status and next action |
-|---|---|---|---|---|---|
-| Authentication and identity | `auth login`, `auth whoami`, `whoami` | token and username/password credentials | `osf_whoami` | redaction, no credential persistence, explicit auth modes | Implemented; live validation remains opt-in |
-| Projects: list/get | `projects list`, `projects get` | current projects, node get | `osf_projects_list`, `osf_project_get` | URL/id normalization, JSON output | Implemented |
-| Projects: create/update/delete | `projects create`, `projects update`, `projects delete` | create, patch, delete node | intentionally not exposed | confirmation for destructive actions; MCP remains read-only | Implemented in CLI; MCP write-safety track needed |
-| Components | `components list` | child node pagination | `osf_components_list` | deterministic pagination | Implemented |
-| Contributors | API-backed CLI surface | contributor listing | `osf_contributors_list` | stable structured fields | Implemented |
-| Search | `search` | OSF search pagination and limit | `osf_search` | required query, max limit 100 | Implemented; SourceShift parity landed |
-| Preprints | `preprints list` | provider filter and limit | `osf_preprints_list` | bounded result sets | Implemented |
-| Registrations | `registrations create` | draft registration creation | not exposed | authenticated write, no publish action | CLI implemented; MCP read/write expansion tracked |
-| Storage listing | `files list` | provider and folder traversal | `osf_files_list` | traversal protection and structured metadata | Implemented |
-| File download | `files download` | streaming download | not exposed | atomic writes, conflicts, manifests, path safety | CLI implemented; MCP download boundary tracked |
-| File upload | `files upload` | WaterButler upload | not exposed | conflict policy, auth, explicit write | CLI implemented; MCP write track needed |
-| Folder creation | `files mkdir` | WaterButler folder create | not exposed | path validation and auth | CLI implemented |
-| File deletion | `files rm` | WaterButler delete | not exposed | confirmation and auth | CLI implemented |
-| File versions | no dedicated CLI command | version listing | not exposed | stable typed model | API implemented; CLI/MCP exposure track |
-| Add-ons | `files addons` | node add-on listing | not exposed | read-only | CLI/API implemented; MCP expansion track |
-| Wiki pages | no dedicated CLI command | wiki listing | not exposed | read-only | API implemented; CLI/MCP expansion track |
-| Comments/logs/identifiers | no dedicated CLI command | entity listing | not exposed | read-only | API implemented; entity parity tracks |
-| Export | `export` | composed node snapshot | not exposed | deterministic JSON and pagination | CLI implemented; MCP export boundary tracked |
-| Shell integration | `completion bash/zsh/fish/powershell`, `open` | n/a | stdio transport | supported-platform contract | Implemented |
-| Output | table and `--json` | typed Go models | structured MCP content | stable schemas and errors | Implemented; compatibility harness tracked |
-| Pagination/retries | transparent API pagination | collection helpers | bounded tool limits | cancellation and deterministic behavior | Implemented; fuzz/performance hardening tracked |
-| Live OSF validation | opt-in validation tool | real API requests | real MCP calls | no committed credentials, safe writes only | Prepared; `OSF_TOKEN` and validation project required |
-| Release artifacts | multi-platform binaries and checksums | dynamic versioning | OCI MCP image and MCPB | SBOM, provenance, Cosign, release gates | Implemented at 0.3.2; 1.0 hardening track |
-| Package managers | Homebrew tap, Scoop bucket, WinGet PR | n/a | n/a | install/version verification | Homebrew/Scoop published; WinGet external review |
-| Official MCP Registry | n/a | n/a | `server.json` and OCI package | registry contract and release workflow | Published; maintain on release |
-| Smithery/Glama/MCP.Directory | n/a | n/a | MCPB/metadata packets | provider-specific metadata | Published or prepared; maintain evidence |
-| Codex/OpenAI | plugin and MCP config | n/a | stdio MCP | marketplace validator and authenticated review | Prepared; track `codex-marketplace-adoption_20260706` |
-| Claude/Anthropic | plugin and marketplace metadata | n/a | stdio MCP | official submission form and plugin validation | Prepared; submission pending |
-| GitHub Copilot | plugin, skill, repository MCP | n/a | repository config | marketplace/repository requirements | Prepared; provider approval not evidenced |
-| Cursor/Cline/LobeHub | configs, plugin artifacts, MCPB | n/a | stdio/remote options | client install validation and listing receipts | Tracks `cursor`, `cline`, and `lobehub` |
-| Gemini/Qwen | extension manifests and packages | n/a | embedded MCP config | version alignment and gallery rules | Prepared/published artifacts; indexing evidence pending |
-| Ecosystem parity | 13 source-tool tracks | n/a | competitor comparison | dated source evidence and explicit gap decisions | SourceShift partial complete; remaining tracks open |
+| Area | CLI | API client | MCP | Safety/quality contract | Status | Next action | Track | Issue |
+|---|---|---|---|---|---|---|---|---|
+| Authentication and identity | auth login, auth whoami, whoami | token and username/password credentials | osf_whoami | redaction; no credential persistence; explicit auth modes | implemented | Run opt-in live validation | `conductor/tracks/live-osf-validation_20260502/spec.md` |  |
+| Projects: list/get | projects list, projects get | current projects; node get | osf_projects_list, osf_project_get | URL/id normalization; JSON output | implemented |  | `` |  |
+| Projects: create/update/delete | projects create, projects update, projects delete | create; patch; delete node | intentionally not exposed | confirmation for destructive actions; MCP remains read-only | track | Design MCP write authorization and rollback | `conductor/tracks/mcp-server-roadmap_20260502/spec.md` | #21 |
+| Components | components list | child node pagination | osf_components_list | deterministic pagination | implemented |  | `` |  |
+| Contributors | API-backed CLI surface | contributor listing | osf_contributors_list | stable structured fields | implemented |  | `` |  |
+| Search | search | OSF search pagination and limit | osf_search | required query; maximum limit 100 | implemented | Maintain SourceShift parity evidence | `conductor/tracks/sourceshift-osf-mcp-parity_20260711/spec.md` | #8 |
+| Preprints | preprints list | provider filter and limit | osf_preprints_list | bounded result sets | implemented |  | `` |  |
+| Registrations | registrations create | draft registration creation | not exposed | authenticated write; no publish action | track | Add read-only MCP registration tools first | `conductor/tracks/osf-api-coverage_20260502/spec.md` | #20 |
+| Storage listing | files list | provider and folder traversal | osf_files_list | traversal protection; structured metadata | implemented |  | `` |  |
+| File download | files download | streaming download | not exposed | atomic writes; conflicts; manifests; path safety | track | Approve MCP download resource boundary | `conductor/tracks/mcp-server-roadmap_20260502/spec.md` |  |
+| File upload | files upload | WaterButler upload | not exposed | conflict policy; auth; explicit write | track | Design MCP write confirmation | `conductor/tracks/mcp-server-roadmap_20260502/spec.md` |  |
+| Folder creation | files mkdir | WaterButler folder create | not exposed | path validation and auth | implemented |  | `` |  |
+| File deletion | files rm | WaterButler delete | not exposed | confirmation and auth | implemented |  | `` |  |
+| File versions | no dedicated command | version listing | not exposed | stable typed model | track | Expose read-only versions consistently | `conductor/tracks/osf-api-coverage_20260502/spec.md` |  |
+| Add-ons | files addons | node add-on listing | not exposed | read-only | track | Add MCP read-only add-on tool | `conductor/tracks/osf-api-coverage_20260502/spec.md` |  |
+| Wiki pages | no dedicated command | wiki listing | not exposed | read-only | track | Add CLI and MCP wiki read tools | `conductor/tracks/osf-api-coverage_20260502/spec.md` |  |
+| Comments, logs, identifiers | no dedicated commands | entity listing | not exposed | read-only | track | Prioritize entity parity by user demand | `conductor/tracks/osf-api-coverage_20260502/spec.md` |  |
+| Export | export | composed node snapshot | not exposed | deterministic JSON and pagination | track | Define MCP export size and resource limits | `conductor/tracks/mcp-server-roadmap_20260502/spec.md` |  |
+| Shell integration | completion bash/zsh/fish/powershell; open | n/a | stdio transport | supported-platform contract | implemented |  | `` |  |
+| Output | table and --json | typed Go models | structured MCP content | stable schemas and errors | track | Add compatibility regression harness | `conductor/tracks/mcp-quality-evaluation-harness_20260713/spec.md` | #54 |
+| Pagination, retries, cancellation | transparent | collection helpers | bounded tool limits | deterministic behavior and cancellation | track | Add fuzz and performance campaigns | `conductor/tracks/v1-hardening-maturity_20260713/spec.md` | #52 |
+| Live OSF validation | opt-in validation tool | real API requests | real MCP calls | no committed credentials; safe writes only | prepared | Set OSF_TOKEN and OSF_VALIDATE_PROJECT | `conductor/tracks/live-osf-validation_20260502/spec.md` |  |
+| Release artifacts | multi-platform binaries and checksums | dynamic versioning | OCI MCP image and MCPB | SBOM; provenance; Cosign; release gates | implemented | Complete 1.0 launch gates | `conductor/tracks/v1-hardening-maturity_20260713/spec.md` | #52 |
+| Package managers | Homebrew tap; Scoop bucket; WinGet PR | n/a | n/a | install and version verification | external-gate | WinGet maintainer review | `conductor/tracks/winget-adoption_20260706/spec.md` |  |
+| Official MCP Registry | n/a | n/a | server.json and OCI package | registry contract and release workflow | implemented | Maintain on every release | `conductor/archive/official-mcp-github-registry-adoption_20260706/spec.md` |  |
+| Smithery, Glama, MCP.Directory | n/a | n/a | MCPB and metadata packets | provider-specific metadata and receipts | prepared | Refresh evidence on release | `conductor/tracks/registry-submission-scorecard_20260713/spec.md` | #53 |
+| Codex and OpenAI Cowork | plugin and MCP config | n/a | stdio MCP | marketplace validation and authenticated review | prepared | Submit through current OpenAI surface | `conductor/tracks/codex-marketplace-adoption_20260706/spec.md` |  |
+| Claude and Anthropic Cowork | plugin and marketplace metadata | n/a | stdio MCP | official submission form and plugin validation | prepared | Submit through official Claude form | `conductor/tracks/claude-official-plugin-directory-adoption_20260706/spec.md` |  |
+| GitHub Copilot | plugin; skill; repository MCP | n/a | repository config | marketplace and repository requirements | prepared | Verify provider-side approval | `conductor/tracks/registry-submission-scorecard_20260713/spec.md` | #53 |
+| Cursor, Cline, LobeHub | configs; plugin artifacts; MCPB | n/a | stdio and remote options | clean-client install validation and receipts | track | Execute provider-specific submissions | `conductor/tracks/registry-submission-scorecard_20260713/spec.md` | #53 |
+| Gemini and Qwen | extension manifests and packages | n/a | embedded MCP config | version alignment and gallery rules | prepared | Verify indexing evidence | `conductor/tracks/registry-submission-scorecard_20260713/spec.md` | #53 |
+| OSF ecosystem parity | 13 source-tool tracks | competitor comparison | dated source evidence | each gap implemented, deferred, or rejected | track | Complete parity tracks and close SourceShift | `conductor/tracks/feature-matrix_20260713/spec.md` | #51 |
 
 ## Matrix rules
 
-1. A row cannot be marked implemented from documentation alone; it needs code
-   and deterministic validation.
-2. A registry cannot be marked published from a local packet; provider-side
-   receipt or public listing evidence is required.
-3. A feature that performs a write must document authorization, confirmation,
-   rollback, and live-test cleanup before MCP exposure.
-4. Every release updates this matrix, the feature inventory, and the registry
-   scorecard together.
+1. A row cannot be marked implemented from documentation alone; it needs code and deterministic validation.
+2. A registry cannot be marked published from a local packet; provider-side receipt or public listing evidence is required.
+3. A feature that performs a write must document authorization, confirmation, rollback, and live-test cleanup before MCP exposure.
+4. Every release updates this matrix, the feature inventory, and the registry scorecard together.
