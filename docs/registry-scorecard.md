@@ -3,7 +3,7 @@
 Last reviewed: 2026-07-14
 
 The machine-readable source of truth for the current review is
-[`registry/submission-scorecard.json`](../registry/submission-scorecard.json),
+[`registry/submission-scorecard.json`](https://github.com/edithatogo/osf-cli-go/blob/master/registry/submission-scorecard.json),
 validated by `go run ./tools/checkregistries`.
 
 This is an execution scorecard, not a claim that any provider has awarded a
