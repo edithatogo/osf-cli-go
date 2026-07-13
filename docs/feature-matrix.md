@@ -43,7 +43,7 @@ This generated matrix is backed by `docs/feature-matrix.json`. Status meanings: 
 | Gemini and Qwen | extension manifests and packages | n/a | embedded MCP config | version alignment and gallery rules | prepared | Verify indexing evidence | `conductor/tracks/registry-submission-scorecard_20260713/spec.md` | #53 |
 | DataLad interoperability | export; files download --tree | OSF project and storage primitives | read-only project/file tools | no implicit Git, DataLad, or git-annex state; safe local writes | track | Define optional git-annex and Git remote interoperability contract | `conductor/archive/datalad-osf-parity_20260711/spec.md` | #69 |
 | DOI-to-OSF resolution | resolve | DOI redirect and OSF host validation | osf_doi_resolve | strict DOI forms; no non-OSF destinations; no download side effect | implemented | Maintain resolver redirect compatibility | `conductor/archive/datahugger-doi-parity_20260711/spec.md` | #14 |
-| OSF ecosystem parity | 13 source-tool tracks | competitor comparison | dated source evidence | each gap implemented, deferred, or rejected | track | Complete parity tracks and close SourceShift | `conductor/tracks/feature-matrix_20260713/spec.md` | #51 |
+| OSF ecosystem parity | 13 source-tool tracks | competitor comparison | dated source evidence | each gap implemented, deferred, or rejected | track | Complete parity tracks and close SourceShift | `conductor/archive/feature-matrix_20260713/spec.md` | #51 |
 
 ## Matrix rules
 
