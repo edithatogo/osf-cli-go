@@ -1,7 +1,9 @@
 # Release Candidate Evidence
 
 This file is the required index for a future `v1.0.0-rc.1`. It is intentionally
-not a claim that the 1.0 release gate is currently satisfied.
+not a claim that the 1.0 release gate is currently satisfied. See the dated
+[1.0 launch review](v1-launch-review.md) for the current gate decisions and
+waivers.
 
 ## Local gates
 
