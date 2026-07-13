@@ -1,0 +1,1 @@
+Implementation evidence: CoLRev OSF search parity adds title, abstract, keywords, year, URL, and stable IDs to search results plus deterministic escaped BibTeX CLI output. Full go test ./... passes.
