@@ -1,0 +1,1 @@
+Track 26 review remediation: repaired three strict-MkDocs broken links inherited from the remote baseline; local mkdocs build --strict passes.
