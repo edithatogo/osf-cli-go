@@ -4,7 +4,7 @@
 
 Technically complete and submitted for upstream review. The package remains
 external-gate pending because the WinGet PR is open and the Microsoft CLA is
-not accepted.
+not accepted. The track remains in the active registry for that follow-up.
 
 ## Fixes Applied
 
@@ -25,4 +25,3 @@ not accepted.
 
 - Microsoft WinGet maintainer revalidation and merge.
 - Contributor CLA acceptance by the authorized contributor.
-

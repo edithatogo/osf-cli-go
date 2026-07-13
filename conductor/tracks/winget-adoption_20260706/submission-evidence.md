@@ -29,6 +29,8 @@ The original validation run is recorded by the upstream bot at:
 - The Microsoft CLA check is pending. The repository requires the contributor
   to explicitly accept the CLA; no legal agreement was made automatically.
 - No WinGet publication or acceptance is claimed until the upstream PR merges.
+- Track cleanup is intentionally deferred while the external CLA and
+  maintainer-review gates remain unresolved.
 
 ## Local Validation
 
