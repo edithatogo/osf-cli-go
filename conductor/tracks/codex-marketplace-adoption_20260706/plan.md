@@ -1,5 +1,9 @@
 # Plan: Codex Marketplace Adoption
 
+Score target: 100% of applicable criteria in
+[`docs/registry-scorecard.md`](../../../docs/registry-scorecard.md). A local
+pass is not an OpenAI listing or approval.
+
 ## Phase 1: Marketplace Requirements Audit
 
 - [ ] Task: Verify current Codex Marketplace submission and validation rules.
@@ -21,6 +25,7 @@
     - [ ] Ask user to log in if required.
     - [ ] Iterate on score/validation feedback toward 100%.
 - [ ] Task: Store receipt, review URL, listing URL, score, and blockers.
+- [ ] Task: Re-run the universal scorecard after every metadata or release change.
 - [ ] Task: Conductor - Automated Review and Checkpoint 'Submission' (Protocol in workflow.md)
 
 ## Phase 4: Final Review

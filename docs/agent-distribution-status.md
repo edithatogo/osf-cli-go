@@ -1,6 +1,6 @@
 # Agent distribution status
 
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-13
 
 | Surface | Local artifact | External status | Track |
 |---|---|---|---|
@@ -26,3 +26,8 @@ successors. Lower-quality directories should be skipped when they require broad
 permissions, obscure provenance, or provide no stable listing evidence.
 
 See issue [#26](https://github.com/edithatogo/osf-cli-go/issues/26).
+
+The current requirements and evidence scoring contract is documented in
+[`docs/registry-scorecard.md`](registry-scorecard.md). Codex and Claude remain
+explicit external submission gates even though their local plugin packages are
+validated.
