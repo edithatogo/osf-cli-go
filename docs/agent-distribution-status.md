@@ -4,7 +4,7 @@ Last reviewed: 2026-07-13
 
 | Surface | Local artifact | External status | Track |
 |---|---|---|---|
-| OpenAI Codex | `plugins/codex-osf` and `.agents/plugins/marketplace.json` | Prepared; public marketplace review not yet evidenced | `codex-marketplace-adoption_20260706` |
+| OpenAI Codex | `plugins/codex-osf` and `.agents/plugins/marketplace.json` | Repository marketplace installs and lists successfully with Codex CLI; public Plugin Directory publication/approval is not evidenced | `codex-marketplace-adoption_20260706` |
 | OpenAI Cowork | MCP server and MCPB package | Prepared; no separate approved public listing evidenced | `codex-marketplace-adoption_20260706` |
 | Anthropic Claude Code/Cowork | `plugins/claude-osf` and `.claude-plugin/marketplace.json` | Package validated; official directory submission blocked by authentication on 2026-07-13 | `claude-official-plugin-directory-adoption_20260706` |
 | GitHub Copilot CLI/cloud agent | `plugins/github-copilot-osf`, `.github/plugin/marketplace.json`, skill, and MCP configs | Repository-hosted marketplace available; GitHub-maintained default marketplace approval not evidenced | `github-copilot-plugin-publication_20260711` |
@@ -30,4 +30,6 @@ See issue [#26](https://github.com/edithatogo/osf-cli-go/issues/26).
 The current requirements and evidence scoring contract is documented in
 [`docs/registry-scorecard.md`](registry-scorecard.md). Codex and Claude remain
 explicit external submission gates even though their local plugin packages are
-validated.
+validated. OpenAI's current documentation describes publication through the
+Codex Plugin Directory and workspace Plugin settings; no public submission
+receipt or listing is claimed for this repository.
