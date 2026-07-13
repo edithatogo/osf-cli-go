@@ -1,9 +1,8 @@
 {
   "track_id": "colrev-osf-parity_20260711",
   "type": "feature",
-  "status": "new",
+  "status": "completed",
   "created_at": "2026-07-11T09:00:00Z",
-  "updated_at": "2026-07-11T09:00:00Z",
+  "updated_at": "2026-07-13T08:36:00Z",
   "description": "Add OSF literature-review ingestion and metadata parity"
 }
-
