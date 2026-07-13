@@ -382,6 +382,47 @@ func TestComponentsListJSONOutput(t *testing.T) {
 	}
 }
 
+func TestValidateResearchOutputJSON(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{
+		node:  osfapi.Node{ID: "project-1", Attributes: osfapi.NodeAttributes{Title: "Study", Description: "Research output", Category: "project"}},
+		files: []osfapi.StorageFile{{ID: "file-1", Attributes: osfapi.StorageFileAttributes{Name: "data.csv", Kind: "file"}}},
+	}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"validate", "project-1", "--profile", "research-output", "--json"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("validate returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	var report validationReport
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatalf("decode report: %v; stdout=%q", err, stdout.String())
+	}
+	if !report.Valid || report.Profile != "research-output" || len(report.Findings) != 4 {
+		t.Fatalf("report = %+v, want valid four-finding report", report)
+	}
+}
+
+func TestValidatePreregistrationWarnsOnCategory(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{node: osfapi.Node{ID: "project-1", Attributes: osfapi.NodeAttributes{Title: "Registration", Description: "Plan", Category: "project"}}}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := runWithClient([]string{"validate", "project-1", "--profile", "preregistration", "--json"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("validate returned %d, want 0, stderr=%q", code, stderr.String())
+	}
+	var report validationReport
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatalf("decode report: %v", err)
+	}
+	if report.Valid || report.Findings[len(report.Findings)-1].Rule != "preregistration.category" {
+		t.Fatalf("report = %+v, want invalid preregistration category finding", report)
+	}
+}
+
 func TestFilesListJSONOutput(t *testing.T) {
 	t.Parallel()
 
@@ -634,8 +675,8 @@ func TestWriteRootContractWithJSON(t *testing.T) {
 	if err := json.Unmarshal(buf.Bytes(), &contract); err != nil {
 		t.Fatalf("stdout is not valid JSON: %v\n%s", err, buf.String())
 	}
-	if len(contract.Commands) != 12 {
-		t.Fatalf("command count = %d, want 12", len(contract.Commands))
+	if len(contract.Commands) != 13 {
+		t.Fatalf("command count = %d, want 13", len(contract.Commands))
 	}
 	if contract.Commands[0].Status != "implemented" || contract.Commands[1].Status != "implemented" {
 		t.Fatalf("unexpected command statuses: %#v", contract.Commands)
