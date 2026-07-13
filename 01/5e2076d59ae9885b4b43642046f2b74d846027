@@ -1,0 +1,1 @@
+Track registry-submission-scorecard_20260713 completed locally. Added registry/submission-scorecard.json, validated target coverage and provider-state evidence, and recorded external submission blockers without inferring approval. Full Go, race, vet, lint, vulnerability, registry, feature-matrix, release-contract, stub, review, and diff gates passed.
