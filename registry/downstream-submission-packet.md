@@ -14,14 +14,15 @@ Date: 2026-05-18
 
 ## Short Description
 
-Read-only MCP tools for authenticated Open Science Framework projects and files.
+Read-only MCP tools for authenticated Open Science Framework discovery, projects, and files.
 
 ## Long Description
 
-OSF CLI Go provides a stdio Model Context Protocol server for inspecting an
-authenticated Open Science Framework account. The server exposes read-only tools
-for current-user identity, projects, components, OSF Storage files/folders, and
-contributors. Authentication uses `OSF_TOKEN` by preference, with optional
+OSF CLI Go provides a stdio Model Context Protocol server for searching and
+inspecting an authenticated Open Science Framework account. The server exposes
+read-only tools for current-user identity, project and preprint discovery,
+projects, components, OSF Storage files/folders, and contributors. Authentication
+uses `OSF_TOKEN` by preference, with optional
 `OSF_USERNAME` and `OSF_PASSWORD` fallback.
 
 ## Install Commands
