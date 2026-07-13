@@ -6,7 +6,7 @@ Last reviewed: 2026-07-13
 |---|---|---|---|
 | OpenAI Codex | `plugins/codex-osf` and `.agents/plugins/marketplace.json` | Prepared; public marketplace review not yet evidenced | `codex-marketplace-adoption_20260706` |
 | OpenAI Cowork | MCP server and MCPB package | Prepared; no separate approved public listing evidenced | `codex-marketplace-adoption_20260706` |
-| Anthropic Claude Code/Cowork | `plugins/claude-osf` and `.claude-plugin/marketplace.json` | Prepared; official directory submission pending | `claude-official-plugin-directory-adoption_20260706` |
+| Anthropic Claude Code/Cowork | `plugins/claude-osf` and `.claude-plugin/marketplace.json` | Package validated; official directory submission blocked by authentication on 2026-07-13 | `claude-official-plugin-directory-adoption_20260706` |
 | GitHub Copilot CLI/cloud agent | `plugins/github-copilot-osf`, `.github/plugin/marketplace.json`, skill, and MCP configs | Repository-hosted marketplace available; GitHub-maintained default marketplace approval not evidenced | `github-copilot-plugin-publication_20260711` |
 | Gemini CLI | root `gemini-extension.json` and `plugins/gemini-osf` release package | Public repository is gallery-discoverable via `gemini-cli-extension`; gallery indexing/approval not yet evidenced | `gemini-extension-gallery-publication_20260711` |
 | Qwen Code | root `qwen-extension.json` and `plugins/qwen-osf` release package | Public Git/local/archive installation available; Qwen has no separate maintained gallery evidenced, with Claude/Gemini channels documented | `qwen-extension-publication_20260711` |

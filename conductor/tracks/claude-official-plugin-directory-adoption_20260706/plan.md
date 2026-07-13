@@ -6,28 +6,28 @@ archive is not an Anthropic listing or approval.
 
 ## Phase 1: Claude Requirements Audit
 
-- [ ] Task: Verify current Claude plugin directory requirements and submission form.
-    - [ ] Compare requirements against `plugins/claude-osf`.
-    - [ ] Record login/review gates.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Claude Requirements Audit' (Protocol in workflow.md)
+- [x] Task: Verify current Claude plugin directory requirements and submission form.
+    - [x] Compare requirements against `plugins/claude-osf`.
+    - [x] Record login/review gates.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Claude Requirements Audit' (Protocol in workflow.md)
 
 ## Phase 2: Package Validation Hardening
 
-- [ ] Task: Validate and harden Claude plugin metadata, docs, and archive build.
-    - [ ] Run JSON/plugin validation and archive checks.
-    - [ ] Fix package fields, install docs, or bundled binary expectations.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Package Validation Hardening' (Protocol in workflow.md)
+- [x] Task: Validate and harden Claude plugin metadata, docs, and archive build.
+    - [x] Run JSON/plugin validation and archive checks.
+    - [x] Fix package fields, install docs, or bundled binary expectations.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Package Validation Hardening' (Protocol in workflow.md)
 
 ## Phase 3: Submission
 
-- [ ] Task: Use Chrome to submit the plugin or record the exact external blocker.
-    - [ ] Ask the user to log in if required.
-    - [ ] Store receipt, review queue, listing URL, or blocker evidence.
-- [ ] Task: Re-run the universal scorecard after every metadata or release change.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Submission' (Protocol in workflow.md)
+- [x] Task: Use Chrome to submit the plugin or record the exact external blocker (blocked by authentication; no submission claimed).
+    - [x] Ask the user to log in if required.
+    - [x] Store receipt, review queue, listing URL, or blocker evidence.
+- [x] Task: Re-run the universal scorecard after every metadata or release change.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Submission' (Protocol in workflow.md)
 
 ## Phase 4: Final Review
 
-- [ ] Task: Run full validation and conductor-review.
-- [ ] Task: Write final phase-review evidence.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Final Review' (Protocol in workflow.md)
+- [x] Task: Run full validation and conductor-review.
+- [x] Task: Write final phase-review evidence.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Final Review' (Protocol in workflow.md)

@@ -35,6 +35,39 @@ foreach ($pluginName in $pluginNames) {
     if (Test-Path -LiteralPath $archive) {
         Remove-Item -LiteralPath $archive -Force
     }
-    Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $archive -Force
+    # Compress-Archive skips dotfiles, which would silently omit plugin manifests
+    # and MCP configuration. Use the .NET implementation so hidden files remain
+    # part of the distributable archive.
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($stage, $archive)
+    $manifestPath = switch ($pluginName) {
+        "claude-osf" { ".claude-plugin/plugin.json" }
+        "codex-osf" { ".codex-plugin/plugin.json" }
+        "github-copilot-osf" { "plugin.json" }
+        "gemini-osf" { "gemini-extension.json" }
+        "qwen-osf" { "qwen-extension.json" }
+    }
+    $documentationPath = switch ($pluginName) {
+        "gemini-osf" { "GEMINI.md" }
+        "qwen-osf" { "QWEN.md" }
+        default { "README.md" }
+    }
+    $mcpPath = switch ($pluginName) {
+        "gemini-osf" { "gemini-extension.json" }
+        "qwen-osf" { "qwen-extension.json" }
+        default { ".mcp.json" }
+    }
+    $requiredEntries = @($manifestPath, $mcpPath, $documentationPath, "bin/$binaryName") | Select-Object -Unique
+    $zip = [System.IO.Compression.ZipFile]::OpenRead($archive)
+    try {
+        foreach ($requiredEntry in $requiredEntries) {
+            if ($null -eq $zip.GetEntry($requiredEntry)) {
+                throw "Archive $archive is missing required entry $requiredEntry"
+            }
+        }
+    }
+    finally {
+        $zip.Dispose()
+    }
     Write-Output $archive
 }
