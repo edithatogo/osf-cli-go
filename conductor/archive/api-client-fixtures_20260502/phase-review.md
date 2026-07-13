@@ -4,7 +4,7 @@
 
 - Track: `api-client-fixtures_20260502`
 - Phase: OSF API client and fixtures
-- Date: 2026-05-02
+- Date: 2026-07-13
 
 ## Implemented Behavior
 
@@ -14,24 +14,32 @@
 
 ## Anti-Stub Evidence
 
-- `go run ./tools/checkstubs` result: passed via `scripts/check.ps1`.
+- `go run ./tools/checkstubs` result: passed.
 - Production markers found: none.
 - Ignored paths verified: testdata fixtures are excluded from anti-stub scan.
 - Self-scan exclusion verified: `tools/checkstubs` package tests passed.
-- Validation evidence link or location: local `scripts/check.ps1` run on 2026-05-02.
+- Validation evidence: the repository-local quality gates listed below were run on 2026-07-13.
 
 ## Validation Commands
 
-```powershell
-scripts/check.ps1
+```text
+go test ./...
+go test -race ./...
+go vet ./...
+go run ./tools/checkstubs
+go run ./tools/checkreviews
+go run ./tools/checkfeaturematrix
+go run ./tools/checkregistries
+go run ./tools/checkreleasecontract
+govulncheck ./...
 git diff --check
 ```
 
 ## Conductor Review
 
 - Review command: `$conductor-review` protocol applied locally against the integrated phase.
-- Blocking findings: none after the CLI dependency metadata was fixed with `go mod tidy`.
-- Fixes applied: none in API client after integration review.
+- Blocking findings: none after refreshing the stale phase evidence.
+- Fixes applied: updated the review date, validation commands, and completion wording; no API client code changes were required.
 - Re-review result: no blocking findings after full local gate.
 
 ## Status
@@ -39,4 +47,4 @@ git diff --check
 - Completion claim: offline-tested.
 - Completion rule: anti-stub scan passed.
 - Residual risks: live OSF compatibility remains opt-in integration work.
-- Next phase: auth and read-only command packages can consume the client.
+- Next phase: none for this completed track; subsequent auth and read-only command behavior is owned by its respective tracks.
