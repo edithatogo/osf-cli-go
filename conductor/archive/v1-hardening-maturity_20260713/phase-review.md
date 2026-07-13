@@ -14,12 +14,14 @@ Reviewed 2026-07-14.
 - Existing atomic-write, cancellation, pagination, race, dependency, SBOM,
   provenance, signing, and cross-platform workflows were reconciled against
   the launch roadmap.
-- Resumable transfers and structured observability remain explicit follow-up
-  items rather than being claimed complete.
+- Fuzz/property, performance, resumable-transfer, and structured-observability
+  implementations remain explicit follow-up items rather than being claimed
+  complete.
 
 ## Operations and live readiness
 
-- Added operations, incident, rollback, support, and release runbook guidance.
+- Added structured-observability requirements plus operations, incident,
+  rollback, support, and release runbook guidance.
 - Recorded dated gate statuses and waivers in `docs/v1-launch-review.md`.
 - Live OSF and provider review gates remain opt-in/external and are not claimed
   as completed.
