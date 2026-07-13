@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "generatedDate": "2026-07-13",
+  "version": "0.3.2",
+  "mode": "offline",
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "skipped": 1,
+    "status": "passed"
+  },
+  "checks": [
+    {
+      "name": "server-metadata",
+      "status": "passed",
+      "detail": "validated"
+    },
+    {
+      "name": "mcpb-manifest",
+      "status": "passed",
+      "detail": "validated"
+    },
+    {
+      "name": "registry-tool-inventory",
+      "status": "passed",
+      "detail": "validated"
+    },
+    {
+      "name": "client-configurations",
+      "status": "passed",
+      "detail": "validated"
+    },
+    {
+      "name": "security-and-bounds-source",
+      "status": "passed",
+      "detail": "validated"
+    },
+    {
+      "name": "mcp-server-tests",
+      "status": "passed",
+      "detail": "validated"
+    },
+    {
+      "name": "live-osf-validation",
+      "status": "skipped",
+      "detail": "opt-in; rerun with -live and OSF_LIVE_VALIDATION=1 plus an OSF project reference"
+    }
+  ]
+}

@@ -20,6 +20,7 @@ func TestRunPassesWithRepoFixtures(t *testing.T) {
 	copyFixture(t, filepath.Join("..", "..", "registry", "README.md"), filepath.Join(dir, "registry", "README.md"))
 	copyFixture(t, filepath.Join("..", "..", "glama.json"), filepath.Join(dir, "glama.json"))
 	copyFixture(t, filepath.Join("..", "..", "registry", "submission-scorecard.json"), filepath.Join(dir, "registry", "submission-scorecard.json"))
+	copyFixture(t, filepath.Join("..", "..", "docs", "mcp-quality-report.json"), filepath.Join(dir, "docs", "mcp-quality-report.json"))
 
 	if err := os.Chdir(dir); err != nil {
 		t.Fatalf("Chdir: %v", err)
@@ -48,6 +49,7 @@ func TestRunFailsWhenOfficialRegistryURLIsWrong(t *testing.T) {
 	copyFixture(t, filepath.Join("..", "..", "registry", "README.md"), filepath.Join(dir, "registry", "README.md"))
 	copyFixture(t, filepath.Join("..", "..", "glama.json"), filepath.Join(dir, "glama.json"))
 	copyFixture(t, filepath.Join("..", "..", "registry", "submission-scorecard.json"), filepath.Join(dir, "registry", "submission-scorecard.json"))
+	copyFixture(t, filepath.Join("..", "..", "docs", "mcp-quality-report.json"), filepath.Join(dir, "docs", "mcp-quality-report.json"))
 
 	path := filepath.Join(dir, "registry", "directory-submissions.json")
 	data, err := os.ReadFile(path)
