@@ -42,6 +42,7 @@ type fileRecord struct {
 	Name        string `json:"name"`
 	Kind        string `json:"kind"`
 	Size        int64  `json:"size,omitempty"`
+	MD5         string `json:"md5,omitempty"`
 	DownloadURL string `json:"download_url,omitempty"`
 }
 
@@ -416,6 +417,7 @@ func newFilesListCommand(client readonlyClient) *cobra.Command {
 					Name:        file.Attributes.Name,
 					Kind:        file.Attributes.Kind,
 					Size:        file.Attributes.Size,
+					MD5:         file.Attributes.Extra.Hashes.MD5,
 					DownloadURL: file.DownloadURL(),
 				})
 			}

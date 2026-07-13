@@ -121,9 +121,20 @@ type StorageFile struct {
 
 // StorageFileAttributes carries OSF Storage file metadata.
 type StorageFileAttributes struct {
-	Name string `json:"name"`
-	Kind string `json:"kind"`
-	Size int64  `json:"size,omitempty"`
+	Name  string           `json:"name"`
+	Kind  string           `json:"kind"`
+	Size  int64            `json:"size,omitempty"`
+	Extra StorageFileExtra `json:"extra,omitempty"`
+}
+
+// StorageFileExtra carries provider metadata returned for a storage entry.
+type StorageFileExtra struct {
+	Hashes StorageFileHashes `json:"hashes,omitempty"`
+}
+
+// StorageFileHashes carries optional integrity hashes for a storage entry.
+type StorageFileHashes struct {
+	MD5 string `json:"md5,omitempty"`
 }
 
 // DownloadURL returns the file download URL when OSF provides one.

@@ -387,7 +387,7 @@ func TestFilesListJSONOutput(t *testing.T) {
 
 	client := &fakeReadonlyClient{
 		files: []osfapi.StorageFile{
-			{ID: "f1", Attributes: osfapi.StorageFileAttributes{Name: "file.txt", Kind: "file"}, Links: osfapi.Links{Download: "https://files.osf.io/f1"}},
+			{ID: "f1", Attributes: osfapi.StorageFileAttributes{Name: "file.txt", Kind: "file", Extra: osfapi.StorageFileExtra{Hashes: osfapi.StorageFileHashes{MD5: "abc123"}}}, Links: osfapi.Links{Download: "https://files.osf.io/f1"}},
 		},
 	}
 	var stdout bytes.Buffer
@@ -395,6 +395,9 @@ func TestFilesListJSONOutput(t *testing.T) {
 	code := runWithClient([]string{"files", "list", "project-1", "--output", "json"}, &stdout, &stderr, client)
 	if code != 0 {
 		t.Fatalf("files list json returned %d, want 0", code)
+	}
+	if !strings.Contains(stdout.String(), `"md5":"abc123"`) {
+		t.Fatalf("stdout = %q, want md5", stdout.String())
 	}
 }
 

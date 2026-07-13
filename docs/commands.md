@@ -110,6 +110,10 @@ List files and folders from the node's OSF Storage provider.
 
 An optional OSF Storage folder ID or API path segment lists the contents of a nested folder.
 
+JSON output includes an optional `md5` checksum from OSF's
+`attributes.extra.hashes.md5` metadata. No file content is downloaded to
+calculate it.
+
 ### `osf files download --file <file-id-or-url> <destination>`
 
 Download one file by OSF file ID, OSF file API URL, or direct WaterButler download URL.

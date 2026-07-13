@@ -200,6 +200,9 @@ func TestListContributorsAndStorageFiles(t *testing.T) {
 	if got := files[0].DownloadURL(); got != "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-1?download=1" {
 		t.Fatalf("download url = %q", got)
 	}
+	if got := files[0].Attributes.Extra.Hashes.MD5; got != "9e107d9d372bb6826bd81d3542a419d6" {
+		t.Fatalf("md5 = %q", got)
+	}
 }
 
 func TestGetStorageFileAndOpenDownload(t *testing.T) {
