@@ -13,6 +13,7 @@ This generated matrix is backed by `docs/feature-matrix.json`. Status meanings: 
 | Contributors | API-backed CLI surface | contributor listing | osf_contributors_list | stable structured fields | implemented |  | `` |  |
 | Search | search | OSF search pagination and limit | osf_search | required query; maximum limit 100 | implemented | Maintain SourceShift parity evidence on releases | `conductor/archive/sourceshift-osf-mcp-parity_20260711/spec.md` | #8 |
 | Preprints | preprints list | provider filter and limit | osf_preprints_list | bounded result sets | implemented |  | `` |  |
+| Preprint discovery | preprints search | title and provider filters; publication metadata | osf_preprints_search | required query; limit 1-100; read-only structured results | implemented | Maintain OSF preprint filter compatibility | `conductor/tracks/tooluniverse-osf-parity_20260711/spec.md` | #15 |
 | Registrations | registrations create | draft registration creation | not exposed | authenticated write; no publish action | track | Add read-only MCP registration tools first | `conductor/tracks/osf-api-coverage_20260502/spec.md` | #20 |
 | Storage listing | files list | provider and folder traversal | osf_files_list | traversal protection; structured metadata | implemented |  | `` |  |
 | File download | files download | streaming download | not exposed | atomic writes; conflicts; manifests; path safety | track | Approve MCP download resource boundary | `conductor/tracks/mcp-server-roadmap_20260502/spec.md` |  |
