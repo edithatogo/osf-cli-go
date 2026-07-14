@@ -55,7 +55,7 @@ retain build artifacts for 30 days. The RC release was published with clean
 asset names and no stale prior-version assets.
 
 The subsequent local candidate build and its unresolved gates are recorded in
-[`provenance-evidence.md`](../conductor/tracks/release-candidate-provenance_20260714/provenance-evidence.md).
+the [Conductor provenance evidence](https://github.com/edithatogo/osf-cli-go/blob/master/conductor/tracks/release-candidate-provenance_20260714/provenance-evidence.md).
 
 The final hosted candidate verification passed with 36 release assets, no
 stale `0.3.2` assets, six independently verified checksum manifests, and
