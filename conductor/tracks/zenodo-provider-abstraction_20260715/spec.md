@@ -55,7 +55,7 @@ scopes, rate limits, and OAI-PMH discovery.
 
 | Order | Track | GitHub |
 |---|---|---|
-| 1 | [Zenodo API provenance](../zenodo-api-provenance_20260715/spec.md) | [#102](https://github.com/edithatogo/osf-cli-go/issues/102) |
+| 1 | [Zenodo API provenance](../../archive/zenodo-api-provenance_20260715/spec.md) | [#102](https://github.com/edithatogo/osf-cli-go/issues/102) |
 | 2 | [Repository provider contract](../repository-provider-contract_20260715/spec.md) | [#103](https://github.com/edithatogo/osf-cli-go/issues/103) |
 | 3 | [Zenodo read-only REST client](../zenodo-readonly-client_20260715/spec.md) | [#104](https://github.com/edithatogo/osf-cli-go/issues/104) |
 | 4 | [Provider-scoped CLI](../provider-scoped-cli_20260715/spec.md) | [#105](https://github.com/edithatogo/osf-cli-go/issues/105) |

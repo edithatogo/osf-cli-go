@@ -20,7 +20,7 @@ Zenodo. It does not claim that Zenodo support is implemented.
 
 | Stage | Child issue and track | Exit condition |
 |---|---|---|
-| 1 | [#102 API provenance](https://github.com/edithatogo/osf-cli-go/issues/102), `conductor/tracks/zenodo-api-provenance_20260715/` | Authoritative sources, version policy, fixtures, and drift gate are reproducible |
+| 1 | [#102 API provenance](https://github.com/edithatogo/osf-cli-go/issues/102), `conductor/archive/zenodo-api-provenance_20260715/` | Authoritative sources, version policy, fixtures, and drift gate are reproducible |
 | 2 | [#103 provider contract](https://github.com/edithatogo/osf-cli-go/issues/103), `conductor/tracks/repository-provider-contract_20260715/` | Qualified IDs, capability negotiation, lossless metadata, and OSF compatibility pass |
 | 3 | [#104 REST client](https://github.com/edithatogo/osf-cli-go/issues/104), `conductor/tracks/zenodo-readonly-client_20260715/`; [#107 OAI-PMH](https://github.com/edithatogo/osf-cli-go/issues/107), `conductor/tracks/zenodo-oai-pmh_20260715/` | Independent read adapters pass offline contract, fuzz, limit, and redaction tests |
 | 4 | [#105 CLI](https://github.com/edithatogo/osf-cli-go/issues/105), `conductor/tracks/provider-scoped-cli_20260715/`; [#106 MCP](https://github.com/edithatogo/osf-cli-go/issues/106), `conductor/tracks/provider-scoped-mcp_20260715/` | Provider-scoped read UX is compatible and no deferred writes are advertised |
