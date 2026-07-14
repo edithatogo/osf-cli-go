@@ -58,3 +58,6 @@ now trigger for every `v*` tag and retain build artifacts for 30 days. A
 future immutable release-candidate tag must still run those workflows and the
 release-security workflow, publish the resulting metadata, and record
 independent clean-environment verification before #98 can close.
+
+The subsequent local candidate build and its unresolved gates are recorded in
+[`provenance-evidence.md`](../conductor/tracks/release-candidate-provenance_20260714/provenance-evidence.md).
