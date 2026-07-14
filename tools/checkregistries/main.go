@@ -366,6 +366,13 @@ func checkMCPBToolSchemas(manifest mcpbManifest) error {
 		"osf_preprints_list",
 		"osf_preprints_search",
 		"osf_doi_resolve",
+		"zenodo_oai_records_list",
+		"zenodo_oai_sets_list",
+		"zenodo_oai_formats_list",
+		"repository_capabilities_get",
+		"zenodo_records_search",
+		"zenodo_record_get",
+		"zenodo_files_list",
 	}
 	seen := map[string]bool{}
 	for _, tool := range manifest.Tools {

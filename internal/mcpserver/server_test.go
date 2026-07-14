@@ -47,6 +47,10 @@ func TestServerExposesReadOnlyTools(t *testing.T) {
 		"zenodo_oai_records_list",
 		"zenodo_oai_sets_list",
 		"zenodo_oai_formats_list",
+		"repository_capabilities_get",
+		"zenodo_records_search",
+		"zenodo_record_get",
+		"zenodo_files_list",
 	}
 	got := map[string]bool{}
 	for _, name := range names {
@@ -75,25 +79,29 @@ func TestServerToolInputSchemasMatchPackagedContract(t *testing.T) {
 	session := connectTestServer(t, &fakeOSFClient{})
 
 	want := map[string][]string{
-		"osf_whoami":              {},
-		"osf_projects_list":       {},
-		"osf_project_get":         {"id"},
-		"osf_components_list":     {"id"},
-		"osf_files_list":          {"id", "path"},
-		"osf_file_versions_list":  {"id"},
-		"osf_addons_list":         {"id"},
-		"osf_wikis_list":          {"id"},
-		"osf_comments_list":       {"id"},
-		"osf_logs_list":           {"id"},
-		"osf_identifiers_list":    {"id"},
-		"osf_contributors_list":   {"id"},
-		"osf_search":              {"query", "limit"},
-		"osf_preprints_list":      {"provider", "limit"},
-		"osf_preprints_search":    {"query", "provider", "limit"},
-		"osf_doi_resolve":         {"identifier"},
-		"zenodo_oai_records_list": {"metadataPrefix", "set", "from", "until", "resumptionToken"},
-		"zenodo_oai_sets_list":    {},
-		"zenodo_oai_formats_list": {"identifier"},
+		"osf_whoami":                  {},
+		"osf_projects_list":           {},
+		"osf_project_get":             {"id"},
+		"osf_components_list":         {"id"},
+		"osf_files_list":              {"id", "path"},
+		"osf_file_versions_list":      {"id"},
+		"osf_addons_list":             {"id"},
+		"osf_wikis_list":              {"id"},
+		"osf_comments_list":           {"id"},
+		"osf_logs_list":               {"id"},
+		"osf_identifiers_list":        {"id"},
+		"osf_contributors_list":       {"id"},
+		"osf_search":                  {"query", "limit"},
+		"osf_preprints_list":          {"provider", "limit"},
+		"osf_preprints_search":        {"query", "provider", "limit"},
+		"osf_doi_resolve":             {"identifier"},
+		"zenodo_oai_records_list":     {"metadataPrefix", "set", "from", "until", "resumptionToken"},
+		"zenodo_oai_sets_list":        {},
+		"zenodo_oai_formats_list":     {"identifier"},
+		"repository_capabilities_get": {"provider"},
+		"zenodo_records_search":       {"query", "limit"},
+		"zenodo_record_get":           {"id"},
+		"zenodo_files_list":           {"id"},
 	}
 	for tool, err := range session.Tools(t.Context(), nil) {
 		if err != nil {
@@ -398,7 +406,7 @@ func TestToolFailureRedactsSecretMaterial(t *testing.T) {
 func connectTestServer(t *testing.T, osf OSFClient) *mcp.ClientSession {
 	t.Helper()
 	ctx := context.Background()
-	server := New(osf, Options{Version: "test", ZenodoOAI: fakeZenodoOAI{}})
+	server := New(osf, Options{Version: "test", ZenodoOAI: fakeZenodoOAI{}, ZenodoREST: &fakeZenodoREST{}})
 	t1, t2 := mcp.NewInMemoryTransports()
 	if _, err := server.Connect(ctx, t1, nil); err != nil {
 		t.Fatalf("server Connect: %v", err)

@@ -51,8 +51,10 @@ The additive 2026-07-15 baseline introduces the provider-scoped `zenodo`
 command, including its `oai` subgroup, and the
 `zenodo_oai_records_list`, `zenodo_oai_sets_list`, and
 `zenodo_oai_formats_list` tools. They remain separate from Zenodo REST
-discovery. All pre-existing CLI commands, MCP tools, inputs, output fields, and
-limits are unchanged.
+discovery. The same additive baseline includes `repository_capabilities_get`,
+`zenodo_records_search`, `zenodo_record_get`, and `zenodo_files_list`. All
+pre-existing CLI commands, MCP tools, inputs, output fields, and limits are
+unchanged.
 
 The OSF API source remains a pinned remote manifest in
 `docs/osf-api-schema-source.json`. The runtime client is typed and maintained

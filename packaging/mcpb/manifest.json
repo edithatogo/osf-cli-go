@@ -3,8 +3,8 @@
   "name": "osf-cli-go",
   "display_name": "OSF CLI Go",
   "version": "0.3.2",
-  "description": "Read-only MCP tools for authenticated Open Science Framework discovery, projects, and files.",
-  "long_description": "OSF CLI Go exposes read-only Model Context Protocol tools for searching OSF, listing preprints, and inspecting an authenticated Open Science Framework account, projects, components, OSF Storage files, and contributors.",
+  "description": "Read-only MCP tools for Open Science Framework workflows and public Zenodo discovery.",
+  "long_description": "OSF CLI Go exposes read-only Model Context Protocol tools for OSF accounts, projects, components, files, preprints, and DOI resolution, plus public Zenodo records, files, provider capabilities, and OAI-PMH metadata harvesting.",
   "author": {
     "name": "edithatogo",
     "url": "https://github.com/edithatogo"
@@ -24,7 +24,8 @@
     "osf",
     "open-science",
     "research",
-    "mcp"
+    "mcp",
+    "zenodo"
   ],
   "server": {
     "type": "binary",
@@ -108,7 +109,14 @@
     {
       "name": "osf_doi_resolve",
       "description": "Resolve a DOI to an OSF web resource without downloading or writing data."
-    }
+    },
+    {"name": "zenodo_oai_records_list", "description": "List one public Zenodo OAI-PMH record page and its continuation."},
+    {"name": "zenodo_oai_sets_list", "description": "List public Zenodo OAI-PMH sets."},
+    {"name": "zenodo_oai_formats_list", "description": "List public Zenodo OAI-PMH metadata formats."},
+    {"name": "repository_capabilities_get", "description": "Return the reviewed OSF or Zenodo provider capability contract."},
+    {"name": "zenodo_records_search", "description": "Search public published Zenodo records."},
+    {"name": "zenodo_record_get", "description": "Inspect a public published Zenodo record."},
+    {"name": "zenodo_files_list", "description": "List files attached to a public published Zenodo record."}
   ],
   "user_config": {
     "osf_token": {

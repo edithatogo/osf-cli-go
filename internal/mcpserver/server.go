@@ -44,14 +44,16 @@ type ZenodoOAIClient interface {
 
 type Server struct {
 	client OSFClient
+	zenodo ZenodoRESTClient
 	oai    ZenodoOAIClient
 	events observability.Emitter
 }
 
 type Options struct {
-	Version   string
-	Events    observability.Emitter
-	ZenodoOAI ZenodoOAIClient
+	Version    string
+	Events     observability.Emitter
+	ZenodoOAI  ZenodoOAIClient
+	ZenodoREST ZenodoRESTClient
 }
 
 type EmptyInput struct{}
@@ -245,7 +247,7 @@ func New(client OSFClient, opts Options) *mcp.Server {
 		version = "0.0.0-dev"
 	}
 
-	service := &Server{client: client, oai: opts.ZenodoOAI, events: opts.Events}
+	service := &Server{client: client, zenodo: opts.ZenodoREST, oai: opts.ZenodoOAI, events: opts.Events}
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "osf-cli-go",
 		Version: version,
@@ -302,6 +304,12 @@ func New(client OSFClient, opts Options) *mcp.Server {
 		mcp.AddTool(server, &mcp.Tool{Name: "zenodo_oai_records_list", Description: "List one public Zenodo OAI-PMH record page and return its opaque continuation."}, service.ListOAIRecords)
 		mcp.AddTool(server, &mcp.Tool{Name: "zenodo_oai_sets_list", Description: "List public Zenodo OAI-PMH selective-harvesting sets."}, service.ListOAISets)
 		mcp.AddTool(server, &mcp.Tool{Name: "zenodo_oai_formats_list", Description: "List public Zenodo OAI-PMH metadata formats."}, service.ListOAIFormats)
+	}
+	if service.zenodo != nil {
+		mcp.AddTool(server, &mcp.Tool{Name: "repository_capabilities_get", Description: "Return the reviewed OSF or Zenodo provider capability contract."}, service.GetRepositoryCapabilities)
+		mcp.AddTool(server, &mcp.Tool{Name: "zenodo_records_search", Description: "Search public published Zenodo records."}, service.SearchZenodoRecords)
+		mcp.AddTool(server, &mcp.Tool{Name: "zenodo_record_get", Description: "Get a public published Zenodo record by native, qualified, or canonical URL identity."}, service.GetZenodoRecord)
+		mcp.AddTool(server, &mcp.Tool{Name: "zenodo_files_list", Description: "List files attached to a public published Zenodo record."}, service.ListZenodoFiles)
 	}
 
 	return server

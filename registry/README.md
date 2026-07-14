@@ -3,6 +3,10 @@
 This directory records the package and submission surfaces for the OSF MCP
 server.
 
+The executable inventory includes authenticated and public OSF reads plus
+public Zenodo REST and OAI-PMH reads. It deliberately contains no Zenodo write,
+upload, deletion, version, or publication tool.
+
 The machine-readable cross-provider readiness contract is
 [`submission-scorecard.json`](submission-scorecard.json). It records a dated
 readiness score, evidence, next action, and blocker for every target. A score
