@@ -1,0 +1,1 @@
+Conductor review: Zenodo API source-policy phase passed. Fixed the official access-policy marker ordering. Offline manifest validation, online official-source markers, targeted tests, vet, and whitespace checks passed.
