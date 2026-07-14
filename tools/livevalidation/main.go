@@ -312,7 +312,11 @@ func writeEvidence(path string, report validationReport) error {
 	for _, result := range report.Steps {
 		fmt.Fprintf(&builder, "  - %s: %s\n", result.Step.Name, result.Status)
 		if result.Output != "" {
-			fmt.Fprintf(&builder, "    - Output: %s\n", sanitizeOutput(result.Output))
+			output := sanitizeOutput(result.Output)
+			if report.Mode == "skipped" && result.Status == "planned" {
+				output = "not executed; live validation was skipped"
+			}
+			fmt.Fprintf(&builder, "    - Output: %s\n", output)
 		}
 		if result.Elapsed > 0 {
 			fmt.Fprintf(&builder, "    - Elapsed: %s\n", result.Elapsed.Round(time.Millisecond))

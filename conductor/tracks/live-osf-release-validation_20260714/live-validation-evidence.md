@@ -1,6 +1,6 @@
 # Live OSF Validation Evidence
 
-- Generated: 2026-07-14T13:46:28Z
+- Generated: 2026-07-14T13:49:00Z
 - Mode: skipped
 - Skip reason: live OSF validation skipped: set OSF_LIVE_VALIDATION=1 to opt in
 - Environment:
@@ -22,23 +22,23 @@
   - files download: pending
 - Results:
   - auth whoami: planned
-    - Output: not executed in dry-run mode
+    - Output: not executed; live validation was skipped
   - projects list: planned
-    - Output: not executed in dry-run mode
+    - Output: not executed; live validation was skipped
   - projects get: planned
-    - Output: not executed in dry-run mode
+    - Output: not executed; live validation was skipped
   - components list: planned
-    - Output: not executed in dry-run mode
+    - Output: not executed; live validation was skipped
   - files list: planned
-    - Output: not executed in dry-run mode
+    - Output: not executed; live validation was skipped
   - files addons: planned
-    - Output: not executed in dry-run mode
+    - Output: not executed; live validation was skipped
   - export: planned
-    - Output: not executed in dry-run mode
+    - Output: not executed; live validation was skipped
   - search: planned
-    - Output: not executed in dry-run mode
+    - Output: not executed; live validation was skipped
   - preprints list: planned
-    - Output: not executed in dry-run mode
+    - Output: not executed; live validation was skipped
   - files download: pending
     - Output: command not yet available in this repository
 

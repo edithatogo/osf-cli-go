@@ -115,6 +115,31 @@ func TestWriteEvidenceRedactsInputs(t *testing.T) {
 	}
 }
 
+func TestWriteEvidenceLabelsSkippedStepsAccurately(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "evidence.md")
+	report := validationReport{
+		GeneratedAt: time.Date(2026, 7, 14, 0, 0, 0, 0, time.UTC),
+		Mode:        "skipped",
+		Steps:       plannedSteps(validationEnv{}),
+	}
+	if err := writeEvidence(path, report); err != nil {
+		t.Fatalf("writeEvidence: %v", err)
+	}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read evidence: %v", err)
+	}
+	text := string(content)
+	if !strings.Contains(text, "not executed; live validation was skipped") {
+		t.Fatalf("evidence did not identify skipped execution: %s", text)
+	}
+	if strings.Contains(text, "not executed in dry-run mode") {
+		t.Fatalf("evidence mislabeled skipped execution as dry-run: %s", text)
+	}
+}
+
 func TestExecutableStepsGateFileDownload(t *testing.T) {
 	t.Parallel()
 
