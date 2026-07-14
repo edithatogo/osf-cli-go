@@ -1,6 +1,6 @@
 # LobeHub MCP Marketplace submission packet
 
-Status: prepared; authentication and provider publication are pending.
+Status: published and verified.
 
 ## Package
 
@@ -17,17 +17,22 @@ repository and logo.
 ## Validation
 
 The manifest parses as JSON and the current LobeHub CLI recognizes it as a
-publish input. Device registration also succeeded and stored M2M credentials
-locally. The publish command was run on 2026-07-14 and stopped at the user
-publisher authentication boundary:
+publish input. Device registration and user authentication succeeded. The
+repository was imported, claimed, and published on 2026-07-14.
 
 ```text
 npx --yes @lobehub/market-cli plugin publish --dir .
-Not logged in. Run `lhm login` first.
+Published edithatogo-osf-cli-go (1.0.0 -> 0.3.2)
 ```
 
-M2M device authentication is available, but it is insufficient for publishing
-owned plugins. This is an authentication blocker, not a package-validation
-failure. After user login, run the publish command from the repository root and
-record the returned identifier/version and public listing URL here. Do not
-claim publication from the local manifest alone.
+## Public receipt
+
+- Identifier: `edithatogo-osf-cli-go`
+- Status: `published`
+- Claimed: `true`
+- Latest version reported by `lhm plugin list`: `0.3.2`
+- Public listing: <https://market.lobehub.com/s/plugins/edithatogo-osf-cli-go>
+- Manifest: <https://market.lobehub.com/api/v1/plugins/edithatogo-osf-cli-go/manifest>
+
+Both public URLs returned HTTP 200 during verification. The marketplace search
+result reports the listing as validated and public.

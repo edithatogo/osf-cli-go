@@ -1,5 +1,5 @@
 {
-  "identifier": "osf-cli-go",
+  "identifier": "edithatogo-osf-cli-go",
   "name": "OSF CLI Go",
   "version": "0.3.2",
   "description": "Read-only Open Science Framework MCP tools for projects, files, contributors, registrations, preprints, and search.",
