@@ -2,7 +2,7 @@
 
 ## Phase 1: Safety model
 
-- [ ] Task: Define lifecycle states, transitions, scopes, access, embargo, license, and metadata policies.
+- [~] Task: Define lifecycle states, transitions, scopes, access, embargo, license, and metadata policies.
 - [ ] Task: Add exhaustive transition, denial, confirmation, and redaction tests.
 - [ ] Task: Conductor - Automated Review and Checkpoint 'Safety model' (Protocol in workflow.md)
 
