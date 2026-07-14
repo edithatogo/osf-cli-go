@@ -1,0 +1,1 @@
+Conductor review: repository provider domain-model phase passed. Fixed provider/kind validation, native metadata serialization, parameterized JSON media validation, and deterministic permission errors. Repository tests, vet, compatibility fixtures, and whitespace checks passed.
