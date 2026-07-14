@@ -1,0 +1,1 @@
+Conductor review for structured-observability_20260714: fixed direct event error redaction and enforced owner-only permissions for existing log files. Added regression coverage and updated archived review evidence. Validation passed: go test ./..., go test -race ./..., go vet ./..., checkstubs, checkfeaturematrix, checkregistries, checkreleasecontract, git diff --check.
