@@ -41,7 +41,7 @@ The per-track `plan.md` files are the source of truth for completion state.
 
 - [x] [osf-sync-parity](tracks/osf-sync-parity_20260711/spec.md) — Benchmark OSF Sync desktop synchronization semantics; source CenterForOpenScience/osf-sync; issue #13.
 
-- [ ] [research-plugins-osf-parity](tracks/research-plugins-osf-parity_20260711/spec.md) — Add research-agent OSF discovery and full-text workflow parity; source wentorai/research-plugins; issue #16.
+- [x] [research-plugins-osf-parity](tracks/research-plugins-osf-parity_20260711/spec.md) — Add research-agent OSF discovery and full-text workflow parity; source wentorai/research-plugins; issue #16.
 
 
 - [ ] [presqt-osf-parity](tracks/presqt-osf-parity_20260711/spec.md) — Benchmark PresQT preservation and metadata-transfer workflows; source Lucy-Family-Institute/presqt; issue #19.
