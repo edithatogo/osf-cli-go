@@ -1,0 +1,1 @@
+Safe execution review fixes: skip_identical ownership survives checkpoints and is excluded from compensation; full mapping report finalized; Zenodo MD5 reverified; cleanup is cancellation-resistant; full gates and live draft 565282 passed; token revoked.
