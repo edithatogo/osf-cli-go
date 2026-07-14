@@ -219,6 +219,10 @@ LLM, modify OSF, or claim that a research method is scientifically valid.
 
 ## Zenodo OAI-PMH
 
+`osf zenodo records search|get` searches or inspects published REST records,
+and `osf zenodo files list` lists a record's files. `osf zenodo capabilities`
+reports supported, partial, and unsupported provider operations.
+
 `osf zenodo oai harvest` retrieves one public metadata page and returns its
 opaque continuation in JSON output. Add `--all` for bounded automatic
 resumption, or `--resume-token` to continue a persisted harvest. Sets and

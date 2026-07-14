@@ -67,6 +67,9 @@ type Record struct {
 	raw          []byte
 }
 
+// NativeJSON returns an independent copy of the original provider response.
+func (record Record) NativeJSON() []byte { return append([]byte(nil), record.raw...) }
+
 // UnmarshalJSON accepts the current entries map and the legacy files array.
 func (record *Record) UnmarshalJSON(data []byte) error {
 	var envelope struct {

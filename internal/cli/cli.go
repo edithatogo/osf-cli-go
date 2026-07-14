@@ -46,7 +46,7 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 		return 2
 	}
 	defer func() { _ = closer.Close() }()
-	root := newRootCommandWithClients(stdout, stderr, newDefaultReadonlyClientWithObserver(auth.EnvSource{}, emitter), newDefaultZenodoOAIClient(emitter))
+	root := newRootCommandWithProviders(stdout, stderr, newDefaultReadonlyClientWithObserver(auth.EnvSource{}, emitter), newDefaultZenodoRESTClient(emitter), newDefaultZenodoOAIClient(emitter))
 	root.SetArgs(args)
 	ctx := observability.WithEmitter(observability.WithOperationID(WithSignal(context.Background()), observability.NewID("op")), emitter)
 	root.SetContext(ctx)
@@ -83,11 +83,18 @@ func newRootCommandWithClient(stdout, stderr io.Writer, client readonlyClient) *
 }
 
 func newRootCommandWithClients(stdout, stderr io.Writer, client readonlyClient, oai zenodoOAIClient) *cobra.Command {
+	return newRootCommandWithProviders(stdout, stderr, client, newDefaultZenodoRESTClient(nil), oai)
+}
+
+func newRootCommandWithProviders(stdout, stderr io.Writer, client readonlyClient, rest zenodoRESTClient, oai zenodoOAIClient) *cobra.Command {
 	if client == nil {
 		client = newDefaultReadonlyClient()
 	}
 	if oai == nil {
 		oai = newDefaultZenodoOAIClient(nil)
+	}
+	if rest == nil {
+		rest = newDefaultZenodoRESTClient(nil)
 	}
 
 	root := &cobra.Command{
@@ -139,7 +146,7 @@ func newRootCommandWithClients(stdout, stderr io.Writer, client readonlyClient, 
 		newResolveCommand(),
 		newOpenCommand(),
 		newWhoamiCommand(client),
-		newZenodoCommand(oai),
+		newZenodoCommand(rest, oai),
 		newCompletionCommand(root),
 	)
 
@@ -218,7 +225,7 @@ func writeRootContract(w io.Writer) error {
 			{Name: "resolve", Status: "implemented", Description: "Resolve an OSF DOI or DOI URL"},
 			{Name: "open", Status: "implemented", Description: "Open an OSF node in the default browser"},
 			{Name: "whoami", Status: "implemented", Description: "Show the active OSF account (alias for auth whoami)"},
-			{Name: "zenodo oai", Status: "implemented", Description: "Harvest public Zenodo OAI-PMH metadata independently from REST discovery"},
+			{Name: "zenodo", Status: "implemented", Description: "Search and inspect public Zenodo records or harvest OAI-PMH metadata"},
 			{Name: "completion", Status: "implemented", Description: "Generate shell completion scripts"},
 		},
 	})

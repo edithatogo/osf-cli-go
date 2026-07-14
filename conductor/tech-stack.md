@@ -22,6 +22,8 @@
   depositions, and publication remain outside this package.
 - Public Zenodo OAI-PMH adapter: `internal/zenodooai`; XML metadata, sets,
   schemas, protocol errors, and opaque continuation remain separate from REST.
+- Provider-scoped Zenodo CLI commands consume the concrete REST and OAI-PMH
+  clients; write-shaped commands consult `repository.ZenodoContract` only.
 - Future reusable core packages should begin under `internal/`. Promote public packages only after the CLI behavior stabilizes and an MCP server track proves the package boundary.
 
 ## API Direction

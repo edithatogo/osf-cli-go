@@ -18,6 +18,7 @@ nav:
   - Zenodo provider roadmap: zenodo-provider-roadmap.md
   - Repository provider contract: repository-provider-contract.md
   - Zenodo read-only client: zenodo-readonly-client.md
+  - Zenodo provider CLI: zenodo-cli.md
   - Zenodo OAI-PMH: zenodo-oai-pmh.md
   - Development: development.md
   - Contributing: contributing.md

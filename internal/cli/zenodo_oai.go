@@ -29,11 +29,11 @@ func newDefaultZenodoOAIClient(emitter observability.Emitter) zenodoOAIClient {
 	return client
 }
 
-func newZenodoCommand(client zenodoOAIClient) *cobra.Command {
+func newZenodoCommand(rest zenodoRESTClient, client zenodoOAIClient) *cobra.Command {
 	command := &cobra.Command{Use: "zenodo", Short: "Use provider-specific Zenodo workflows"}
 	oai := &cobra.Command{Use: "oai", Short: "Harvest public Zenodo OAI-PMH metadata"}
 	oai.AddCommand(newZenodoOAIHarvestCommand(client), newZenodoOAISetsCommand(client), newZenodoOAIFormatsCommand(client))
-	command.AddCommand(oai)
+	command.AddCommand(newZenodoRecordsCommand(rest), newZenodoFilesCommand(rest), newZenodoCapabilitiesCommand(), newZenodoPublishCommand(), oai)
 	return command
 }
 

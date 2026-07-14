@@ -73,6 +73,14 @@ func TestGetRecordUsesBearerHeaderAndPreservesNativeMetadata(t *testing.T) {
 	if envelope.Identity.Provider != repository.ProviderZenodo || !bytes.Contains(envelope.NativeMetadata.Bytes(), []byte(`"provider_extension"`)) {
 		t.Fatalf("envelope = %#v native=%s", envelope, envelope.NativeMetadata.Bytes())
 	}
+	native := record.NativeJSON()
+	if !bytes.Contains(native, []byte(`"provider_extension"`)) {
+		t.Fatalf("native JSON = %s", native)
+	}
+	native[0] = 'x'
+	if bytes.Equal(native, record.NativeJSON()) {
+		t.Fatal("NativeJSON returned shared storage")
+	}
 }
 
 func TestListRecordFilesUsesEmbeddedRecordFiles(t *testing.T) {
