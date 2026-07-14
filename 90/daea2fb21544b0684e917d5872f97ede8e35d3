@@ -1,0 +1,1 @@
+Conductor review: repository provider contract-validation phase passed. Added malformed-catalog, partial support, unknown capability, native metadata, and record-envelope coverage; renamed CapabilitySupportError for semantic accuracy. Full harness and frozen CLI/MCP fixtures passed.
