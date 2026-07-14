@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {"provider": "osf", "capability": "files.download", "level": "supported"},
+    {"provider": "osf", "capability": "lifecycle.publish", "level": "partial"},
+    {"provider": "osf", "capability": "oai.harvest", "level": "unsupported"},
+    {"provider": "zenodo", "capability": "files.download", "level": "supported"},
+    {"provider": "zenodo", "capability": "files.upload", "level": "partial"},
+    {"provider": "zenodo", "capability": "oai.harvest", "level": "supported"}
+  ]
+}
