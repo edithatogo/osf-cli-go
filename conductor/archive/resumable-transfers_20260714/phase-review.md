@@ -36,3 +36,12 @@ Reviewed: 2026-07-14
 - `go run ./tools/checkregistries`
 - `go run ./tools/checkreleasecontract`
 - `git diff --check`
+
+## Hosted gate residual
+
+The local implementation gates pass, but PR #100's Codecov patch check reports
+72.4% against the repository's 90% patch target. The report includes the
+broader launch-roadmap changes already present in that PR as well as this
+track. The threshold was intentionally not weakened; the remaining release
+action is to split the broad PR or add the missing error-path coverage until
+the hosted patch score reaches the existing target.
