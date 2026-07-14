@@ -70,4 +70,4 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [x] [structured-observability](archive/structured-observability_20260714/spec.md) — Define and implement structured observability for 1.0; issue #96.
 - [~] [live-osf-release-validation](tracks/live-osf-release-validation_20260714/spec.md) — Run live OSF validation for the 1.0 release candidate; issue #97.
 - [x] [release-candidate-provenance](tracks/release-candidate-provenance_20260714/spec.md) — Verify v1.0 release-candidate supply chain and provenance; issue #98.
-- [ ] [compatibility-contract-freeze](tracks/compatibility-contract-freeze_20260714/spec.md) — Freeze OSF API and CLI/MCP compatibility contracts for 1.0; issue #99.
+- [x] [compatibility-contract-freeze](tracks/compatibility-contract-freeze_20260714/spec.md) — Freeze OSF API and CLI/MCP compatibility contracts for 1.0; issue #99.
