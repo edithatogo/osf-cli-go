@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
 	"github.com/edithatogo/osf-cli-go/internal/buildinfo"
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/spf13/cobra"
 )
 
@@ -38,16 +40,40 @@ type contractEntry struct {
 
 // Run executes the osf CLI and returns a process exit code.
 func Run(args []string, stdout io.Writer, stderr io.Writer) int {
-	root := newRootCommandWithClient(stdout, stderr, nil)
+	emitter, closer, err := observability.OpenFromEnv(stderr)
+	if err != nil {
+		_, _ = fmt.Fprintln(stderr, err)
+		return 2
+	}
+	defer func() { _ = closer.Close() }()
+	root := newRootCommandWithClient(stdout, stderr, newDefaultReadonlyClientWithObserver(auth.EnvSource{}, emitter))
 	root.SetArgs(args)
-	ctx := WithSignal(context.Background())
+	ctx := observability.WithEmitter(observability.WithOperationID(WithSignal(context.Background()), observability.NewID("op")), emitter)
 	root.SetContext(ctx)
+	started := time.Now()
+	observability.Emit(ctx, emitter, observability.Event{
+		Name:       "cli.command",
+		Fields:     map[string]any{"argumentCount": len(args)},
+		RetryCount: 0,
+	})
 
 	if err := root.Execute(); err != nil {
 		err = auth.RedactError(err)
+		observability.Emit(ctx, emitter, observability.Event{
+			Level:      observability.LevelError,
+			Name:       "cli.command.result",
+			DurationMS: time.Since(started).Milliseconds(),
+			Outcome:    observability.OutcomeError,
+			Error:      observability.RedactedError(err),
+		})
 		_, _ = fmt.Fprintln(stderr, err)
 		return exitCodeForError(err)
 	}
+	observability.Emit(ctx, emitter, observability.Event{
+		Name:       "cli.command.result",
+		DurationMS: time.Since(started).Milliseconds(),
+		Outcome:    observability.OutcomeOK,
+	})
 
 	return 0
 }

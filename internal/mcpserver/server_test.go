@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -49,6 +50,18 @@ func TestServerExposesReadOnlyTools(t *testing.T) {
 		if !got[name] {
 			t.Fatalf("missing tool %q; all tools: %v", name, names)
 		}
+	}
+}
+
+func TestMCPToolErrorsEmitRedactedEvents(t *testing.T) {
+	var events strings.Builder
+	server := &Server{events: observability.NewJSONEmitter(&events, observability.LevelInfo)}
+	_, _, err := server.Search(context.Background(), nil, SearchInput{Query: "  "})
+	if err == nil {
+		t.Fatal("Search returned nil error for empty query")
+	}
+	if !strings.Contains(events.String(), `"name":"mcp.tool.error"`) || !strings.Contains(events.String(), `"class":"validation"`) {
+		t.Fatalf("events=%q", events.String())
 	}
 }
 

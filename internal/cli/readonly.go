@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
 )
 
@@ -50,17 +51,25 @@ type defaultReadonlyClient struct {
 }
 
 func newDefaultReadonlyClient() readonlyClient {
-	return newDefaultReadonlyClientFromSource(auth.EnvSource{})
+	return newDefaultReadonlyClientWithObserver(auth.EnvSource{}, nil)
 }
 
 func newDefaultReadonlyClientFromSource(source auth.Source) readonlyClient {
+	return newDefaultReadonlyClientWithObserver(source, nil)
+}
+
+func newDefaultReadonlyClientWithObserver(source auth.Source, emitter observability.Emitter) readonlyClient {
 	credentials, err := auth.LoadCredentials(source)
 	if err != nil && credentials.Mode == "" {
 		credentials = auth.Credentials{Mode: auth.ModeAnonymous}
 	}
 	credentialErr := err
 
-	api, err := osfapi.New(osfAPIBaseURL, osfapi.WithCredentials(credentials))
+	options := []osfapi.Option{osfapi.WithCredentials(credentials)}
+	if emitter != nil {
+		options = append(options, osfapi.WithObserver(emitter))
+	}
+	api, err := osfapi.New(osfAPIBaseURL, options...)
 	if err != nil {
 		panic(err)
 	}

@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"log/slog"
 	"os"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
 	"github.com/edithatogo/osf-cli-go/internal/buildinfo"
 	"github.com/edithatogo/osf-cli-go/internal/mcpserver"
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -16,22 +16,28 @@ var version = "0.0.0-dev"
 
 func main() {
 	effectiveVersion := buildinfo.Version(version)
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil)).With(
-		"service", "osf-mcp",
-		"version", effectiveVersion,
-	)
-	credentials, _ := auth.LoadCredentials(auth.EnvSource{})
-	client, err := osfapi.New("", osfapi.WithCredentials(credentials))
+	emitter, closer, err := observability.OpenFromEnv(os.Stderr)
 	if err != nil {
-		logger.Error("initialize OSF client", "error", auth.RedactError(err))
+		_, _ = os.Stderr.WriteString(err.Error() + "\n")
+		os.Exit(2)
+	}
+	defer func() { _ = closer.Close() }()
+	ctx := observability.WithEmitter(observability.WithOperationID(context.Background(), observability.NewID("op")), emitter)
+	observability.Emit(ctx, emitter, observability.Event{
+		Name:   "mcp.server",
+		Fields: map[string]any{"state": "starting", "transport": "stdio", "version": effectiveVersion},
+	})
+	credentials, _ := auth.LoadCredentials(auth.EnvSource{})
+	client, err := osfapi.New("", osfapi.WithCredentials(credentials), osfapi.WithObserver(emitter))
+	if err != nil {
+		observability.Emit(ctx, emitter, observability.Event{Level: observability.LevelError, Name: "mcp.server", Outcome: observability.OutcomeError, Error: observability.RedactedError(err)})
 		os.Exit(1)
 	}
 
-	server := mcpserver.New(client, mcpserver.Options{Version: effectiveVersion})
-	logger.Info("starting MCP server", "transport", "stdio")
-	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
-		logger.Error("MCP server stopped", "error", auth.RedactError(err))
+	server := mcpserver.New(client, mcpserver.Options{Version: effectiveVersion, Events: emitter})
+	if err := server.Run(ctx, &mcp.StdioTransport{}); err != nil {
+		observability.Emit(ctx, emitter, observability.Event{Level: observability.LevelError, Name: "mcp.server", Outcome: observability.OutcomeError, Error: observability.RedactedError(err)})
 		os.Exit(1)
 	}
-	logger.Info("MCP server stopped")
+	observability.Emit(ctx, emitter, observability.Event{Name: "mcp.server", Fields: map[string]any{"state": "stopped"}})
 }

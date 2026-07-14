@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 )
 
 func TestResumeFileUploadRecoversAcknowledgedChunk(t *testing.T) {
@@ -170,6 +172,24 @@ func TestResumeFileUploadValidatesSessionAndCheckpointPaths(t *testing.T) {
 		return 3, true, nil
 	}); err == nil {
 		t.Fatal("directory checkpoint path returned nil error")
+	}
+}
+
+func TestResumeFileUploadEmitsTransferEvent(t *testing.T) {
+	dir := t.TempDir()
+	source := filepath.Join(dir, "source.txt")
+	if err := os.WriteFile(source, []byte("abc"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var events strings.Builder
+	ctx := observability.WithOperationID(context.Background(), "op-upload-test")
+	ctx = observability.WithEmitter(ctx, observability.NewJSONEmitter(&events, observability.LevelInfo))
+	result, err := ResumeFileUpload(ctx, UploadOptions{SourcePath: source, SourceIdentity: "osf:file"}, func(_ context.Context, offset, total int64, content io.Reader) (int64, bool, error) {
+		body, readErr := io.ReadAll(content)
+		return offset + int64(len(body)), total == offset+int64(len(body)), readErr
+	})
+	if err != nil || !result.Completed || !strings.Contains(events.String(), `"name":"transfer.upload"`) {
+		t.Fatalf("result=%+v err=%v events=%q", result, err, events.String())
 	}
 }
 

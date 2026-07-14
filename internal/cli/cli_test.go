@@ -36,6 +36,25 @@ func TestRunPrintsHelpWithoutArgs(t *testing.T) {
 	}
 }
 
+func TestRunWritesOptInStructuredEventsOutsideCommandOutput(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "events.jsonl")
+	t.Setenv("OSF_EVENT_LOG", logPath)
+	var stdout, stderr bytes.Buffer
+	if code := Run([]string{"unknown-command"}, &stdout, &stderr); code == 0 {
+		t.Fatal("Run returned success for unknown command")
+	}
+	data, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatalf("ReadFile events: %v", err)
+	}
+	if !strings.Contains(string(data), `"name":"cli.command.result"`) {
+		t.Fatalf("events=%q", data)
+	}
+	if strings.Contains(stdout.String(), `"schemaVersion"`) {
+		t.Fatalf("structured events polluted stdout: %q", stdout.String())
+	}
+}
+
 func TestRunPrintsHelpWithHelpFlag(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

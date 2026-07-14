@@ -19,6 +19,14 @@ release-blocking finding lacks a dated waiver.
    rollback guidance, and preserve the failing evidence.
 5. Add a redacted regression test before closing the incident.
 
+## Observability
+
+Set `OSF_EVENT_LOG` to a private JSONL file for local diagnosis. Correlate
+`operationId` and `requestId` across CLI, API, transfer, and MCP events. Event
+logs are opt-in, local-only, redacted, and owner-readable; apply an operator
+retention or rotation policy and inspect them before sharing. Never set the
+destination to stdout because command JSON output must remain unpolluted.
+
 ## Rollback
 
 Rollback means directing users to the previous verified release or container

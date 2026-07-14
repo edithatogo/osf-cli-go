@@ -1,12 +1,15 @@
 package download
 
 import (
+	"context"
 	"errors"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 )
 
 func TestResumeStreamAtomicallyRecoversAfterInterruptedRead(t *testing.T) {
@@ -191,6 +194,19 @@ func TestResumeStreamAtomicallyRejectsStalledReaders(t *testing.T) {
 	}
 	if _, statErr := os.Stat(resumeCheckpointPath(dst)); statErr != nil {
 		t.Fatalf("checkpoint stat=%v, want retained checkpoint", statErr)
+	}
+}
+
+func TestResumeStreamAtomicallyEmitsTransferEvent(t *testing.T) {
+	var events strings.Builder
+	ctx := observability.WithOperationID(context.Background(), "op-transfer-test")
+	ctx = observability.WithEmitter(ctx, observability.NewJSONEmitter(&events, observability.LevelInfo))
+	dst := filepath.Join(t.TempDir(), "result.txt")
+	if _, err := ResumeStreamAtomically(stringsReaderOpener("content"), ResumeOptions{Destination: dst, Source: "https://files.osf.io/download", Policy: ConflictOverwrite, Context: ctx}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(events.String(), `"name":"transfer.download"`) || !strings.Contains(events.String(), `"operationId":"op-transfer-test"`) {
+		t.Fatalf("events=%q", events.String())
 	}
 }
 

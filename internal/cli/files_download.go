@@ -137,6 +137,7 @@ func downloadSingleFile(ctx context.Context, client readonlyClient, source, dest
 		ExpectedSize:     record.Bytes,
 		ExpectedChecksum: expectedChecksum,
 		Policy:           policy,
+		Context:          ctx,
 	})
 	result := filesDownloadResult{
 		Mode:           "file",
@@ -249,6 +250,7 @@ func collectFolderDownloadFiles(ctx context.Context, client readonlyClient, node
 				}
 				return int64Ptr(file.Attributes.Size)
 			}(),
+			Context: ctx,
 		})
 	}
 

@@ -1,6 +1,7 @@
 package osfapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -13,7 +14,29 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 )
+
+func TestClientEmitsRedactedRequestEvent(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		_, _ = io.WriteString(w, `{"data":{"id":"user-1","type":"users","attributes":{"full_name":"Test User"}}}`)
+	}))
+	defer srv.Close()
+	var events bytes.Buffer
+	emitter := observability.NewJSONEmitter(&events, observability.LevelInfo)
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()), WithBearerToken("secret-token"), WithObserver(emitter))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.CurrentUser(observability.WithOperationID(context.Background(), "op-api-test")); err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(events.Bytes(), []byte(`"name":"api.request"`)) || bytes.Contains(events.Bytes(), []byte("secret-token")) {
+		t.Fatalf("events=%q", events.String())
+	}
+}
 
 func FuzzResolveReference(f *testing.F) {
 	for _, seed := range []string{"/v2/nodes/project-123/", "?page=2", "https://example.org/resource", "\x00"} {

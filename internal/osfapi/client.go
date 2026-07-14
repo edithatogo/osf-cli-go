@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 )
 
 const defaultBaseURL = "https://api.osf.io/v2/"
@@ -27,6 +29,7 @@ type Client struct {
 	httpClient  *http.Client
 	bearerToken string
 	credentials auth.Credentials
+	emitter     observability.Emitter
 }
 
 // Option configures a Client using the functional options pattern.
@@ -63,6 +66,11 @@ func WithUsernamePassword(username, password string) Option {
 	return func(c *Client) {
 		c.credentials = auth.Credentials{Mode: auth.ModeUsernamePassword, Username: username, Password: password}
 	}
+}
+
+// WithObserver enables redacted structured request events.
+func WithObserver(emitter observability.Emitter) Option {
+	return func(c *Client) { c.emitter = emitter }
 }
 
 // New creates a Client that communicates with the given OSF API base URL.
@@ -209,7 +217,7 @@ func (c *Client) get(ctx context.Context, endpoint string, dst any) (*url.URL, e
 	c.sign(req)
 	req.Header.Set("Accept", "application/vnd.api+json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +261,7 @@ func (c *Client) post(ctx context.Context, endpoint string, body any, dst any) (
 	req.Header.Set("Accept", "application/vnd.api+json")
 	req.Header.Set("Content-Type", "application/vnd.api+json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +307,7 @@ func (c *Client) patch(ctx context.Context, endpoint string, body any, dst any) 
 	req.Header.Set("Accept", "application/vnd.api+json")
 	req.Header.Set("Content-Type", "application/vnd.api+json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return nil, err
 	}
@@ -335,7 +343,7 @@ func (c *Client) delete(ctx context.Context, endpoint string) error {
 	c.sign(req)
 	req.Header.Set("Accept", "application/vnd.api+json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return err
 	}
@@ -346,6 +354,45 @@ func (c *Client) delete(ctx context.Context, endpoint string) error {
 		return parseAPIError(resp.StatusCode, req.Method, req.URL.RequestURI(), respBody)
 	}
 	return nil
+}
+
+func (c *Client) doHTTP(req *http.Request) (*http.Response, error) {
+	started := time.Now()
+	resp, err := c.httpClient.Do(req)
+	status := 0
+	if resp != nil {
+		status = resp.StatusCode
+	}
+	if c.emitter != nil {
+		outcome := observability.OutcomeOK
+		if err != nil || status >= 400 {
+			outcome = observability.OutcomeError
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				outcome = observability.OutcomeCancel
+			}
+		}
+		observability.Emit(req.Context(), c.emitter, observability.Event{
+			Level:         levelForHTTP(outcome),
+			Name:          "api.request",
+			DurationMS:    time.Since(started).Milliseconds(),
+			RetryCount:    0,
+			Outcome:       outcome,
+			EndpointClass: observability.EndpointClass(req.URL.String()),
+			Fields: map[string]any{
+				"method": req.Method,
+				"status": status,
+			},
+			Error: observability.RedactedError(err),
+		})
+	}
+	return resp, err
+}
+
+func levelForHTTP(outcome string) string {
+	if outcome == observability.OutcomeOK {
+		return observability.LevelInfo
+	}
+	return observability.LevelError
 }
 
 // OpenDownload opens the given download URL and returns the response body.
@@ -379,7 +426,7 @@ func (c *Client) openDownload(ctx context.Context, downloadURL string, offset in
 		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", offset))
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +477,7 @@ func (c *Client) UploadFile(ctx context.Context, providerURL, fileName string, c
 	}
 	c.sign(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return err
 	}
@@ -461,7 +508,7 @@ func (c *Client) CreateFolder(ctx context.Context, providerURL, folderName strin
 	}
 	c.sign(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return err
 	}
@@ -487,7 +534,7 @@ func (c *Client) DeleteFile(ctx context.Context, providerURL, fileName string) e
 	}
 	c.sign(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return err
 	}

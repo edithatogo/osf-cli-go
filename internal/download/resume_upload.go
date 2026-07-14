@@ -8,6 +8,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
+
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 )
 
 // UploadSession sends one provider-supported chunk beginning at offset and
@@ -20,6 +23,7 @@ type UploadOptions struct {
 	SourcePath     string
 	SourceIdentity string
 	CheckpointPath string
+	Emitter        observability.Emitter
 }
 
 // UploadResult reports provider acknowledgements and checkpoint cleanup.
@@ -42,6 +46,31 @@ type uploadCheckpoint struct {
 // not emulate resumability for one-shot providers: the session callback must
 // acknowledge each provider chunk explicitly.
 func ResumeFileUpload(ctx context.Context, opts UploadOptions, session UploadSession) (result UploadResult, err error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	emitter := opts.Emitter
+	if emitter == nil {
+		emitter = observability.EmitterFromContext(ctx)
+	}
+	started := time.Now()
+	defer func() {
+		outcome := observability.OutcomeOK
+		if err != nil {
+			outcome = observability.OutcomeError
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				outcome = observability.OutcomeCancel
+			}
+		}
+		observability.Emit(ctx, emitter, observability.Event{
+			Level:      transferUploadEventLevel(outcome),
+			Name:       "transfer.upload",
+			DurationMS: time.Since(started).Milliseconds(),
+			Outcome:    outcome,
+			Fields:     map[string]any{"source": opts.SourcePath, "bytes": result.Bytes, "resumed": result.Resumed},
+			Error:      observability.RedactedError(err),
+		})
+	}()
 	if session == nil {
 		return result, errors.New("upload session is required")
 	}
@@ -112,6 +141,13 @@ func ResumeFileUpload(ctx context.Context, opts UploadOptions, session UploadSes
 	result.Completed = true
 	result.CheckpointPath = ""
 	return result, nil
+}
+
+func transferUploadEventLevel(outcome string) string {
+	if outcome == observability.OutcomeOK {
+		return observability.LevelInfo
+	}
+	return observability.LevelError
 }
 
 func loadUploadCheckpoint(opts UploadOptions, total int64) (uploadCheckpoint, bool, error) {

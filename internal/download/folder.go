@@ -1,6 +1,7 @@
 package download
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -31,6 +32,7 @@ type FolderDownloadFile struct {
 	SourceIdentity   string
 	ExpectedChecksum string
 	KnownBytes       *int64
+	Context          context.Context
 }
 
 type plannedFolderDownloadFile struct {
@@ -42,6 +44,7 @@ type plannedFolderDownloadFile struct {
 	source     string
 	checksum   string
 	knownBytes *int64
+	context    context.Context
 }
 
 // FolderDownloadRecord is one entry in a folder download manifest.
@@ -113,6 +116,7 @@ func NewFolderDownloadPlan(destRoot string, policy ConflictPolicy, files []Folde
 			source:     file.SourceIdentity,
 			checksum:   file.ExpectedChecksum,
 			knownBytes: file.KnownBytes,
+			context:    file.Context,
 		})
 	}
 
@@ -148,7 +152,7 @@ func (p *FolderDownloadPlan) Execute() (FolderDownloadManifest, error) {
 		var checkpointPath string
 		var writeErr error
 		if file.openRange != nil {
-			resume, resumeErr := ResumeStreamAtomically(file.openRange, ResumeOptions{Destination: file.localPath, Source: file.source, ExpectedSize: file.knownBytes, ExpectedChecksum: file.checksum, Policy: p.policy})
+			resume, resumeErr := ResumeStreamAtomically(file.openRange, ResumeOptions{Destination: file.localPath, Source: file.source, ExpectedSize: file.knownBytes, ExpectedChecksum: file.checksum, Policy: p.policy, Context: file.context})
 			written = resume.Completed
 			bytes = resume.Bytes
 			resumed = resume.Resumed

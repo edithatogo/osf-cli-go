@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -35,10 +36,12 @@ type OSFClient interface {
 
 type Server struct {
 	client OSFClient
+	events observability.Emitter
 }
 
 type Options struct {
 	Version string
+	Events  observability.Emitter
 }
 
 type EmptyInput struct{}
@@ -198,7 +201,7 @@ func New(client OSFClient, opts Options) *mcp.Server {
 		version = "0.0.0-dev"
 	}
 
-	service := &Server{client: client}
+	service := &Server{client: client, events: opts.Events}
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "osf-cli-go",
 		Version: version,
@@ -258,7 +261,7 @@ func New(client OSFClient, opts Options) *mcp.Server {
 func (s *Server) Whoami(ctx context.Context, _ *mcp.CallToolRequest, _ EmptyInput) (*mcp.CallToolResult, UserResult, error) {
 	user, err := s.client.CurrentUser(ctx)
 	if err != nil {
-		return nil, UserResult{}, mcpError(err)
+		return nil, UserResult{}, s.mcpError(ctx, err)
 	}
 	return nil, UserResult{User: toUserOutput(user)}, nil
 }
@@ -266,7 +269,7 @@ func (s *Server) Whoami(ctx context.Context, _ *mcp.CallToolRequest, _ EmptyInpu
 func (s *Server) ListProjects(ctx context.Context, _ *mcp.CallToolRequest, _ EmptyInput) (*mcp.CallToolResult, NodesResult, error) {
 	nodes, err := s.client.ListCurrentUserProjects(ctx)
 	if err != nil {
-		return nil, NodesResult{}, mcpError(err)
+		return nil, NodesResult{}, s.mcpError(ctx, err)
 	}
 	return nil, NodesResult{Nodes: toNodeOutputs(nodes)}, nil
 }
@@ -274,11 +277,11 @@ func (s *Server) ListProjects(ctx context.Context, _ *mcp.CallToolRequest, _ Emp
 func (s *Server) GetProject(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, NodeResult, error) {
 	id, err := normalizeNodeID(in.ID)
 	if err != nil {
-		return nil, NodeResult{}, mcpError(err)
+		return nil, NodeResult{}, s.mcpError(ctx, err)
 	}
 	node, err := s.client.GetNode(ctx, id)
 	if err != nil {
-		return nil, NodeResult{}, mcpError(err)
+		return nil, NodeResult{}, s.mcpError(ctx, err)
 	}
 	return nil, NodeResult{Node: toNodeOutput(node)}, nil
 }
@@ -286,11 +289,11 @@ func (s *Server) GetProject(ctx context.Context, _ *mcp.CallToolRequest, in Node
 func (s *Server) ListComponents(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, NodesResult, error) {
 	id, err := normalizeNodeID(in.ID)
 	if err != nil {
-		return nil, NodesResult{}, mcpError(err)
+		return nil, NodesResult{}, s.mcpError(ctx, err)
 	}
 	nodes, err := s.client.ListNodeChildren(ctx, id)
 	if err != nil {
-		return nil, NodesResult{}, mcpError(err)
+		return nil, NodesResult{}, s.mcpError(ctx, err)
 	}
 	return nil, NodesResult{Nodes: toNodeOutputs(nodes)}, nil
 }
@@ -298,15 +301,15 @@ func (s *Server) ListComponents(ctx context.Context, _ *mcp.CallToolRequest, in 
 func (s *Server) ListFiles(ctx context.Context, _ *mcp.CallToolRequest, in FilesInput) (*mcp.CallToolResult, FilesResult, error) {
 	id, err := normalizeNodeID(in.ID)
 	if err != nil {
-		return nil, FilesResult{}, mcpError(err)
+		return nil, FilesResult{}, s.mcpError(ctx, err)
 	}
 	segments, err := storagePathSegments(in.Path)
 	if err != nil {
-		return nil, FilesResult{}, mcpError(err)
+		return nil, FilesResult{}, s.mcpError(ctx, err)
 	}
 	files, err := s.client.ListStorageFiles(ctx, id, segments...)
 	if err != nil {
-		return nil, FilesResult{}, mcpError(err)
+		return nil, FilesResult{}, s.mcpError(ctx, err)
 	}
 	return nil, FilesResult{Files: toFileOutputs(files)}, nil
 }
@@ -314,11 +317,11 @@ func (s *Server) ListFiles(ctx context.Context, _ *mcp.CallToolRequest, in Files
 func (s *Server) ListContributors(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, ContributorsResult, error) {
 	id, err := normalizeNodeID(in.ID)
 	if err != nil {
-		return nil, ContributorsResult{}, mcpError(err)
+		return nil, ContributorsResult{}, s.mcpError(ctx, err)
 	}
 	contributors, err := s.client.ListNodeContributors(ctx, id)
 	if err != nil {
-		return nil, ContributorsResult{}, mcpError(err)
+		return nil, ContributorsResult{}, s.mcpError(ctx, err)
 	}
 	return nil, ContributorsResult{Contributors: toContributorOutputs(contributors)}, nil
 }
@@ -326,11 +329,11 @@ func (s *Server) ListContributors(ctx context.Context, _ *mcp.CallToolRequest, i
 func (s *Server) ListFileVersions(ctx context.Context, _ *mcp.CallToolRequest, in FileInput) (*mcp.CallToolResult, FileVersionsResult, error) {
 	fileID := strings.TrimSpace(in.ID)
 	if fileID == "" {
-		return nil, FileVersionsResult{}, mcpError(errors.New("id is required"))
+		return nil, FileVersionsResult{}, s.mcpError(ctx, errors.New("id is required"))
 	}
 	versions, err := s.client.ListFileVersions(ctx, fileID)
 	if err != nil {
-		return nil, FileVersionsResult{}, mcpError(err)
+		return nil, FileVersionsResult{}, s.mcpError(ctx, err)
 	}
 	out := make([]FileVersionOutput, 0, len(versions))
 	for _, version := range versions {
@@ -342,11 +345,11 @@ func (s *Server) ListFileVersions(ctx context.Context, _ *mcp.CallToolRequest, i
 func (s *Server) ListAddons(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, NodesResult, error) {
 	id, err := normalizeNodeID(in.ID)
 	if err != nil {
-		return nil, NodesResult{}, mcpError(err)
+		return nil, NodesResult{}, s.mcpError(ctx, err)
 	}
 	addons, err := s.client.ListNodeAddons(ctx, id)
 	if err != nil {
-		return nil, NodesResult{}, mcpError(err)
+		return nil, NodesResult{}, s.mcpError(ctx, err)
 	}
 	return nil, NodesResult{Nodes: toNodeOutputs(addons)}, nil
 }
@@ -370,11 +373,11 @@ func (s *Server) ListIdentifiers(ctx context.Context, _ *mcp.CallToolRequest, in
 func (s *Server) listRelated(ctx context.Context, rawID string, list func(context.Context, string) ([]osfapi.RelatedResource, error)) (*mcp.CallToolResult, RelatedResourcesResult, error) {
 	id, err := normalizeNodeID(rawID)
 	if err != nil {
-		return nil, RelatedResourcesResult{}, mcpError(err)
+		return nil, RelatedResourcesResult{}, s.mcpError(ctx, err)
 	}
 	resources, err := list(ctx, id)
 	if err != nil {
-		return nil, RelatedResourcesResult{}, mcpError(err)
+		return nil, RelatedResourcesResult{}, s.mcpError(ctx, err)
 	}
 	out := make([]RelatedResourceOutput, 0, len(resources))
 	for _, resource := range resources {
@@ -386,15 +389,15 @@ func (s *Server) listRelated(ctx context.Context, rawID string, list func(contex
 func (s *Server) Search(ctx context.Context, _ *mcp.CallToolRequest, in SearchInput) (*mcp.CallToolResult, SearchResults, error) {
 	query := strings.TrimSpace(in.Query)
 	if query == "" {
-		return nil, SearchResults{}, mcpError(errors.New("query is required"))
+		return nil, SearchResults{}, s.mcpError(ctx, errors.New("query is required"))
 	}
 	limit, err := boundedLimit(in.Limit)
 	if err != nil {
-		return nil, SearchResults{}, mcpError(err)
+		return nil, SearchResults{}, s.mcpError(ctx, err)
 	}
 	results, err := s.client.SearchOSF(ctx, query, limit)
 	if err != nil {
-		return nil, SearchResults{}, mcpError(err)
+		return nil, SearchResults{}, s.mcpError(ctx, err)
 	}
 	out := make([]SearchResult, 0, len(results))
 	for _, result := range results {
@@ -406,11 +409,11 @@ func (s *Server) Search(ctx context.Context, _ *mcp.CallToolRequest, in SearchIn
 func (s *Server) ListPreprints(ctx context.Context, _ *mcp.CallToolRequest, in PreprintsInput) (*mcp.CallToolResult, NodesResult, error) {
 	limit, err := boundedLimit(in.Limit)
 	if err != nil {
-		return nil, NodesResult{}, mcpError(err)
+		return nil, NodesResult{}, s.mcpError(ctx, err)
 	}
 	preprints, err := s.client.ListPreprints(ctx, strings.TrimSpace(in.Provider), limit)
 	if err != nil {
-		return nil, NodesResult{}, mcpError(err)
+		return nil, NodesResult{}, s.mcpError(ctx, err)
 	}
 	return nil, NodesResult{Nodes: toNodeOutputs(preprints)}, nil
 }
@@ -418,15 +421,15 @@ func (s *Server) ListPreprints(ctx context.Context, _ *mcp.CallToolRequest, in P
 func (s *Server) SearchPreprints(ctx context.Context, _ *mcp.CallToolRequest, in PreprintSearchInput) (*mcp.CallToolResult, PreprintsResult, error) {
 	query := strings.TrimSpace(in.Query)
 	if query == "" {
-		return nil, PreprintsResult{}, mcpError(errors.New("query is required"))
+		return nil, PreprintsResult{}, s.mcpError(ctx, errors.New("query is required"))
 	}
 	limit, err := boundedSearchLimit(in.Limit)
 	if err != nil {
-		return nil, PreprintsResult{}, mcpError(err)
+		return nil, PreprintsResult{}, s.mcpError(ctx, err)
 	}
 	preprints, err := s.client.SearchPreprints(ctx, query, strings.TrimSpace(in.Provider), limit)
 	if err != nil {
-		return nil, PreprintsResult{}, mcpError(err)
+		return nil, PreprintsResult{}, s.mcpError(ctx, err)
 	}
 	out := make([]PreprintOutput, 0, len(preprints))
 	for _, preprint := range preprints {
@@ -447,11 +450,11 @@ func (s *Server) SearchPreprints(ctx context.Context, _ *mcp.CallToolRequest, in
 func (s *Server) ResolveDOI(ctx context.Context, _ *mcp.CallToolRequest, in DOIInput) (*mcp.CallToolResult, DOIResult, error) {
 	identifier := strings.TrimSpace(in.Identifier)
 	if identifier == "" {
-		return nil, DOIResult{}, mcpError(errors.New("identifier is required"))
+		return nil, DOIResult{}, s.mcpError(ctx, errors.New("identifier is required"))
 	}
 	resolution, err := s.client.ResolveDOI(ctx, identifier)
 	if err != nil {
-		return nil, DOIResult{}, mcpError(err)
+		return nil, DOIResult{}, s.mcpError(ctx, err)
 	}
 	return nil, DOIResult{DOI: resolution.DOI, ResolvedURL: resolution.ResolvedURL}, nil
 }
@@ -476,8 +479,15 @@ func boundedSearchLimit(limit int) (int, error) {
 	return limit, nil
 }
 
-func mcpError(err error) error {
-	return auth.RedactError(err)
+func (s *Server) mcpError(ctx context.Context, err error) error {
+	redacted := auth.RedactError(err)
+	observability.Emit(ctx, s.events, observability.Event{
+		Level:   observability.LevelError,
+		Name:    "mcp.tool.error",
+		Outcome: observability.OutcomeError,
+		Error:   observability.RedactedError(redacted),
+	})
+	return redacted
 }
 
 func normalizeNodeID(raw string) (string, error) {

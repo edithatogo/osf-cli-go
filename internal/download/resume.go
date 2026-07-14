@@ -1,6 +1,7 @@
 package download
 
 import (
+	"context"
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
@@ -13,6 +14,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
+
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 )
 
 const resumeCheckpointVersion = 1
@@ -32,6 +36,8 @@ type ResumeOptions struct {
 	ExpectedChecksum string
 	Policy           ConflictPolicy
 	Perm             fs.FileMode
+	Context          context.Context
+	Emitter          observability.Emitter
 }
 
 // ResumeResult reports the verified transfer and checkpoint state.
@@ -57,6 +63,32 @@ type resumeCheckpoint struct {
 // Failed or cancelled transfers retain their .part and .resume.json files so
 // the next invocation can continue from the recorded byte offset.
 func ResumeStreamAtomically(open StreamOpener, opts ResumeOptions) (result ResumeResult, err error) {
+	ctx := opts.Context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	emitter := opts.Emitter
+	if emitter == nil {
+		emitter = observability.EmitterFromContext(ctx)
+	}
+	started := time.Now()
+	defer func() {
+		outcome := observability.OutcomeOK
+		if err != nil {
+			outcome = observability.OutcomeError
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				outcome = observability.OutcomeCancel
+			}
+		}
+		observability.Emit(ctx, emitter, observability.Event{
+			Level:      transferEventLevel(outcome),
+			Name:       "transfer.download",
+			DurationMS: time.Since(started).Milliseconds(),
+			Outcome:    outcome,
+			Fields:     map[string]any{"source": opts.Source, "destination": opts.Destination, "bytes": result.Bytes, "resumed": result.Resumed},
+			Error:      observability.RedactedError(err),
+		})
+	}()
 	if open == nil {
 		return result, errors.New("resume stream opener is required")
 	}
@@ -223,6 +255,13 @@ func ResumeStreamAtomically(open StreamOpener, opts ResumeOptions) (result Resum
 	result.Completed = true
 	result.CheckpointPath = ""
 	return result, nil
+}
+
+func transferEventLevel(outcome string) string {
+	if outcome == observability.OutcomeOK {
+		return observability.LevelInfo
+	}
+	return observability.LevelError
 }
 
 func loadResumeCheckpoint(checkpointPath, partialPath string, opts ResumeOptions) (resumeCheckpoint, bool, error) {
