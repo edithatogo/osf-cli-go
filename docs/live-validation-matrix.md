@@ -18,3 +18,19 @@ project. They must never run as ordinary unit tests or in pull requests.
 The release checklist must identify which rows were run for a release candidate
 and which remain unrun because credentials, permissions, or a disposable OSF
 fixture were unavailable.
+
+## Repeatable invocation
+
+Set credentials and a disposable project reference only in the shell running
+the validation. Then opt in explicitly:
+
+```sh
+OSF_LIVE_VALIDATION=1 \
+OSF_TOKEN="$OSF_TOKEN" \
+OSF_VALIDATE_PROJECT="<disposable-project-id-or-url>" \
+go run ./tools/livevalidation -live
+```
+
+Set `OSF_VALIDATE_DOWNLOAD` to a known disposable fixture file reference to
+enable the download row. The tool writes sanitized evidence to the current
+release-validation track by default and never writes credential values.

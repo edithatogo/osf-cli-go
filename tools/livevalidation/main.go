@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	defaultEvidencePath = "conductor/tracks/live-osf-validation_20260502/live-validation-evidence.md"
+	defaultEvidencePath = "conductor/tracks/live-osf-release-validation_20260714/live-validation-evidence.md"
 	osfCommandPath      = "./cmd/osf"
 )
 

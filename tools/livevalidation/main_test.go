@@ -36,6 +36,15 @@ func TestLoadValidationEnv(t *testing.T) {
 	}
 }
 
+func TestDefaultEvidencePathMatchesCurrentTrack(t *testing.T) {
+	t.Parallel()
+
+	want := filepath.Join("conductor", "tracks", "live-osf-release-validation_20260714", "live-validation-evidence.md")
+	if defaultEvidencePath != want {
+		t.Fatalf("defaultEvidencePath = %q, want %q", defaultEvidencePath, want)
+	}
+}
+
 func TestRunValidationDryRunPlansAllSteps(t *testing.T) {
 	t.Parallel()
 

@@ -1,0 +1,44 @@
+# Live OSF Validation Evidence
+
+- Generated: 2026-07-14T13:46:28Z
+- Mode: skipped
+- Skip reason: live OSF validation skipped: set OSF_LIVE_VALIDATION=1 to opt in
+- Environment:
+  - OSF_TOKEN: missing
+  - OSF_USERNAME: missing
+  - OSF_PASSWORD: missing
+  - OSF_VALIDATE_PROJECT: missing
+  - OSF_LIVE_VALIDATION: false
+- Planned coverage:
+  - auth whoami: planned
+  - projects list: planned
+  - projects get: planned
+  - components list: planned
+  - files list: planned
+  - files addons: planned
+  - export: planned
+  - search: planned
+  - preprints list: planned
+  - files download: pending
+- Results:
+  - auth whoami: planned
+    - Output: not executed in dry-run mode
+  - projects list: planned
+    - Output: not executed in dry-run mode
+  - projects get: planned
+    - Output: not executed in dry-run mode
+  - components list: planned
+    - Output: not executed in dry-run mode
+  - files list: planned
+    - Output: not executed in dry-run mode
+  - files addons: planned
+    - Output: not executed in dry-run mode
+  - export: planned
+    - Output: not executed in dry-run mode
+  - search: planned
+    - Output: not executed in dry-run mode
+  - preprints list: planned
+    - Output: not executed in dry-run mode
+  - files download: pending
+    - Output: command not yet available in this repository
+
