@@ -30,7 +30,7 @@ rationale. Provider review and approval remain external facts.
 | Anthropic Claude/Cowork | validated Claude plugin and marketplace metadata | submit at official Claude form; record review/listing | 100% |
 | GitHub Copilot | plugin, skill, repository MCP config | verify repository marketplace and any maintained default marketplace route | 100% |
 | Cursor | `.cursor/mcp.json`, MCPB, README install path | submit/verify Cursor Directory | 100% |
-| Cline | MCPB, logo, README/`llms-install.md` validation | submit official Cline issue | 100% |
+| Cline | MCPB, 400x400 logo, README/`llms-install.md` validation, and issue #2024 receipt | await and respond to official Cline review | 100% |
 | LobeHub | `lhm.plugin.json`, release metadata | browser login, GitHub connect, submit/publish with `lhm` | 100% |
 | Gemini CLI | extension manifests and version checks | verify gallery indexing and record listing | 100% |
 | Qwen Code | extension manifests and package | verify supported gallery or document repository install | 100% |

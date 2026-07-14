@@ -9,7 +9,7 @@ not implied. No row is treated as published without provider-side evidence.
 
 | Target | Source and route | Auth/ownership | Cost | Review/publication | Listing URL | Status | Next action |
 |---|---|---|---|---|---|---|---|
-| [Cline MCP Marketplace](https://github.com/cline/mcp-marketplace) | GitHub issue template; requires logo, reason, and Cline install validation | GitHub account; maintainer review | Free | Curated issue review | Not listed | blocked: packet incomplete | Track #47: add the 400x400 PNG, install transcript, and submit |
+| [Cline MCP Marketplace](https://github.com/cline/mcp-marketplace) | GitHub issue template; requires logo, reason, and Cline install validation | GitHub account; maintainer review | Free | Curated issue review | Not listed | submitted: [issue #2024](https://github.com/cline/mcp-marketplace/issues/2024) open | Monitor maintainer review; do not claim approval before upstream acceptance |
 | [LobeHub MCP Marketplace](https://market.lobehub.com/s/publish-mcp) | `@lobehub/market-cli`; `lhm plugin submit`/`publish` | LobeHub login plus GitHub ownership connection | Free route observed | Ownership claim and marketplace review | Not listed | blocked: manifest incomplete | Track #48: add `lhm.plugin.json`, authenticate, submit, and verify |
 | [MCP.so](https://mcp.so/submit) | Public submission form/issue route | Public repository; account may be requested at submission | Free route observed | Provider indexing/review | Not listed | prepared | Submit the existing packet and record the receipt |
 | [mcpservers.org](https://mcpservers.org/submit) | Website submission form | Public repository; account requirements not evidenced | Free route observed; paid review is optional | Directory review; paid promotion is separate | Not listed | prepared | Submit without purchasing promotion and record the listing |
@@ -40,7 +40,7 @@ receipts, or approval claims.
 
 | Target | Local packet/evidence | Dedicated track or follow-up |
 |---|---|---|
-| Cline | `integrations/cline/`, release MCPB artifacts; packet still incomplete | `conductor/tracks/cline-mcp-marketplace-adoption_20260713/` and issue #47 |
+| Cline | `integrations/cline/`, `registry/cline-submission-packet.md`, 400x400 logo, install guide, and upstream issue #2024 | `conductor/tracks/cline-mcp-marketplace-adoption_20260713/` and issue #47 |
 | LobeHub | `registry/directory-submissions.json`; `lhm.plugin.json` still missing | `conductor/tracks/lobehub-mcp-marketplace-adoption_20260713/` and issue #48 |
 | Docker MCP Catalog | `registry/docker-mcp-registry/`, `docs/mcp-catalog-discoverability-evidence.md` | archived catalog sweep; submit upstream PR |
 | MCP.so and mcpservers.org | `docs/mcp-catalog-discoverability-evidence.md`, canonical metadata packet | submit manually and record receipts |
