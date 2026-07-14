@@ -16,6 +16,8 @@
 - Future auth/token package: `internal/auth`.
 - Future output rendering package: `internal/output`.
 - Future download safety package: `internal/download`.
+- Provider-qualified identity, metadata, lifecycle, and capability contracts:
+  `internal/repository`; this package does not define a generic network client.
 - Future reusable core packages should begin under `internal/`. Promote public packages only after the CLI behavior stabilizes and an MCP server track proves the package boundary.
 
 ## API Direction
@@ -46,6 +48,8 @@
 - Unit tests use Go's standard `testing` package.
 - HTTP tests should use `httptest.Server` and fixture JSON instead of live OSF calls.
 - Live API tests, when added, must be opt-in and skipped unless explicit environment variables are present.
+- Concrete repository descriptors must pass the reusable
+  `internal/repository/conformancetest` suite before CLI or MCP exposure.
 
 ## Tooling
 
