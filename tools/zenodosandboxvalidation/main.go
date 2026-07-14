@@ -65,10 +65,10 @@ func main() {
 		os.Exit(1)
 	}
 	if report.Mode != "live" {
-		fmt.Fprintln(os.Stdout, report.SkipReason)
+		_, _ = fmt.Fprintln(os.Stdout, report.SkipReason)
 		return
 	}
-	fmt.Fprintln(os.Stdout, "Zenodo sandbox transfer validation passed and disposable draft cleanup succeeded")
+	_, _ = fmt.Fprintln(os.Stdout, "Zenodo sandbox transfer validation passed and disposable draft cleanup succeeded")
 }
 
 func loadValidationEnv() validationEnv {

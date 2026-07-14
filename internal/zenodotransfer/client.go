@@ -174,7 +174,7 @@ func New(baseURL, token string, options ...Option) (*Client, error) {
 		client.httpClient = &http.Client{Timeout: defaultTimeout}
 	}
 	if client.maxResponseBytes <= 0 || client.maxFileBytes <= 0 || client.maxFiles <= 0 || client.maxRetries < 0 || client.retryDelay < 0 {
-		return nil, errors.New("Zenodo transfer response, file, and retry budgets must be positive and retries non-negative")
+		return nil, errors.New("zenodo transfer response, file, and retry budgets must be positive and retries non-negative")
 	}
 	configuredHTTP := *client.httpClient
 	previousRedirect := configuredHTTP.CheckRedirect
@@ -239,7 +239,7 @@ func (client *Client) CreateDraft(ctx context.Context) (Draft, error) {
 func (client *Client) DeleteDraft(ctx context.Context, id string) error {
 	id = strings.TrimSpace(id)
 	if id == "" {
-		return errors.New("Zenodo draft id is required for cleanup")
+		return errors.New("zenodo draft id is required for cleanup")
 	}
 	endpoint, err := client.resolve("deposit/depositions/" + url.PathEscape(id))
 	if err != nil {
@@ -256,7 +256,7 @@ func (client *Client) DeleteDraft(ctx context.Context, id string) error {
 func (client *Client) ListDraftFiles(ctx context.Context, id string) ([]RemoteFile, error) {
 	id = strings.TrimSpace(id)
 	if id == "" {
-		return nil, errors.New("Zenodo draft id is required")
+		return nil, errors.New("zenodo draft id is required")
 	}
 	endpoint, err := client.resolve("deposit/depositions/" + url.PathEscape(id) + "/files")
 	if err != nil {
@@ -290,18 +290,18 @@ func (client *Client) UploadFile(ctx context.Context, draft Draft, sourcePath, r
 		return result, err
 	}
 	if strings.TrimSpace(draft.ID) == "" || strings.TrimSpace(draft.BucketURL) == "" {
-		return result, errors.New("Zenodo draft id and bucket URL are required")
+		return result, errors.New("zenodo draft id and bucket URL are required")
 	}
 	remoteName = strings.TrimSpace(remoteName)
 	if remoteName == "" || remoteName != filepath.Base(remoteName) || strings.ContainsAny(remoteName, "/\\") || remoteName == "." {
-		return result, errors.New("Zenodo remote filename must be a single non-empty path segment")
+		return result, errors.New("zenodo remote filename must be a single non-empty path segment")
 	}
 	info, err := os.Stat(sourcePath)
 	if err != nil {
 		return result, fmt.Errorf("stat Zenodo upload source: %w", err)
 	}
 	if !info.Mode().IsRegular() {
-		return result, errors.New("Zenodo upload source must be a regular file")
+		return result, errors.New("zenodo upload source must be a regular file")
 	}
 	if info.Size() > client.maxFileBytes {
 		return result, fmt.Errorf("%w: %d > %d bytes", ErrFileTooLarge, info.Size(), client.maxFileBytes)
@@ -347,11 +347,11 @@ func (client *Client) UploadFile(ctx context.Context, draft Draft, sourcePath, r
 		CheckpointPath: checkpoint, Emitter: client.emitter,
 	}, func(ctx context.Context, offset, total int64, reader io.Reader) (int64, bool, error) {
 		if offset != 0 {
-			return offset, false, errors.New("Zenodo bucket API does not support partial upload resume")
+			return offset, false, errors.New("zenodo bucket API does not support partial upload resume")
 		}
 		seeker, ok := reader.(io.ReadSeeker)
 		if !ok {
-			return 0, false, errors.New("Zenodo upload source is not seekable")
+			return 0, false, errors.New("zenodo upload source is not seekable")
 		}
 		payload, retryCount, err := client.putFile(ctx, bucket, seeker, total)
 		retries += retryCount
@@ -363,10 +363,10 @@ func (client *Client) UploadFile(ctx context.Context, draft Draft, sourcePath, r
 			return 0, false, err
 		}
 		if remote.Size != total {
-			return 0, false, fmt.Errorf("Zenodo upload size mismatch: got %d, want %d", remote.Size, total)
+			return 0, false, fmt.Errorf("zenodo upload size mismatch: got %d, want %d", remote.Size, total)
 		}
 		if normalizeChecksum(remote.Checksum) != expectedChecksum {
-			return 0, false, fmt.Errorf("Zenodo upload checksum mismatch: got %s, want %s", normalizeChecksum(remote.Checksum), expectedChecksum)
+			return 0, false, fmt.Errorf("zenodo upload checksum mismatch: got %s, want %s", normalizeChecksum(remote.Checksum), expectedChecksum)
 		}
 		uploaded = remote
 		return total, true, nil
@@ -387,11 +387,11 @@ func (client *Client) UploadFile(ctx context.Context, draft Draft, sourcePath, r
 // non-secret checkpoint after interruption or cancellation.
 func (client *Client) DownloadFile(ctx context.Context, remote RemoteFile, destination string, policy download.ConflictPolicy) (download.ResumeResult, error) {
 	if remote.Size < 0 || strings.TrimSpace(remote.DownloadURL) == "" {
-		return download.ResumeResult{}, errors.New("Zenodo remote file size and download URL are required")
+		return download.ResumeResult{}, errors.New("zenodo remote file size and download URL are required")
 	}
 	checksum := normalizeChecksum(remote.Checksum)
 	if !validMD5(checksum) {
-		return download.ResumeResult{}, errors.New("Zenodo remote file requires a valid MD5 checksum")
+		return download.ResumeResult{}, errors.New("zenodo remote file requires a valid MD5 checksum")
 	}
 	endpoint, err := client.approveLink(remote.DownloadURL)
 	if err != nil {
@@ -411,11 +411,11 @@ func (client *Client) DownloadFile(ctx context.Context, remote RemoteFile, desti
 // disposable sandbox validation harness.
 func (client *Client) ValidateResumableDownload(ctx context.Context, remote RemoteFile, destination string, interruptAfter int64) (download.ResumeResult, error) {
 	if interruptAfter <= 0 || interruptAfter >= remote.Size {
-		return download.ResumeResult{}, errors.New("Zenodo resume validation offset must be within the remote file")
+		return download.ResumeResult{}, errors.New("zenodo resume validation offset must be within the remote file")
 	}
 	checksum := normalizeChecksum(remote.Checksum)
 	if !validMD5(checksum) {
-		return download.ResumeResult{}, errors.New("Zenodo remote file requires a valid MD5 checksum")
+		return download.ResumeResult{}, errors.New("zenodo remote file requires a valid MD5 checksum")
 	}
 	endpoint, err := client.approveLink(remote.DownloadURL)
 	if err != nil {
@@ -433,14 +433,14 @@ func (client *Client) ValidateResumableDownload(ctx context.Context, remote Remo
 	})
 	partialInfo, statErr := os.Stat(destination + ".part")
 	if firstErr == nil || first.Completed || statErr != nil || partialInfo.Size() != interruptAfter {
-		return download.ResumeResult{}, fmt.Errorf("Zenodo resume validation did not stop at %d bytes: result=%+v error=%v", interruptAfter, first, firstErr)
+		return download.ResumeResult{}, fmt.Errorf("zenodo resume validation did not stop at %d bytes: result=%+v error=%v", interruptAfter, first, firstErr)
 	}
 	result, err := client.DownloadFile(ctx, remote, destination, download.ConflictOverwrite)
 	if err != nil {
 		return result, fmt.Errorf("resume Zenodo validation download: %w", err)
 	}
 	if !result.Resumed {
-		return result, errors.New("Zenodo validation download restarted instead of resuming")
+		return result, errors.New("zenodo validation download restarted instead of resuming")
 	}
 	return result, nil
 }
@@ -589,7 +589,7 @@ func (client *Client) do(ctx context.Context, method string, endpoint *url.URL, 
 				}
 				continue
 			}
-			return nil, retries, fmt.Errorf("Zenodo sandbox request: %w", err)
+			return nil, retries, fmt.Errorf("zenodo sandbox request: %w", err)
 		}
 		if response.StatusCode >= 300 && response.StatusCode < 400 {
 			location, locationErr := response.Location()
