@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: "3.x"
       - name: Install MkDocs
-        run: python -m pip install --disable-pip-version-check 'mkdocs==1.6.1'
+        run: python -m pip install --disable-pip-version-check --require-hashes -r requirements-docs.txt
       - name: Verify CLI help stays runnable
         run: go run ./cmd/osf --help
       - name: Anti-stub scan
