@@ -217,6 +217,15 @@ LLM, modify OSF, or claim that a research method is scientifically valid.
 
 ## Browser And Shell Integration
 
+## Zenodo OAI-PMH
+
+`osf zenodo oai harvest` retrieves one public metadata page and returns its
+opaque continuation in JSON output. Add `--all` for bounded automatic
+resumption, or `--resume-token` to continue a persisted harvest. Sets and
+metadata schemas are available through `osf zenodo oai sets` and
+`osf zenodo oai formats`. These commands remain independent of Zenodo REST
+search and never use repository write credentials.
+
 ### `osf open <guid-or-url>`
 
 Open an OSF node in the system browser.

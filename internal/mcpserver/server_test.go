@@ -12,6 +12,7 @@ import (
 
 	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
+	"github.com/edithatogo/osf-cli-go/internal/zenodooai"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -43,6 +44,9 @@ func TestServerExposesReadOnlyTools(t *testing.T) {
 		"osf_preprints_list",
 		"osf_preprints_search",
 		"osf_doi_resolve",
+		"zenodo_oai_records_list",
+		"zenodo_oai_sets_list",
+		"zenodo_oai_formats_list",
 	}
 	got := map[string]bool{}
 	for _, name := range names {
@@ -71,22 +75,25 @@ func TestServerToolInputSchemasMatchPackagedContract(t *testing.T) {
 	session := connectTestServer(t, &fakeOSFClient{})
 
 	want := map[string][]string{
-		"osf_whoami":             {},
-		"osf_projects_list":      {},
-		"osf_project_get":        {"id"},
-		"osf_components_list":    {"id"},
-		"osf_files_list":         {"id", "path"},
-		"osf_file_versions_list": {"id"},
-		"osf_addons_list":        {"id"},
-		"osf_wikis_list":         {"id"},
-		"osf_comments_list":      {"id"},
-		"osf_logs_list":          {"id"},
-		"osf_identifiers_list":   {"id"},
-		"osf_contributors_list":  {"id"},
-		"osf_search":             {"query", "limit"},
-		"osf_preprints_list":     {"provider", "limit"},
-		"osf_preprints_search":   {"query", "provider", "limit"},
-		"osf_doi_resolve":        {"identifier"},
+		"osf_whoami":              {},
+		"osf_projects_list":       {},
+		"osf_project_get":         {"id"},
+		"osf_components_list":     {"id"},
+		"osf_files_list":          {"id", "path"},
+		"osf_file_versions_list":  {"id"},
+		"osf_addons_list":         {"id"},
+		"osf_wikis_list":          {"id"},
+		"osf_comments_list":       {"id"},
+		"osf_logs_list":           {"id"},
+		"osf_identifiers_list":    {"id"},
+		"osf_contributors_list":   {"id"},
+		"osf_search":              {"query", "limit"},
+		"osf_preprints_list":      {"provider", "limit"},
+		"osf_preprints_search":    {"query", "provider", "limit"},
+		"osf_doi_resolve":         {"identifier"},
+		"zenodo_oai_records_list": {"metadataPrefix", "set", "from", "until", "resumptionToken"},
+		"zenodo_oai_sets_list":    {},
+		"zenodo_oai_formats_list": {"identifier"},
 	}
 	for tool, err := range session.Tools(t.Context(), nil) {
 		if err != nil {
@@ -391,7 +398,7 @@ func TestToolFailureRedactsSecretMaterial(t *testing.T) {
 func connectTestServer(t *testing.T, osf OSFClient) *mcp.ClientSession {
 	t.Helper()
 	ctx := context.Background()
-	server := New(osf, Options{Version: "test"})
+	server := New(osf, Options{Version: "test", ZenodoOAI: fakeZenodoOAI{}})
 	t1, t2 := mcp.NewInMemoryTransports()
 	if _, err := server.Connect(ctx, t1, nil); err != nil {
 		t.Fatalf("server Connect: %v", err)
@@ -463,6 +470,29 @@ type fakeOSFClient struct {
 	gotDOI           string
 	gotRelatedID     string
 	failErr          error
+}
+
+type fakeZenodoOAI struct{ failErr error }
+
+func (fake fakeZenodoOAI) ListRecords(_ context.Context, request zenodooai.Request) (zenodooai.Page, error) {
+	if fake.failErr != nil {
+		return zenodooai.Page{}, fake.failErr
+	}
+	return zenodooai.Page{Records: []zenodooai.Record{{Header: zenodooai.Header{Identifier: "oai:zenodo.org:1001", Datestamp: "2026-07-15"}, Provenance: zenodooai.Provenance{MetadataPrefix: request.MetadataPrefix}}}}, nil
+}
+
+func (fake fakeZenodoOAI) ListSets(context.Context) ([]zenodooai.Set, error) {
+	if fake.failErr != nil {
+		return nil, fake.failErr
+	}
+	return []zenodooai.Set{{Spec: "user-demo", Name: "Demo"}}, nil
+}
+
+func (fake fakeZenodoOAI) ListMetadataFormats(context.Context, string) ([]zenodooai.MetadataFormat, error) {
+	if fake.failErr != nil {
+		return nil, fake.failErr
+	}
+	return []zenodooai.MetadataFormat{{Prefix: "oai_dc"}}, nil
 }
 
 func (f *fakeOSFClient) ListFileVersions(_ context.Context, id string) ([]osfapi.FileVersion, error) {

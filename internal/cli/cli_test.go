@@ -728,13 +728,13 @@ func TestWriteRootContractWithJSON(t *testing.T) {
 	if err := json.Unmarshal(buf.Bytes(), &contract); err != nil {
 		t.Fatalf("stdout is not valid JSON: %v\n%s", err, buf.String())
 	}
-	if len(contract.Commands) != 14 {
-		t.Fatalf("command count = %d, want 14", len(contract.Commands))
+	if len(contract.Commands) != 15 {
+		t.Fatalf("command count = %d, want 15", len(contract.Commands))
 	}
 	if contract.Commands[0].Status != "implemented" || contract.Commands[1].Status != "implemented" {
 		t.Fatalf("unexpected command statuses: %#v", contract.Commands)
 	}
-	wantNames := []string{"auth", "projects", "components", "files", "nodes", "export", "validate", "search", "preprints", "registrations", "resolve", "open", "whoami", "completion"}
+	wantNames := []string{"auth", "projects", "components", "files", "nodes", "export", "validate", "search", "preprints", "registrations", "resolve", "open", "whoami", "zenodo oai", "completion"}
 	for i, want := range wantNames {
 		if contract.Commands[i].Name != want || contract.Commands[i].Status != "implemented" {
 			t.Fatalf("command %d = %#v, want implemented %q", i, contract.Commands[i], want)

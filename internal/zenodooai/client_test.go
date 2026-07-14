@@ -162,7 +162,7 @@ func TestProtocolMalformedAndHTTPFailures(t *testing.T) {
 			}
 			if test.name == "protocol" {
 				var protocolErr *ProtocolError
-				if !errors.As(err, &protocolErr) || protocolErr.Code != "badResumptionToken" {
+				if !errors.As(err, &protocolErr) || protocolErr.Code != "badResumptionToken" || !errors.Is(err, ErrTokenExpired) {
 					t.Fatalf("not typed: %T", err)
 				}
 			}

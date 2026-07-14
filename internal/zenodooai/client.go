@@ -83,7 +83,7 @@ func New(baseURL string, options ...Option) (*Client, error) {
 	}
 	host := strings.ToLower(parsed.Hostname())
 	local := host == "localhost" || host == "127.0.0.1" || host == "::1"
-	if parsed.Host == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" || (parsed.Scheme != "https" && !(local && parsed.Scheme == "http")) {
+	if parsed.Host == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" || (parsed.Scheme != "https" && (!local || parsed.Scheme != "http")) {
 		return nil, errors.New("zenodo OAI-PMH URL must be plain HTTPS without credentials, query, or fragment")
 	}
 	if !local && host != "zenodo.org" && host != "sandbox.zenodo.org" {

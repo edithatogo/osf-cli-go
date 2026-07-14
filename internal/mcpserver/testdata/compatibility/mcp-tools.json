@@ -16,6 +16,9 @@
     {"name": "osf_search", "properties": ["query", "limit"]},
     {"name": "osf_preprints_list", "properties": ["provider", "limit"]},
     {"name": "osf_preprints_search", "properties": ["query", "provider", "limit"]},
-    {"name": "osf_doi_resolve", "properties": ["identifier"]}
+    {"name": "osf_doi_resolve", "properties": ["identifier"]},
+    {"name": "zenodo_oai_records_list", "properties": ["metadataPrefix", "set", "from", "until", "resumptionToken"]},
+    {"name": "zenodo_oai_sets_list", "properties": []},
+    {"name": "zenodo_oai_formats_list", "properties": ["identifier"]}
   ]
 }

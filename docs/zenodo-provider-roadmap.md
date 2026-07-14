@@ -1,7 +1,8 @@
 # Zenodo Provider Roadmap
 
-This roadmap tracks a future provider-neutral repository layer for OSF and
-Zenodo. It does not claim that Zenodo support is implemented.
+This roadmap tracks the staged provider-neutral repository layer for OSF and
+Zenodo. The provider contract, public REST reads, and public OAI-PMH harvesting
+are offline-tested; write and cross-provider workflows remain gated.
 
 ## API mapping
 

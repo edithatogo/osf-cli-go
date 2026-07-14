@@ -11,6 +11,7 @@ import (
 	"github.com/edithatogo/osf-cli-go/internal/auth"
 	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
+	"github.com/edithatogo/osf-cli-go/internal/zenodooai"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -34,14 +35,23 @@ type OSFClient interface {
 	ResolveDOI(context.Context, string) (osfapi.DOIResolution, error)
 }
 
+// ZenodoOAIClient is the public metadata-harvesting surface exposed separately from REST.
+type ZenodoOAIClient interface {
+	ListRecords(context.Context, zenodooai.Request) (zenodooai.Page, error)
+	ListSets(context.Context) ([]zenodooai.Set, error)
+	ListMetadataFormats(context.Context, string) ([]zenodooai.MetadataFormat, error)
+}
+
 type Server struct {
 	client OSFClient
+	oai    ZenodoOAIClient
 	events observability.Emitter
 }
 
 type Options struct {
-	Version string
-	Events  observability.Emitter
+	Version   string
+	Events    observability.Emitter
+	ZenodoOAI ZenodoOAIClient
 }
 
 type EmptyInput struct{}
@@ -77,6 +87,18 @@ type PreprintSearchInput struct {
 
 type DOIInput struct {
 	Identifier string `json:"identifier" jsonschema:"DOI, doi.org URL, or OSF DOI URL"`
+}
+
+type OAIRecordsInput struct {
+	MetadataPrefix  string `json:"metadataPrefix,omitempty" jsonschema:"OAI metadata prefix; defaults to oai_dc"`
+	Set             string `json:"set,omitempty" jsonschema:"optional OAI set spec"`
+	From            string `json:"from,omitempty" jsonschema:"inclusive RFC3339 or YYYY-MM-DD start"`
+	Until           string `json:"until,omitempty" jsonschema:"inclusive RFC3339 or YYYY-MM-DD end"`
+	ResumptionToken string `json:"resumptionToken,omitempty" jsonschema:"opaque token from a prior page; exclusive with set/from/until"`
+}
+
+type OAIFormatsInput struct {
+	Identifier string `json:"identifier,omitempty" jsonschema:"optional OAI identifier"`
 }
 
 type FileVersionOutput struct {
@@ -194,6 +216,28 @@ type DOIResult struct {
 	ResolvedURL string `json:"resolvedUrl"`
 }
 
+type OAIRecordOutput struct {
+	Identifier        string               `json:"identifier"`
+	Datestamp         string               `json:"datestamp"`
+	SetSpecs          []string             `json:"setSpecs,omitempty"`
+	Deleted           bool                 `json:"deleted,omitempty"`
+	NativeMetadataXML string               `json:"nativeMetadataXml,omitempty"`
+	AboutXML          string               `json:"aboutXml,omitempty"`
+	Provenance        zenodooai.Provenance `json:"provenance"`
+}
+
+type OAIRecordsResult struct {
+	Records []OAIRecordOutput          `json:"records"`
+	Next    *zenodooai.ResumptionToken `json:"next,omitempty"`
+}
+
+type OAISetsResult struct {
+	Sets []zenodooai.Set `json:"sets"`
+}
+type OAIFormatsResult struct {
+	Formats []zenodooai.MetadataFormat `json:"formats"`
+}
+
 // New returns an MCP server with read-only OSF tools registered.
 func New(client OSFClient, opts Options) *mcp.Server {
 	version := strings.TrimSpace(opts.Version)
@@ -201,7 +245,7 @@ func New(client OSFClient, opts Options) *mcp.Server {
 		version = "0.0.0-dev"
 	}
 
-	service := &Server{client: client, events: opts.Events}
+	service := &Server{client: client, oai: opts.ZenodoOAI, events: opts.Events}
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "osf-cli-go",
 		Version: version,
@@ -254,6 +298,11 @@ func New(client OSFClient, opts Options) *mcp.Server {
 		Name:        "osf_doi_resolve",
 		Description: "Resolve a DOI to an OSF web resource without downloading or writing data.",
 	}, service.ResolveDOI)
+	if service.oai != nil {
+		mcp.AddTool(server, &mcp.Tool{Name: "zenodo_oai_records_list", Description: "List one public Zenodo OAI-PMH record page and return its opaque continuation."}, service.ListOAIRecords)
+		mcp.AddTool(server, &mcp.Tool{Name: "zenodo_oai_sets_list", Description: "List public Zenodo OAI-PMH selective-harvesting sets."}, service.ListOAISets)
+		mcp.AddTool(server, &mcp.Tool{Name: "zenodo_oai_formats_list", Description: "List public Zenodo OAI-PMH metadata formats."}, service.ListOAIFormats)
+	}
 
 	return server
 }
@@ -457,6 +506,80 @@ func (s *Server) ResolveDOI(ctx context.Context, _ *mcp.CallToolRequest, in DOII
 		return nil, DOIResult{}, s.mcpError(ctx, err)
 	}
 	return nil, DOIResult{DOI: resolution.DOI, ResolvedURL: resolution.ResolvedURL}, nil
+}
+
+func (s *Server) ListOAIRecords(ctx context.Context, _ *mcp.CallToolRequest, in OAIRecordsInput) (*mcp.CallToolResult, OAIRecordsResult, error) {
+	request, err := oaiRequest(in)
+	if err != nil {
+		return nil, OAIRecordsResult{}, s.mcpError(ctx, err)
+	}
+	page, err := s.oai.ListRecords(ctx, request)
+	if err != nil {
+		return nil, OAIRecordsResult{}, s.mcpError(ctx, err)
+	}
+	result := OAIRecordsResult{Records: make([]OAIRecordOutput, 0, len(page.Records))}
+	if !page.Next.Empty() {
+		result.Next = &page.Next
+	}
+	for _, record := range page.Records {
+		var native string
+		if record.NativeMetadata != nil {
+			native = string(record.NativeMetadata.Bytes())
+		}
+		result.Records = append(result.Records, OAIRecordOutput{Identifier: record.Header.Identifier, Datestamp: record.Header.Datestamp, SetSpecs: append([]string(nil), record.Header.SetSpecs...), Deleted: record.Header.Deleted, NativeMetadataXML: native, AboutXML: string(record.AboutXML), Provenance: record.Provenance})
+	}
+	return nil, result, nil
+}
+
+func (s *Server) ListOAISets(ctx context.Context, _ *mcp.CallToolRequest, _ EmptyInput) (*mcp.CallToolResult, OAISetsResult, error) {
+	sets, err := s.oai.ListSets(ctx)
+	if err != nil {
+		return nil, OAISetsResult{}, s.mcpError(ctx, err)
+	}
+	return nil, OAISetsResult{Sets: sets}, nil
+}
+
+func (s *Server) ListOAIFormats(ctx context.Context, _ *mcp.CallToolRequest, in OAIFormatsInput) (*mcp.CallToolResult, OAIFormatsResult, error) {
+	formats, err := s.oai.ListMetadataFormats(ctx, strings.TrimSpace(in.Identifier))
+	if err != nil {
+		return nil, OAIFormatsResult{}, s.mcpError(ctx, err)
+	}
+	return nil, OAIFormatsResult{Formats: formats}, nil
+}
+
+func oaiRequest(in OAIRecordsInput) (zenodooai.Request, error) {
+	prefix := strings.TrimSpace(in.MetadataPrefix)
+	if prefix == "" {
+		prefix = "oai_dc"
+	}
+	if token := strings.TrimSpace(in.ResumptionToken); token != "" {
+		if strings.TrimSpace(in.Set) != "" || strings.TrimSpace(in.From) != "" || strings.TrimSpace(in.Until) != "" {
+			return zenodooai.Request{}, errors.New("resumptionToken cannot be combined with set, from, or until")
+		}
+		return zenodooai.Request{Token: zenodooai.ResumptionToken{Value: token, MetadataPrefix: prefix}}, nil
+	}
+	from, err := parseOAIDate(in.From)
+	if err != nil {
+		return zenodooai.Request{}, errors.New("from must be RFC3339 or YYYY-MM-DD")
+	}
+	until, err := parseOAIDate(in.Until)
+	if err != nil {
+		return zenodooai.Request{}, errors.New("until must be RFC3339 or YYYY-MM-DD")
+	}
+	return zenodooai.Request{MetadataPrefix: prefix, Set: strings.TrimSpace(in.Set), From: from, Until: until}, nil
+}
+
+func parseOAIDate(value string) (time.Time, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return time.Time{}, nil
+	}
+	for _, layout := range []string{time.RFC3339, time.DateOnly} {
+		if parsed, err := time.Parse(layout, value); err == nil {
+			return parsed, nil
+		}
+	}
+	return time.Time{}, errors.New("invalid OAI date")
 }
 
 func boundedLimit(limit int) (int, error) {

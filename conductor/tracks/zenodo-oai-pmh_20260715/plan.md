@@ -8,6 +8,6 @@
 
 ## Phase 2: Adapter and surfaces
 
-- [~] Task: Implement cancellable harvesting, retries, limits, and deterministic continuation.
-- [ ] Task: Expose reviewed CLI/MCP harvesting surfaces separately from REST discovery.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Adapter and surfaces' (Protocol in workflow.md)
+- [x] Task: Implement cancellable harvesting, retries, limits, and deterministic continuation.
+- [x] Task: Expose reviewed CLI/MCP harvesting surfaces separately from REST discovery.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Adapter and surfaces' (Protocol in workflow.md)

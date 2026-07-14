@@ -9,6 +9,7 @@ import (
 	"github.com/edithatogo/osf-cli-go/internal/mcpserver"
 	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
+	"github.com/edithatogo/osf-cli-go/internal/zenodooai"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -34,7 +35,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	server := mcpserver.New(client, mcpserver.Options{Version: effectiveVersion, Events: emitter})
+	oai, err := zenodooai.New("", zenodooai.WithObserver(emitter))
+	if err != nil {
+		observability.Emit(ctx, emitter, observability.Event{Level: observability.LevelError, Name: "mcp.server", Outcome: observability.OutcomeError, Error: observability.RedactedError(err)})
+		os.Exit(1)
+	}
+	server := mcpserver.New(client, mcpserver.Options{Version: effectiveVersion, Events: emitter, ZenodoOAI: oai})
 	if err := server.Run(ctx, &mcp.StdioTransport{}); err != nil {
 		observability.Emit(ctx, emitter, observability.Event{Level: observability.LevelError, Name: "mcp.server", Outcome: observability.OutcomeError, Error: observability.RedactedError(err)})
 		os.Exit(1)
