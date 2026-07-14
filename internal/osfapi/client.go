@@ -351,6 +351,19 @@ func (c *Client) delete(ctx context.Context, endpoint string) error {
 // OpenDownload opens the given download URL and returns the response body.
 // The caller is responsible for closing the returned io.ReadCloser.
 func (c *Client) OpenDownload(ctx context.Context, downloadURL string) (io.ReadCloser, error) {
+	return c.openDownload(ctx, downloadURL, 0)
+}
+
+// OpenDownloadRange opens a download at offset. Providers that ignore the
+// range request return ErrRangeUnsupported so callers can restart safely.
+func (c *Client) OpenDownloadRange(ctx context.Context, downloadURL string, offset int64) (io.ReadCloser, error) {
+	if offset < 0 {
+		return nil, fmt.Errorf("download offset must not be negative")
+	}
+	return c.openDownload(ctx, downloadURL, offset)
+}
+
+func (c *Client) openDownload(ctx context.Context, downloadURL string, offset int64) (io.ReadCloser, error) {
 	reqURL, err := c.resolveEndpoint(downloadURL)
 	if err != nil {
 		return nil, err
@@ -362,6 +375,9 @@ func (c *Client) OpenDownload(ctx context.Context, downloadURL string) (io.ReadC
 	}
 	c.sign(req)
 	req.Header.Set("Accept", "*/*")
+	if offset > 0 {
+		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", offset))
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -375,6 +391,10 @@ func (c *Client) OpenDownload(ctx context.Context, downloadURL string) (io.ReadC
 			return nil, fmt.Errorf("read download error body: %w", readErr)
 		}
 		return nil, parseAPIError(resp.StatusCode, req.Method, req.URL.RequestURI(), body)
+	}
+	if offset > 0 && resp.StatusCode != http.StatusPartialContent {
+		_ = resp.Body.Close()
+		return nil, ErrRangeUnsupported
 	}
 
 	return resp.Body, nil

@@ -3,6 +3,7 @@ package osfapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -276,6 +277,52 @@ func TestGetStorageFileAndOpenDownload(t *testing.T) {
 	}
 	if string(got) != "downloaded bytes" {
 		t.Fatalf("download body = %q", string(got))
+	}
+}
+
+func TestOpenDownloadRangeHonorsPartialContent(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got, want := r.Header.Get("Range"), "bytes=3-"; got != want {
+			t.Fatalf("Range header = %q, want %q", got, want)
+		}
+		w.WriteHeader(http.StatusPartialContent)
+		_, _ = w.Write([]byte("def"))
+	}))
+	defer srv.Close()
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := client.OpenDownloadRange(t.Context(), srv.URL+"/download", 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = body.Close() }()
+	got, err := io.ReadAll(body)
+	if err != nil || string(got) != "def" {
+		t.Fatalf("range body=%q err=%v", got, err)
+	}
+}
+
+func TestOpenDownloadRangeRejectsIgnoredRange(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("abcdef"))
+	}))
+	defer srv.Close()
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := client.OpenDownloadRange(t.Context(), srv.URL+"/download", 3)
+	if body != nil {
+		_ = body.Close()
+	}
+	if !errors.Is(err, ErrRangeUnsupported) {
+		t.Fatalf("error=%v, want ErrRangeUnsupported", err)
 	}
 }
 

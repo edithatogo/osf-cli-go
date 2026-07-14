@@ -121,6 +121,9 @@ Download one file by OSF file ID, OSF file API URL, or direct WaterButler downlo
 Options:
 
 - `--conflict fail|skip|overwrite`, default `fail`
+- Interrupted downloads resume automatically from `<destination>.part` using a
+  validated `<destination>.resume.json` checkpoint when the provider supports
+  byte ranges; providers that ignore ranges are restarted safely.
 
 ### `osf files download --tree <node-guid-or-url> <destination>`
 

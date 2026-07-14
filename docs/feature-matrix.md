@@ -1,6 +1,6 @@
 # OSF CLI Go feature matrix
 
-Last reviewed: 2026-07-13
+Last reviewed: 2026-07-14
 
 This generated matrix is backed by `docs/feature-matrix.json`. Status meanings: **external-gate** is Local work is complete, but authentication or maintainer action remains.; **implemented** is Covered by repository code and deterministic tests.; **prepared** is A local distribution artifact exists, but provider-side approval is not evidenced.; **track** is Intentionally planned and linked to follow-up work.
 
@@ -24,7 +24,7 @@ This generated matrix is backed by `docs/feature-matrix.json`. Status meanings: 
 | Storage listing | files list | provider and folder traversal | osf_files_list | traversal protection; structured metadata | implemented |  | `` |  |
 | osfclient CLI storage parity | files list; files download; files upload; open | OSF Storage and WaterButler primitives | osf_files_list | explicit transfers; atomic writes; conflict policy; no project-local credential persistence | implemented | Maintain explicit transfer and authentication compatibility | `conductor/tracks/osfclient-cli-parity_20260711/spec.md` | #9 |
 | Storage integrity metadata | files list --json | optional attributes.extra.hashes.md5 | osf_files_list md5 | provider-supplied checksum only; no implicit download | implemented | Maintain checksum compatibility | `conductor/archive/jasp-osf-integration-parity_20260711/spec.md` | #18 |
-| File download | files download | streaming download | not exposed | atomic writes; conflicts; manifests; path safety | track | Approve MCP download resource boundary | `conductor/tracks/mcp-server-roadmap_20260502/spec.md` | #21 |
+| File download | files download | streaming download | not exposed | atomic writes; conflicts; manifests; path safety; checkpointed resume; range validation; checksum verification | implemented | Approve MCP download resource boundary | `conductor/tracks/mcp-server-roadmap_20260502/spec.md` | #21 |
 | File upload | files upload | WaterButler upload | not exposed | conflict policy; auth; explicit write | track | Design MCP write confirmation | `conductor/tracks/mcp-server-roadmap_20260502/spec.md` | #21 |
 | Folder creation | files mkdir | WaterButler folder create | not exposed | path validation and auth | implemented |  | `` |  |
 | File deletion | files rm | WaterButler delete | not exposed | confirmation and auth | implemented |  | `` |  |
@@ -36,7 +36,7 @@ This generated matrix is backed by `docs/feature-matrix.json`. Status meanings: 
 | OSF metadata validation | validate --profile research-output|preregistration | node, contributor, and storage metadata | not exposed | read-only deterministic findings; no LLM or scientific validity claim | implemented | Maintain finding schema compatibility | `conductor/archive/metacheck-osf-validation_20260711/spec.md` | #20 |
 | Shell integration | completion bash/zsh/fish/powershell; open | n/a | stdio transport | supported-platform contract | implemented |  | `` |  |
 | Output | table and --json | typed Go models | structured MCP content | stable schemas and errors | implemented | Maintain compatibility regression report | `conductor/tracks/mcp-quality-evaluation-harness_20260713/spec.md` | #54 |
-| Pagination, retries, cancellation | transparent | collection helpers | bounded tool limits | deterministic behavior, cancellation, checkpointed resume, and integrity verification | track | Implement resumable transfer checkpoints and recovery tests | `conductor/tracks/resumable-transfers_20260714/spec.md` | #95 |
+| Pagination, retries, cancellation | transparent | collection helpers | bounded tool limits | deterministic behavior, cancellation, checkpointed resume, and integrity verification | implemented | Maintain interruption and provider-range regression coverage | `conductor/tracks/resumable-transfers_20260714/spec.md` | #95 |
 | Structured observability | human and JSON events | request, retry, and transfer events | operation and error events | versioned schema; redaction; request IDs; no credential leakage | track | Implement the documented event contract | `conductor/tracks/structured-observability_20260714/spec.md` | #96 |
 | Live OSF validation | opt-in validation tool | real API requests | real MCP calls | no committed credentials; disposable writes; sanitized evidence | track | Run release-candidate validation with scoped credentials | `conductor/tracks/live-osf-release-validation_20260714/spec.md` | #97 |
 | Release artifacts | multi-platform binaries and checksums | dynamic versioning | OCI MCP image and MCPB | SBOM; provenance; Cosign; clean-environment verification | track | Verify the complete release-candidate supply chain | `conductor/tracks/release-candidate-provenance_20260714/spec.md` | #98 |

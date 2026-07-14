@@ -8,6 +8,7 @@
 - Inspect the authenticated account with `osf auth whoami`.
 - List and inspect projects, components, and OSF Storage files.
 - Download files and folder trees with conservative conflict handling.
+- Resume interrupted downloads with integrity-checked checkpoints.
 - Upload files, create OSF Storage folders, and remove files through explicit WaterButler commands.
 - Search OSF, list preprints, create draft registrations, and export node snapshots.
 - Emit table output for humans and JSON output for automation.

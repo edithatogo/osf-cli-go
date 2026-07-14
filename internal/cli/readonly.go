@@ -25,6 +25,7 @@ type readonlyClient interface {
 	ListStorageFiles(context.Context, string, ...string) ([]osfapi.StorageFile, error)
 	GetStorageFile(context.Context, string) (osfapi.StorageFile, error)
 	OpenDownload(context.Context, string) (io.ReadCloser, error)
+	OpenDownloadRange(context.Context, string, int64) (io.ReadCloser, error)
 	GetNodeFilesProvider(context.Context, string) (string, error)
 	UploadFile(context.Context, string, string, io.Reader, string) error
 	CreateFolder(context.Context, string, string) error
@@ -135,6 +136,10 @@ func (c *defaultReadonlyClient) GetStorageFile(ctx context.Context, id string) (
 
 func (c *defaultReadonlyClient) OpenDownload(ctx context.Context, downloadURL string) (io.ReadCloser, error) {
 	return c.api.OpenDownload(ctx, downloadURL)
+}
+
+func (c *defaultReadonlyClient) OpenDownloadRange(ctx context.Context, downloadURL string, offset int64) (io.ReadCloser, error) {
+	return c.api.OpenDownloadRange(ctx, downloadURL, offset)
 }
 
 func (c *defaultReadonlyClient) GetNodeFilesProvider(ctx context.Context, id string) (string, error) {

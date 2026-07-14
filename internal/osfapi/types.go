@@ -1,9 +1,13 @@
 package osfapi
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
+
+// ErrRangeUnsupported indicates that a provider did not honor a range request.
+var ErrRangeUnsupported = errors.New("download range request was not honored")
 
 type document[T any] struct {
 	Data  T     `json:"data"`

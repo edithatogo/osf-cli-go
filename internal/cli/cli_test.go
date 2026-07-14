@@ -1130,7 +1130,7 @@ func TestFilesDownloadSingleFileOutputsTableAndJSON(t *testing.T) {
 
 	client := &fakeReadonlyClient{
 		storageFiles: map[string]osfapi.StorageFile{
-			"file-1": {ID: "file-1", Attributes: osfapi.StorageFileAttributes{Name: "analysis.csv", Kind: "file", Size: 12}, Links: osfapi.Links{Download: "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-1?download=1"}},
+			"file-1": {ID: "file-1", Attributes: osfapi.StorageFileAttributes{Name: "analysis.csv", Kind: "file", Size: 14}, Links: osfapi.Links{Download: "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-1?download=1"}},
 		},
 		downloadBodies: map[string]string{
 			"https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-1?download=1": "col1,col2\n1,2\n",
@@ -1179,10 +1179,10 @@ func TestFilesDownloadTreeOutputsTableAndJSON(t *testing.T) {
 		storageLists: map[string][]osfapi.StorageFile{
 			"project-1:": {
 				{ID: "folder-1", Attributes: osfapi.StorageFileAttributes{Name: "figures", Kind: "folder"}},
-				{ID: "file-1", Attributes: osfapi.StorageFileAttributes{Name: "analysis.csv", Kind: "file", Size: 12}, Links: osfapi.Links{Download: "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-1?download=1"}},
+				{ID: "file-1", Attributes: osfapi.StorageFileAttributes{Name: "analysis.csv", Kind: "file", Size: 14}, Links: osfapi.Links{Download: "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-1?download=1"}},
 			},
 			"project-1:figures": {
-				{ID: "file-2", Attributes: osfapi.StorageFileAttributes{Name: "plot.png", Kind: "file", Size: 24}, Links: osfapi.Links{Download: "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-2?download=1"}},
+				{ID: "file-2", Attributes: osfapi.StorageFileAttributes{Name: "plot.png", Kind: "file", Size: 9}, Links: osfapi.Links{Download: "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-2?download=1"}},
 			},
 		},
 		downloadBodies: map[string]string{
@@ -1735,6 +1735,10 @@ func (f *fakeReadonlyClient) OpenDownload(_ context.Context, downloadURL string)
 		}
 	}
 	return nil, fmt.Errorf("missing download body %q", downloadURL)
+}
+
+func (f *fakeReadonlyClient) OpenDownloadRange(ctx context.Context, downloadURL string, _ int64) (io.ReadCloser, error) {
+	return f.OpenDownload(ctx, downloadURL)
 }
 
 func TestExportJSONOutput(t *testing.T) {

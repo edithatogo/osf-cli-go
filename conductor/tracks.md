@@ -66,7 +66,7 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [x] [mcp-quality-evaluation-harness](tracks/mcp-quality-evaluation-harness_20260713/spec.md) — Build repeatable MCP quality and compatibility evaluation; issue #54.
 - [x] [osf-api-entity-coverage](tracks/osf-api-entity-coverage_20260714/spec.md) — Expose typed OSF file-version and node-related read surfaces through CLI and MCP; issue #80.
 - [x] [datalad-git-annex-interoperability](tracks/datalad-git-annex-interoperability_20260714/spec.md) — Define a fixture-backed optional Git, DataLad, and git-annex companion-tool contract; issue #69.
-- [ ] [resumable-transfers](tracks/resumable-transfers_20260714/spec.md) — Implement resumable, checkpointed transfers for 1.0; issue #95.
+- [~] [resumable-transfers](tracks/resumable-transfers_20260714/spec.md) — Implement resumable, checkpointed transfers for 1.0; issue #95.
 - [ ] [structured-observability](tracks/structured-observability_20260714/spec.md) — Define and implement structured observability for 1.0; issue #96.
 - [ ] [live-osf-release-validation](tracks/live-osf-release-validation_20260714/spec.md) — Run live OSF validation for the 1.0 release candidate; issue #97.
 - [ ] [release-candidate-provenance](tracks/release-candidate-provenance_20260714/spec.md) — Verify v1.0 release-candidate supply chain and provenance; issue #98.
