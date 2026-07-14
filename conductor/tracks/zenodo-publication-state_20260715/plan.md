@@ -2,12 +2,12 @@
 
 ## Phase 1: Safety model
 
-- [~] Task: Define lifecycle states, transitions, scopes, access, embargo, license, and metadata policies.
-- [ ] Task: Add exhaustive transition, denial, confirmation, and redaction tests.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Safety model' (Protocol in workflow.md)
+- [x] Task: Define lifecycle states, transitions, scopes, access, embargo, license, and metadata policies. (3773e30)
+- [x] Task: Add exhaustive transition, denial, confirmation, and redaction tests. (3773e30)
+- [x] Task: Conductor - Automated Review and Checkpoint 'Safety model' (Protocol in workflow.md) (22f986b)
 
 ## Phase 2: Publication workflows
 
-- [ ] Task: Implement DOI reservation, publish, version, and discard behind explicit gates.
+- [~] Task: Implement DOI reservation, publish, version, and discard behind explicit gates.
 - [ ] Task: Validate the lifecycle in the sandbox and document irreversible boundaries.
 - [ ] Task: Conductor - Automated Review and Checkpoint 'Publication workflows' (Protocol in workflow.md)
