@@ -17,10 +17,9 @@ contracts, not merely that it has accumulated enough features.
 | Distribution | Signed multi-platform release, package-manager channels, official MCP registry, validated plugins, and evidence-backed directory listings |
 | Governance | Maintainer expectations, compatibility window, contribution policy, code of conduct, and explicit support boundaries |
 
-The implementation source of truth is issue
-[#21](https://github.com/edithatogo/osf-cli-go/issues/21) and its Conductor
-track. A `v1.0.0` tag must not be created until every gate is either satisfied
-or explicitly waived in a release-candidate review.
+The original launch contract is recorded in closed issue
+[#21](https://github.com/edithatogo/osf-cli-go/issues/21). The remaining
+implementation and evidence gates are tracked in [#95](https://github.com/edithatogo/osf-cli-go/issues/95), [#96](https://github.com/edithatogo/osf-cli-go/issues/96), [#97](https://github.com/edithatogo/osf-cli-go/issues/97), [#98](https://github.com/edithatogo/osf-cli-go/issues/98), and [#99](https://github.com/edithatogo/osf-cli-go/issues/99), each with a dated Conductor track. A `v1.0.0` tag must not be created until every gate is either satisfied or explicitly waived in a release-candidate review.
 
 The working evidence set is maintained in the [feature
 matrix](feature-matrix.md), [registry scorecard](registry-scorecard.md), and
@@ -28,11 +27,11 @@ the [1.0 hardening and maturity track](https://github.com/edithatogo/osf-cli-go/
 
 ## Recommended sequence
 
-1. Complete the source-tool parity tracks and update the feature matrix.
-2. Freeze candidate CLI and MCP contracts and publish a release candidate.
-3. Run the hardening, quality-harness, security, reliability, live-OSF, and cross-platform campaigns.
-4. Complete package-manager, plugin, and registry distribution using the scorecard.
-5. Publish migration, support, and governance documents.
+1. Implement [resumable transfers (#95)](https://github.com/edithatogo/osf-cli-go/issues/95) and [structured observability (#96)](https://github.com/edithatogo/osf-cli-go/issues/96).
+2. Freeze candidate CLI, API, and MCP contracts through [#99](https://github.com/edithatogo/osf-cli-go/issues/99).
+3. Run [live OSF validation (#97)](https://github.com/edithatogo/osf-cli-go/issues/97) against a disposable project.
+4. Verify the complete release-candidate supply chain through [#98](https://github.com/edithatogo/osf-cli-go/issues/98).
+5. Complete package-manager, plugin, and registry distribution using the scorecard.
 6. Run a clean release review and publish `v1.0.0` with signed provenance.
 
 ## Tacit marketing

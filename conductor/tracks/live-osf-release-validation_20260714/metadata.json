@@ -1,0 +1,9 @@
+{
+  "track_id": "live-osf-release-validation_20260714",
+  "type": "chore",
+  "status": "new",
+  "created_at": "2026-07-14T00:00:00Z",
+  "updated_at": "2026-07-14T00:00:00Z",
+  "description": "Run live OSF validation for the 1.0 release candidate",
+  "github_issue": "https://github.com/edithatogo/osf-cli-go/issues/97"
+}
