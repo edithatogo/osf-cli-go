@@ -1,9 +1,9 @@
 {
   "track_id": "zenodo-sandbox-transfers_20260715",
   "type": "feature",
-  "status": "in_progress",
+  "status": "completed",
   "created_at": "2026-07-15T00:00:00Z",
-  "updated_at": "2026-07-15T00:00:00+10:00",
+  "updated_at": "2026-07-15T03:04:00+10:00",
   "description": "Validate safe resumable Zenodo transfers in the sandbox",
   "github_issue": "https://github.com/edithatogo/osf-cli-go/issues/108",
   "parent_issue": "https://github.com/edithatogo/osf-cli-go/issues/101"
