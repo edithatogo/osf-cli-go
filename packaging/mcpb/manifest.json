@@ -66,6 +66,30 @@
       "description": "List OSF Storage files and folders."
     },
     {
+      "name": "osf_file_versions_list",
+      "description": "List versions for an OSF Storage file."
+    },
+    {
+      "name": "osf_addons_list",
+      "description": "List configured storage add-ons for an OSF node."
+    },
+    {
+      "name": "osf_wikis_list",
+      "description": "List wiki pages linked to an OSF node."
+    },
+    {
+      "name": "osf_comments_list",
+      "description": "List comments linked to an OSF node."
+    },
+    {
+      "name": "osf_logs_list",
+      "description": "List audit logs linked to an OSF node."
+    },
+    {
+      "name": "osf_identifiers_list",
+      "description": "List identifiers linked to an OSF node."
+    },
+    {
       "name": "osf_contributors_list",
       "description": "List contributors for an OSF project or component."
     },

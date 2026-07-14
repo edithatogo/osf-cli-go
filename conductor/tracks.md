@@ -64,3 +64,5 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [x] [lobehub-mcp-marketplace-adoption](tracks/lobehub-mcp-marketplace-adoption_20260713/spec.md) — Submit OSF MCP server to LobeHub Marketplace; issue #48.
 - [x] [additional-mcp-registry-sweep](tracks/additional-mcp-registry-sweep_20260713/spec.md) — Evaluate additional MCP registries and agent marketplaces; issue #49.
 - [x] [mcp-quality-evaluation-harness](tracks/mcp-quality-evaluation-harness_20260713/spec.md) — Build repeatable MCP quality and compatibility evaluation; issue #54.
+- [x] [osf-api-entity-coverage](tracks/osf-api-entity-coverage_20260714/spec.md) — Expose typed OSF file-version and node-related read surfaces through CLI and MCP; issue #80.
+- [x] [datalad-git-annex-interoperability](tracks/datalad-git-annex-interoperability_20260714/spec.md) — Define a fixture-backed optional Git, DataLad, and git-annex companion-tool contract; issue #69.

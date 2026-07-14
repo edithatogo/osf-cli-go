@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
@@ -20,6 +21,12 @@ type OSFClient interface {
 	ListNodeChildren(context.Context, string) ([]osfapi.Node, error)
 	ListNodeContributors(context.Context, string) ([]osfapi.Contributor, error)
 	ListStorageFiles(context.Context, string, ...string) ([]osfapi.StorageFile, error)
+	ListFileVersions(context.Context, string) ([]osfapi.FileVersion, error)
+	ListNodeAddons(context.Context, string) ([]osfapi.Node, error)
+	ListWikiPages(context.Context, string) ([]osfapi.RelatedResource, error)
+	ListNodeComments(context.Context, string) ([]osfapi.RelatedResource, error)
+	ListNodeLogs(context.Context, string) ([]osfapi.RelatedResource, error)
+	ListNodeIdentifiers(context.Context, string) ([]osfapi.RelatedResource, error)
 	SearchOSF(context.Context, string, ...int) ([]osfapi.SearchResult, error)
 	ListPreprints(context.Context, string, ...int) ([]osfapi.Node, error)
 	SearchPreprints(context.Context, string, string, ...int) ([]osfapi.Preprint, error)
@@ -38,6 +45,10 @@ type EmptyInput struct{}
 
 type NodeInput struct {
 	ID string `json:"id" jsonschema:"OSF project/component id or URL"`
+}
+
+type FileInput struct {
+	ID string `json:"id" jsonschema:"OSF file id"`
 }
 
 type FilesInput struct {
@@ -63,6 +74,22 @@ type PreprintSearchInput struct {
 
 type DOIInput struct {
 	Identifier string `json:"identifier" jsonschema:"DOI, doi.org URL, or OSF DOI URL"`
+}
+
+type FileVersionOutput struct {
+	ID           string    `json:"id"`
+	Type         string    `json:"type,omitempty"`
+	Size         int64     `json:"size,omitempty"`
+	DateCreated  time.Time `json:"dateCreated,omitempty"`
+	DateModified time.Time `json:"dateModified,omitempty"`
+	SelfURL      string    `json:"selfUrl,omitempty"`
+}
+
+type RelatedResourceOutput struct {
+	ID         string         `json:"id"`
+	Type       string         `json:"type,omitempty"`
+	Attributes map[string]any `json:"attributes,omitempty"`
+	SelfURL    string         `json:"selfUrl,omitempty"`
 }
 
 type UserOutput struct {
@@ -136,6 +163,14 @@ type FilesResult struct {
 	Files []FileOutput `json:"files"`
 }
 
+type FileVersionsResult struct {
+	Versions []FileVersionOutput `json:"versions"`
+}
+
+type RelatedResourcesResult struct {
+	Resources []RelatedResourceOutput `json:"resources"`
+}
+
 type SearchResult struct {
 	ID          string   `json:"id"`
 	Type        string   `json:"type,omitempty"`
@@ -190,6 +225,12 @@ func New(client OSFClient, opts Options) *mcp.Server {
 		Name:        "osf_files_list",
 		Description: "List OSF Storage files and folders for a project/component, optionally below a path.",
 	}, service.ListFiles)
+	mcp.AddTool(server, &mcp.Tool{Name: "osf_file_versions_list", Description: "List versions for an OSF Storage file."}, service.ListFileVersions)
+	mcp.AddTool(server, &mcp.Tool{Name: "osf_addons_list", Description: "List configured storage add-ons for an OSF node."}, service.ListAddons)
+	mcp.AddTool(server, &mcp.Tool{Name: "osf_wikis_list", Description: "List wiki pages linked to an OSF node."}, service.ListWikis)
+	mcp.AddTool(server, &mcp.Tool{Name: "osf_comments_list", Description: "List comments linked to an OSF node."}, service.ListComments)
+	mcp.AddTool(server, &mcp.Tool{Name: "osf_logs_list", Description: "List audit logs linked to an OSF node."}, service.ListLogs)
+	mcp.AddTool(server, &mcp.Tool{Name: "osf_identifiers_list", Description: "List identifiers linked to an OSF node."}, service.ListIdentifiers)
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "osf_contributors_list",
 		Description: "List contributors for an OSF project or component.",
@@ -280,6 +321,66 @@ func (s *Server) ListContributors(ctx context.Context, _ *mcp.CallToolRequest, i
 		return nil, ContributorsResult{}, mcpError(err)
 	}
 	return nil, ContributorsResult{Contributors: toContributorOutputs(contributors)}, nil
+}
+
+func (s *Server) ListFileVersions(ctx context.Context, _ *mcp.CallToolRequest, in FileInput) (*mcp.CallToolResult, FileVersionsResult, error) {
+	fileID := strings.TrimSpace(in.ID)
+	if fileID == "" {
+		return nil, FileVersionsResult{}, mcpError(errors.New("id is required"))
+	}
+	versions, err := s.client.ListFileVersions(ctx, fileID)
+	if err != nil {
+		return nil, FileVersionsResult{}, mcpError(err)
+	}
+	out := make([]FileVersionOutput, 0, len(versions))
+	for _, version := range versions {
+		out = append(out, FileVersionOutput{ID: version.ID, Type: version.Type, Size: version.Attributes.Size, DateCreated: version.Attributes.DateCreated, DateModified: version.Attributes.DateModified, SelfURL: version.Links.Self})
+	}
+	return nil, FileVersionsResult{Versions: out}, nil
+}
+
+func (s *Server) ListAddons(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, NodesResult, error) {
+	id, err := normalizeNodeID(in.ID)
+	if err != nil {
+		return nil, NodesResult{}, mcpError(err)
+	}
+	addons, err := s.client.ListNodeAddons(ctx, id)
+	if err != nil {
+		return nil, NodesResult{}, mcpError(err)
+	}
+	return nil, NodesResult{Nodes: toNodeOutputs(addons)}, nil
+}
+
+func (s *Server) ListWikis(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, RelatedResourcesResult, error) {
+	return s.listRelated(ctx, in.ID, s.client.ListWikiPages)
+}
+
+func (s *Server) ListComments(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, RelatedResourcesResult, error) {
+	return s.listRelated(ctx, in.ID, s.client.ListNodeComments)
+}
+
+func (s *Server) ListLogs(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, RelatedResourcesResult, error) {
+	return s.listRelated(ctx, in.ID, s.client.ListNodeLogs)
+}
+
+func (s *Server) ListIdentifiers(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, RelatedResourcesResult, error) {
+	return s.listRelated(ctx, in.ID, s.client.ListNodeIdentifiers)
+}
+
+func (s *Server) listRelated(ctx context.Context, rawID string, list func(context.Context, string) ([]osfapi.RelatedResource, error)) (*mcp.CallToolResult, RelatedResourcesResult, error) {
+	id, err := normalizeNodeID(rawID)
+	if err != nil {
+		return nil, RelatedResourcesResult{}, mcpError(err)
+	}
+	resources, err := list(ctx, id)
+	if err != nil {
+		return nil, RelatedResourcesResult{}, mcpError(err)
+	}
+	out := make([]RelatedResourceOutput, 0, len(resources))
+	for _, resource := range resources {
+		out = append(out, RelatedResourceOutput{ID: resource.ID, Type: resource.Type, Attributes: resource.Attributes, SelfURL: resource.Links.Self})
+	}
+	return nil, RelatedResourcesResult{Resources: out}, nil
 }
 
 func (s *Server) Search(ctx context.Context, _ *mcp.CallToolRequest, in SearchInput) (*mcp.CallToolResult, SearchResults, error) {

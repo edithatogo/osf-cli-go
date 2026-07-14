@@ -29,6 +29,12 @@ func TestServerExposesReadOnlyTools(t *testing.T) {
 		"osf_project_get",
 		"osf_components_list",
 		"osf_files_list",
+		"osf_file_versions_list",
+		"osf_addons_list",
+		"osf_wikis_list",
+		"osf_comments_list",
+		"osf_logs_list",
+		"osf_identifiers_list",
 		"osf_contributors_list",
 		"osf_search",
 		"osf_preprints_list",
@@ -50,16 +56,22 @@ func TestServerToolInputSchemasMatchPackagedContract(t *testing.T) {
 	session := connectTestServer(t, &fakeOSFClient{})
 
 	want := map[string][]string{
-		"osf_whoami":            {},
-		"osf_projects_list":     {},
-		"osf_project_get":       {"id"},
-		"osf_components_list":   {"id"},
-		"osf_files_list":        {"id", "path"},
-		"osf_contributors_list": {"id"},
-		"osf_search":            {"query", "limit"},
-		"osf_preprints_list":    {"provider", "limit"},
-		"osf_preprints_search":  {"query", "provider", "limit"},
-		"osf_doi_resolve":       {"identifier"},
+		"osf_whoami":             {},
+		"osf_projects_list":      {},
+		"osf_project_get":        {"id"},
+		"osf_components_list":    {"id"},
+		"osf_files_list":         {"id", "path"},
+		"osf_file_versions_list": {"id"},
+		"osf_addons_list":        {"id"},
+		"osf_wikis_list":         {"id"},
+		"osf_comments_list":      {"id"},
+		"osf_logs_list":          {"id"},
+		"osf_identifiers_list":   {"id"},
+		"osf_contributors_list":  {"id"},
+		"osf_search":             {"query", "limit"},
+		"osf_preprints_list":     {"provider", "limit"},
+		"osf_preprints_search":   {"query", "provider", "limit"},
+		"osf_doi_resolve":        {"identifier"},
 	}
 	for tool, err := range session.Tools(t.Context(), nil) {
 		if err != nil {
@@ -153,6 +165,69 @@ func TestFilesListRejectsTraversal(t *testing.T) {
 	}
 	if !result.IsError {
 		t.Fatal("tool succeeded, want MCP tool error")
+	}
+}
+
+func TestEntityCoverageToolsReturnStructuredResults(t *testing.T) {
+	client := &fakeOSFClient{}
+	session := connectTestServer(t, client)
+	cases := []struct {
+		name string
+		key  string
+		id   string
+	}{
+		{name: "osf_file_versions_list", key: "versions", id: "version-1"},
+		{name: "osf_addons_list", key: "nodes", id: "addon-1"},
+		{name: "osf_wikis_list", key: "resources", id: "wiki-1"},
+		{name: "osf_comments_list", key: "resources", id: "comment-1"},
+		{name: "osf_logs_list", key: "resources", id: "log-1"},
+		{name: "osf_identifiers_list", key: "resources", id: "identifier-1"},
+	}
+	for _, tc := range cases {
+		result, err := session.CallTool(t.Context(), &mcp.CallToolParams{Name: tc.name, Arguments: map[string]any{"id": "project-1"}})
+		if err != nil || result.IsError {
+			t.Fatalf("%s failed: result=%#v err=%v", tc.name, result, err)
+		}
+		content, ok := result.StructuredContent.(map[string]any)
+		if !ok {
+			t.Fatalf("%s structured content = %T", tc.name, result.StructuredContent)
+		}
+		items, ok := content[tc.key].([]any)
+		if !ok || len(items) != 1 {
+			t.Fatalf("%s content[%q] = %#v", tc.name, tc.key, content[tc.key])
+		}
+		item, ok := items[0].(map[string]any)
+		if !ok || item["id"] != tc.id {
+			t.Fatalf("%s item = %#v, want id %s", tc.name, items[0], tc.id)
+		}
+	}
+}
+
+func TestEntityCoverageToolsPropagateClientErrors(t *testing.T) {
+	cases := []string{"osf_file_versions_list", "osf_addons_list", "osf_wikis_list", "osf_comments_list", "osf_logs_list", "osf_identifiers_list"}
+	for _, name := range cases {
+		t.Run(name, func(t *testing.T) {
+			session := connectTestServer(t, &fakeOSFClient{failErr: errors.New("backend unavailable")})
+			result, err := session.CallTool(t.Context(), &mcp.CallToolParams{Name: name, Arguments: map[string]any{"id": "node-1"}})
+			if err != nil {
+				t.Fatalf("CallTool returned error: %v", err)
+			}
+			if !result.IsError || !strings.Contains(contentText(result.Content), "backend unavailable") {
+				t.Fatalf("result = %#v, want backend error", result)
+			}
+		})
+	}
+}
+
+func TestEntityCoverageToolsRejectMissingIDs(t *testing.T) {
+	for _, name := range []string{"osf_file_versions_list", "osf_addons_list", "osf_wikis_list", "osf_comments_list", "osf_logs_list", "osf_identifiers_list"} {
+		t.Run(name, func(t *testing.T) {
+			session := connectTestServer(t, &fakeOSFClient{})
+			result, err := session.CallTool(t.Context(), &mcp.CallToolParams{Name: name, Arguments: map[string]any{"id": " "}})
+			if err != nil || !result.IsError {
+				t.Fatalf("%s result=%#v err=%v, want missing-id tool error", name, result, err)
+			}
+		})
 	}
 }
 
@@ -326,7 +401,56 @@ type fakeOSFClient struct {
 	gotProvider      string
 	gotLimit         int
 	gotDOI           string
+	gotRelatedID     string
 	failErr          error
+}
+
+func (f *fakeOSFClient) ListFileVersions(_ context.Context, id string) ([]osfapi.FileVersion, error) {
+	f.gotRelatedID = id
+	if f.failErr != nil {
+		return nil, f.failErr
+	}
+	return []osfapi.FileVersion{{ID: "version-1", Type: "file_versions", Attributes: osfapi.FileVersionAttributes{Size: 42}, Links: osfapi.Links{Self: "https://api.osf.io/v2/files/file-1/versions/1/"}}}, nil
+}
+
+func (f *fakeOSFClient) ListNodeAddons(_ context.Context, id string) ([]osfapi.Node, error) {
+	f.gotRelatedID = id
+	if f.failErr != nil {
+		return nil, f.failErr
+	}
+	return []osfapi.Node{{ID: "addon-1", Type: "files", Attributes: osfapi.NodeAttributes{Title: "OSF Storage"}}}, nil
+}
+
+func (f *fakeOSFClient) ListWikiPages(_ context.Context, id string) ([]osfapi.RelatedResource, error) {
+	f.gotRelatedID = id
+	if f.failErr != nil {
+		return nil, f.failErr
+	}
+	return []osfapi.RelatedResource{{ID: "wiki-1", Type: "wikis", Attributes: map[string]any{"name": "README"}}}, nil
+}
+
+func (f *fakeOSFClient) ListNodeComments(_ context.Context, id string) ([]osfapi.RelatedResource, error) {
+	f.gotRelatedID = id
+	if f.failErr != nil {
+		return nil, f.failErr
+	}
+	return []osfapi.RelatedResource{{ID: "comment-1", Type: "comments", Attributes: map[string]any{"content": "hello"}}}, nil
+}
+
+func (f *fakeOSFClient) ListNodeLogs(_ context.Context, id string) ([]osfapi.RelatedResource, error) {
+	f.gotRelatedID = id
+	if f.failErr != nil {
+		return nil, f.failErr
+	}
+	return []osfapi.RelatedResource{{ID: "log-1", Type: "logs", Attributes: map[string]any{"action": "view"}}}, nil
+}
+
+func (f *fakeOSFClient) ListNodeIdentifiers(_ context.Context, id string) ([]osfapi.RelatedResource, error) {
+	f.gotRelatedID = id
+	if f.failErr != nil {
+		return nil, f.failErr
+	}
+	return []osfapi.RelatedResource{{ID: "identifier-1", Type: "identifiers", Attributes: map[string]any{"value": "10.1234/example"}}}, nil
 }
 
 func (f *fakeOSFClient) CurrentUser(context.Context) (osfapi.User, error) {

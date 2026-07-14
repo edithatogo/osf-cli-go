@@ -18,7 +18,8 @@ import (
 var expectedTools = []string{
 	"osf_whoami", "osf_projects_list", "osf_project_get", "osf_components_list",
 	"osf_files_list", "osf_contributors_list", "osf_search", "osf_preprints_list",
-	"osf_preprints_search", "osf_doi_resolve",
+	"osf_preprints_search", "osf_doi_resolve", "osf_file_versions_list", "osf_addons_list",
+	"osf_wikis_list", "osf_comments_list", "osf_logs_list", "osf_identifiers_list",
 }
 
 type qualityReport struct {

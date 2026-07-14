@@ -1,0 +1,8 @@
+{
+  "track_id": "osf-api-entity-coverage_20260714",
+  "type": "feature",
+  "status": "completed",
+  "created_at": "2026-07-14T00:00:00Z",
+  "updated_at": "2026-07-14T00:00:00Z",
+  "description": "Expose typed OSF file-version and node-related read surfaces through CLI and MCP"
+}
