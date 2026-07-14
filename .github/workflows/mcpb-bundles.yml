@@ -40,7 +40,7 @@ jobs:
 
       - name: Build MCPB bundle
         shell: pwsh
-        run: ./scripts/build-mcpb.ps1 -UseMcpbCli
+        run: ./scripts/build-mcpb.ps1 -Version "$($env:GITHUB_REF_NAME.Substring(1))" -UseMcpbCli
 
       - name: Upload MCPB bundle
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
