@@ -41,6 +41,8 @@ jobs:
         run: go run ./tools/checkfeaturematrix
       - name: Release readiness contract
         run: go run ./tools/checkreleasecontract
+      - name: Compatibility contract
+        run: go test ./internal/cli ./internal/mcpserver -run 'CompatibilityFixture|RootContractMatchesCompatibilityFixture'
       - name: Coverage
         run: |
           go test ./... -coverprofile=coverage.out

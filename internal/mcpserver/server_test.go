@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"sort"
 	"strings"
 	"testing"
 
@@ -102,6 +104,51 @@ func TestServerToolInputSchemasMatchPackagedContract(t *testing.T) {
 	}
 	for name := range want {
 		t.Fatalf("missing tool %q", name)
+	}
+}
+
+func TestServerToolSchemasMatchCompatibilityFixture(t *testing.T) {
+	fixture, err := os.ReadFile("testdata/compatibility/mcp-tools.json")
+	if err != nil {
+		t.Fatalf("read compatibility fixture: %v", err)
+	}
+	var want struct {
+		SchemaVersion int `json:"schemaVersion"`
+		Tools         []struct {
+			Name       string   `json:"name"`
+			Properties []string `json:"properties"`
+		} `json:"tools"`
+	}
+	if err := json.Unmarshal(fixture, &want); err != nil {
+		t.Fatalf("decode compatibility fixture: %v", err)
+	}
+	if want.SchemaVersion != 1 {
+		t.Fatalf("schema version = %d, want 1", want.SchemaVersion)
+	}
+	wantTools := map[string][]string{}
+	for _, tool := range want.Tools {
+		wantTools[tool.Name] = append([]string{}, tool.Properties...)
+		sort.Strings(wantTools[tool.Name])
+	}
+
+	session := connectTestServer(t, &fakeOSFClient{})
+	gotTools := map[string][]string{}
+	for tool, err := range session.Tools(t.Context(), nil) {
+		if err != nil {
+			t.Fatalf("Tools returned error: %v", err)
+		}
+		properties := schemaProperties(t, tool.InputSchema)
+		got := make([]string, 0, len(properties))
+		for property := range properties {
+			got = append(got, property)
+		}
+		sort.Strings(got)
+		gotTools[tool.Name] = got
+	}
+	gotJSON, _ := json.Marshal(gotTools)
+	wantJSON, _ := json.Marshal(wantTools)
+	if string(gotJSON) != string(wantJSON) {
+		t.Fatalf("MCP compatibility contract changed:\n got: %s\nwant: %s", gotJSON, wantJSON)
 	}
 }
 

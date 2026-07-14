@@ -1,0 +1,23 @@
+{
+  "name": "osf",
+  "version": "0.0.0-dev",
+  "default_output": "table",
+  "output_modes": ["table", "json"],
+  "exit_codes": {"runtime_error": 1, "success": 0, "usage_or_argument": 2},
+  "commands": [
+    {"name": "auth", "status": "implemented", "description": "Manage OSF authentication and token bootstrap guidance"},
+    {"name": "projects", "status": "implemented", "description": "List, inspect, create, update, and delete OSF projects and components"},
+    {"name": "components", "status": "implemented", "description": "List project components"},
+    {"name": "files", "status": "implemented", "description": "List, download, upload, create folders, and delete OSF Storage files"},
+    {"name": "nodes", "status": "implemented", "description": "List OSF wiki pages, comments, logs, and identifiers"},
+    {"name": "export", "status": "implemented", "description": "Export a node snapshot"},
+    {"name": "validate", "status": "implemented", "description": "Validate OSF node metadata against a deterministic profile"},
+    {"name": "search", "status": "implemented", "description": "Search OSF projects and components"},
+    {"name": "preprints", "status": "implemented", "description": "List OSF preprints"},
+    {"name": "registrations", "status": "implemented", "description": "Create OSF draft registrations"},
+    {"name": "resolve", "status": "implemented", "description": "Resolve an OSF DOI or DOI URL"},
+    {"name": "open", "status": "implemented", "description": "Open an OSF node in the default browser"},
+    {"name": "whoami", "status": "implemented", "description": "Show the active OSF account (alias for auth whoami)"},
+    {"name": "completion", "status": "implemented", "description": "Generate shell completion scripts"}
+  ]
+}

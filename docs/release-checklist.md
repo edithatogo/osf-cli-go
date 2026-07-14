@@ -29,6 +29,7 @@ Use this checklist before tagging a release or publishing binaries.
 - Run `go run ./cmd/osf completion bash`.
 - Run `go run ./cmd/osf completion powershell`.
 - Run `go run ./tools/checkstubs`.
+- Run `go test ./internal/cli ./internal/mcpserver -run 'CompatibilityFixture|RootContractMatchesCompatibilityFixture'`.
 - Run `go test ./...` from a clean checkout.
 - Confirm the README, contributing guide, and security notes still match the released command surface and auth rules.
 

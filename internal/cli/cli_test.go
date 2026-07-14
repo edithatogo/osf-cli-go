@@ -742,6 +742,31 @@ func TestWriteRootContractWithJSON(t *testing.T) {
 	}
 }
 
+func TestRootContractMatchesCompatibilityFixture(t *testing.T) {
+	fixture, err := os.ReadFile("testdata/compatibility/cli-root.json")
+	if err != nil {
+		t.Fatalf("read compatibility fixture: %v", err)
+	}
+
+	var want rootContract
+	if err := json.Unmarshal(fixture, &want); err != nil {
+		t.Fatalf("decode compatibility fixture: %v", err)
+	}
+	var gotBytes bytes.Buffer
+	if err := writeRootContract(&gotBytes); err != nil {
+		t.Fatalf("writeRootContract returned error: %v", err)
+	}
+	var got rootContract
+	if err := json.Unmarshal(gotBytes.Bytes(), &got); err != nil {
+		t.Fatalf("decode generated contract: %v", err)
+	}
+	wantJSON, _ := json.Marshal(want)
+	gotJSON, _ := json.Marshal(got)
+	if !bytes.Equal(gotJSON, wantJSON) {
+		t.Fatalf("CLI compatibility contract changed:\n got: %s\nwant: %s", gotJSON, wantJSON)
+	}
+}
+
 func TestIsUsageError(t *testing.T) {
 	t.Parallel()
 

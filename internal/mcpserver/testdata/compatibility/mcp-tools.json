@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "tools": [
+    {"name": "osf_whoami", "properties": []},
+    {"name": "osf_projects_list", "properties": []},
+    {"name": "osf_project_get", "properties": ["id"]},
+    {"name": "osf_components_list", "properties": ["id"]},
+    {"name": "osf_files_list", "properties": ["id", "path"]},
+    {"name": "osf_file_versions_list", "properties": ["id"]},
+    {"name": "osf_addons_list", "properties": ["id"]},
+    {"name": "osf_wikis_list", "properties": ["id"]},
+    {"name": "osf_comments_list", "properties": ["id"]},
+    {"name": "osf_logs_list", "properties": ["id"]},
+    {"name": "osf_identifiers_list", "properties": ["id"]},
+    {"name": "osf_contributors_list", "properties": ["id"]},
+    {"name": "osf_search", "properties": ["query", "limit"]},
+    {"name": "osf_preprints_list", "properties": ["provider", "limit"]},
+    {"name": "osf_preprints_search", "properties": ["query", "provider", "limit"]},
+    {"name": "osf_doi_resolve", "properties": ["identifier"]}
+  ]
+}
