@@ -42,3 +42,19 @@ waivers.
 
 Each unchecked item requires dated evidence or a written waiver in the release
 review before a `v1.0.0` tag is created.
+
+## Provenance review for #98
+
+Reviewed 2026-07-14 against commit `8b14217` on the working branch. The
+existing v0.3.2 release is not a v1.0 release candidate: it contains the six
+platform binary pairs and per-platform SHA-256 files, but no published SBOM,
+provenance attestation, Cosign signature bundle, MCPB package, or plugin
+archive. The successful release-security run
+([29194265418](https://github.com/edithatogo/osf-cli-go/actions/runs/29194265418))
+covered the GHCR MCP image on a different `master` commit, not this candidate.
+
+The MCPB and plugin archive workflows previously ran only for `v0.3.1`; they
+now trigger for every `v*` tag and retain build artifacts for 30 days. A
+future immutable release-candidate tag must still run those workflows and the
+release-security workflow, publish the resulting metadata, and record
+independent clean-environment verification before #98 can close.

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - "v0.3.1"
+      - "v*"
 
 permissions:
   contents: read
@@ -47,3 +47,4 @@ jobs:
         with:
           name: mcpb-${{ runner.os }}
           path: dist/mcpb/*.mcpb
+          retention-days: 30
