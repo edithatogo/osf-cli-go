@@ -1,7 +1,7 @@
 {
   "track_id": "zenodo-api-provenance_20260715",
   "type": "chore",
-  "status": "in_progress",
+  "status": "completed",
   "created_at": "2026-07-15T00:00:00Z",
   "updated_at": "2026-07-15T00:00:00Z",
   "description": "Pin Zenodo API evidence and detect upstream contract drift",

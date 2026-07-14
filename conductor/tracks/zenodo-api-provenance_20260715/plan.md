@@ -8,6 +8,6 @@
 
 ## Phase 2: Drift gate
 
-- [~] Task: Add a deterministic endpoint and capability snapshot.
-- [ ] Task: Add offline drift checks with actionable diagnostics and CI coverage.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Drift gate' (Protocol in workflow.md)
+- [x] Task: Add a deterministic endpoint and capability snapshot.
+- [x] Task: Add offline drift checks with actionable diagnostics and CI coverage.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Drift gate' (Protocol in workflow.md)

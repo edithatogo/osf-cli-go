@@ -39,6 +39,8 @@ jobs:
         run: go run ./tools/checkregistries
       - name: Feature matrix contract
         run: go run ./tools/checkfeaturematrix
+      - name: Zenodo API capability contract
+        run: go run ./tools/checkzenodoapi
       - name: Release readiness contract
         run: go run ./tools/checkreleasecontract
       - name: Compatibility contract

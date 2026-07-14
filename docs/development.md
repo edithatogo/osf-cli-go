@@ -33,11 +33,18 @@ go vet ./...
 go run ./tools/checkstubs
 go run ./tools/checkreviews
 go run ./tools/checkfeaturematrix
+go run ./tools/checkzenodoapi
+go run ./tools/checkreleasecontract
 go test ./... "-coverprofile=coverage.out"
 go tool cover "-func=coverage.out"
 ```
 
 Run `go test -race ./...` when a C compiler is available.
+
+The Zenodo API check is deterministic and offline by default. Maintainers can
+run `go run ./tools/checkzenodoapi -online` to verify the reviewed structural
+markers on official Zenodo documentation. CI runs the online form only in the
+scheduled/manual Zenodo drift workflow; it never sends credentials.
 
 ## Documentation Site
 
