@@ -69,7 +69,12 @@ func TestLiveValidationVerifiesResumeAndCleanup(t *testing.T) {
 		case r.Method == http.MethodPost:
 			_, _ = fmt.Fprintf(w, `{"id":123,"links":{"bucket":%q}}`, server.URL+"/api/bucket")
 		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/files"):
-			_, _ = io.WriteString(w, `[]`)
+			if len(stored) == 0 {
+				_, _ = io.WriteString(w, `[]`)
+				return
+			}
+			digest := md5.Sum(stored)
+			_, _ = fmt.Fprintf(w, `[{"id":"file","filename":"validation.bin","filesize":%d,"checksum":"md5:%s","links":{"download":%q}}]`, len(stored), hex.EncodeToString(digest[:]), server.URL+"/api/file")
 		case r.Method == http.MethodPut:
 			stored, _ = io.ReadAll(r.Body)
 			digest := md5.Sum(stored)

@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"net/url"
 	"os"
@@ -340,7 +341,7 @@ func (client *Client) UploadFile(ctx context.Context, draft Draft, sourcePath, r
 		return result, err
 	}
 	checkpoint := sourcePath + ".zenodo-upload.resume.json"
-	var uploaded RemoteFile
+	var receipt RemoteFile
 	retries := 0
 	transfer, err := download.ResumeFileUpload(ctx, download.UploadOptions{
 		SourcePath: sourcePath, SourceIdentity: "zenodo:draft:" + draft.ID + ":" + remoteName,
@@ -358,7 +359,7 @@ func (client *Client) UploadFile(ctx context.Context, draft Draft, sourcePath, r
 		if err != nil {
 			return 0, false, err
 		}
-		remote, err := client.remoteFile(payload)
+		remote, err := uploadReceipt(payload)
 		if err != nil {
 			return 0, false, err
 		}
@@ -368,7 +369,7 @@ func (client *Client) UploadFile(ctx context.Context, draft Draft, sourcePath, r
 		if normalizeChecksum(remote.Checksum) != expectedChecksum {
 			return 0, false, fmt.Errorf("zenodo upload checksum mismatch: got %s, want %s", normalizeChecksum(remote.Checksum), expectedChecksum)
 		}
-		uploaded = remote
+		receipt = remote
 		return total, true, nil
 	})
 	result.Bytes = transfer.Bytes
@@ -376,11 +377,28 @@ func (client *Client) UploadFile(ctx context.Context, draft Draft, sourcePath, r
 	result.Completed = transfer.Completed
 	result.CheckpointPath = transfer.CheckpointPath
 	result.RetryCount = retries
-	result.Remote = uploaded
+	result.Remote = receipt
 	if err != nil {
 		return result, err
 	}
-	return result, nil
+	files, err := client.ListDraftFiles(ctx, draft.ID)
+	if err != nil {
+		result.Completed = false
+		return result, fmt.Errorf("refresh Zenodo draft inventory after upload: %w", err)
+	}
+	for _, remote := range files {
+		if remote.Name != remoteName {
+			continue
+		}
+		if remote.Size != info.Size() || normalizeChecksum(remote.Checksum) != expectedChecksum {
+			result.Completed = false
+			return result, errors.New("zenodo draft inventory does not match the acknowledged upload")
+		}
+		result.Remote = remote
+		return result, nil
+	}
+	result.Completed = false
+	return result, errors.New("zenodo uploaded file is missing from the draft inventory")
 }
 
 // DownloadFile atomically downloads and verifies a sandbox file, retaining a
@@ -451,37 +469,66 @@ type limitedReadCloser struct {
 }
 
 type filePayload struct {
-	ID       json.RawMessage `json:"id"`
-	Filename string          `json:"filename"`
-	Key      string          `json:"key"`
-	Filesize int64           `json:"filesize"`
-	Size     int64           `json:"size"`
-	Checksum string          `json:"checksum"`
-	Links    struct {
+	ID        json.RawMessage `json:"id"`
+	VersionID string          `json:"version_id"`
+	Filename  string          `json:"filename"`
+	Key       string          `json:"key"`
+	Filesize  integralSize    `json:"filesize"`
+	Size      integralSize    `json:"size"`
+	Checksum  string          `json:"checksum"`
+	Links     struct {
 		Download string `json:"download"`
 		Content  string `json:"content"`
 	} `json:"links"`
 }
 
-func (client *Client) remoteFile(payload filePayload) (RemoteFile, error) {
-	name := strings.TrimSpace(payload.Filename)
-	if name == "" {
-		name = strings.TrimSpace(payload.Key)
+type integralSize int64
+
+func (size *integralSize) UnmarshalJSON(data []byte) error {
+	value := strings.TrimSpace(string(data))
+	parsed, ok := new(big.Rat).SetString(value)
+	if !ok || parsed.Sign() < 0 || !parsed.IsInt() || !parsed.Num().IsInt64() {
+		return fmt.Errorf("file size %q must be a non-negative integer", value)
 	}
-	size := payload.Filesize
-	if size == 0 && payload.Size > 0 {
-		size = payload.Size
+	*size = integralSize(parsed.Num().Int64())
+	return nil
+}
+
+func (client *Client) remoteFile(payload filePayload) (RemoteFile, error) {
+	remote, err := uploadReceipt(payload)
+	if err != nil {
+		return RemoteFile{}, err
 	}
 	downloadURL := strings.TrimSpace(payload.Links.Download)
 	if downloadURL == "" {
 		downloadURL = strings.TrimSpace(payload.Links.Content)
 	}
-	remote := RemoteFile{ID: rawID(payload.ID), Name: name, Size: size, Checksum: normalizeChecksum(payload.Checksum), DownloadURL: downloadURL}
-	if remote.ID == "" || remote.Name == "" || remote.Size < 0 || remote.Checksum == "" || remote.DownloadURL == "" {
-		return RemoteFile{}, errors.New("decode Zenodo file: id, name, size, checksum, or download link is missing")
+	remote.DownloadURL = downloadURL
+	if remote.DownloadURL == "" {
+		return RemoteFile{}, errors.New("decode Zenodo file: download link is missing")
 	}
 	if _, err := client.approveLink(remote.DownloadURL); err != nil {
 		return RemoteFile{}, fmt.Errorf("validate Zenodo file download link: %w", err)
+	}
+	return remote, nil
+}
+
+func uploadReceipt(payload filePayload) (RemoteFile, error) {
+	name := strings.TrimSpace(payload.Filename)
+	if name == "" {
+		name = strings.TrimSpace(payload.Key)
+	}
+	size := int64(payload.Filesize)
+	if size == 0 && payload.Size > 0 {
+		size = int64(payload.Size)
+	}
+	id := rawID(payload.ID)
+	if id == "" {
+		id = strings.TrimSpace(payload.VersionID)
+	}
+	remote := RemoteFile{ID: id, Name: name, Size: size, Checksum: normalizeChecksum(payload.Checksum)}
+	if remote.ID == "" || remote.Name == "" || remote.Size < 0 || remote.Checksum == "" {
+		return RemoteFile{}, errors.New("decode Zenodo file: id, name, size, or checksum is missing")
 	}
 	return remote, nil
 }
@@ -509,7 +556,6 @@ func (client *Client) openDownload(ctx context.Context, endpoint *url.URL, offse
 		if err != nil {
 			return nil, err
 		}
-		request.Header.Set("Accept", "application/octet-stream")
 		request.Header.Set("Authorization", "Bearer "+client.token)
 		if offset > 0 {
 			request.Header.Set("Range", fmt.Sprintf("bytes=%d-", offset))

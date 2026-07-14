@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -47,6 +48,7 @@ func TestDraftTransferRetriesVerifiesAndCleansUp(t *testing.T) {
 	checksum := "md5:" + hex.EncodeToString(digest[:])
 	var server *httptest.Server
 	var uploadAttempts atomic.Int32
+	var listAttempts atomic.Int32
 	var deleted atomic.Bool
 	var stored []byte
 
@@ -59,7 +61,12 @@ func TestDraftTransferRetriesVerifiesAndCleansUp(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = fmt.Fprintf(w, `{"id":123,"links":{"bucket":%q}}`, server.URL+"/api/files/bucket-1")
 		case r.Method == http.MethodGet && r.URL.Path == "/api/deposit/depositions/123/files":
-			_, _ = io.WriteString(w, `[]`)
+			listAttempts.Add(1)
+			if len(stored) == 0 {
+				_, _ = io.WriteString(w, `[]`)
+				return
+			}
+			_, _ = fmt.Fprintf(w, `[{"id":"file-1","filename":"result.txt","filesize":%d.0,"checksum":%q,"links":{"download":%q}}]`, len(stored), checksum, server.URL+"/api/files/bucket-1/result.txt")
 		case r.Method == http.MethodPut && r.URL.Path == "/api/files/bucket-1/result.txt":
 			attempt := uploadAttempts.Add(1)
 			body, _ := io.ReadAll(r.Body)
@@ -69,8 +76,11 @@ func TestDraftTransferRetriesVerifiesAndCleansUp(t *testing.T) {
 				return
 			}
 			stored = append([]byte(nil), body...)
-			_, _ = fmt.Fprintf(w, `{"id":"file-1","filename":"result.txt","filesize":%d,"checksum":%q,"links":{"download":%q}}`, len(stored), checksum, server.URL+"/api/files/bucket-1/result.txt")
+			_, _ = fmt.Fprintf(w, `{"version_id":"file-1","key":"result.txt","size":%d,"checksum":%q,"links":{"self":%q}}`, len(stored), checksum, server.URL+"/api/files/bucket-1/result.txt")
 		case r.Method == http.MethodGet && r.URL.Path == "/api/files/bucket-1/result.txt":
+			if accept := r.Header.Get("Accept"); accept == "application/octet-stream" {
+				t.Errorf("download sent restrictive Accept header %q", accept)
+			}
 			w.Header().Set("Content-Length", fmt.Sprint(len(stored)))
 			_, _ = w.Write(stored)
 		case r.Method == http.MethodDelete && r.URL.Path == "/api/deposit/depositions/123":
@@ -100,7 +110,7 @@ func TestDraftTransferRetriesVerifiesAndCleansUp(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UploadFile: %v", err)
 	}
-	if upload.Remote.Checksum != checksum || upload.Bytes != int64(len(content)) || upload.RetryCount != 1 || !upload.Completed {
+	if upload.Remote.Checksum != checksum || upload.Bytes != int64(len(content)) || upload.RetryCount != 1 || !upload.Completed || listAttempts.Load() != 2 {
 		t.Fatalf("upload = %+v", upload)
 	}
 
@@ -393,6 +403,22 @@ func TestInvalidConfigurationAndTransferInputs(t *testing.T) {
 	}
 	if _, err := client.UploadFile(t.Context(), Draft{}, "missing", "../escape", download.ConflictFail); err == nil {
 		t.Fatal("UploadFile accepted invalid draft and filename")
+	}
+}
+
+func TestIntegralSizeDecoding(t *testing.T) {
+	t.Parallel()
+	for _, input := range []string{"22", "22.0", "2.2e1"} {
+		var size integralSize
+		if err := json.Unmarshal([]byte(input), &size); err != nil || size != 22 {
+			t.Fatalf("Unmarshal(%q) = %d, %v", input, size, err)
+		}
+	}
+	for _, input := range []string{"-1", "1.5", "1e100", `"22"`, "null"} {
+		var size integralSize
+		if err := json.Unmarshal([]byte(input), &size); err == nil {
+			t.Fatalf("Unmarshal(%q) returned nil error", input)
+		}
 	}
 }
 
