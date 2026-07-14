@@ -1,6 +1,6 @@
 # OSF tooling landscape
 
-Last reviewed: 2026-07-13
+Last reviewed: 2026-07-14
 
 This inventory tracks public repositories that expose substantial reusable OSF
 functionality. It excludes one-off download scripts, demos, deprecated mirrors,
@@ -13,7 +13,7 @@ and repositories that merely mention the OSF API.
 | [ropensci/osfr](https://github.com/ropensci/osfr) | Broad R entity coverage and explicit conflict behavior | [#10](https://github.com/edithatogo/osf-cli-go/issues/10) |
 | [psychopy/pyosf](https://github.com/psychopy/pyosf) | Project synchronization workflows | [#11](https://github.com/edithatogo/osf-cli-go/issues/11) |
 | [datalad/datalad-osf](https://github.com/datalad/datalad-osf) | DataLad datasets, Git remotes, and git-annex-oriented workflows | [#12](https://github.com/edithatogo/osf-cli-go/issues/12) closed; dated comparison evidence in the archived DataLad track |
-| [CenterForOpenScience/osf-sync](https://github.com/CenterForOpenScience/osf-sync) | Desktop synchronization semantics | [#13](https://github.com/edithatogo/osf-cli-go/issues/13) |
+| [CenterForOpenScience/osf-sync](https://github.com/CenterForOpenScience/osf-sync) | LGPL-3.0 OSX/Windows desktop synchronization; no published GitHub releases in the reviewed snapshot | [#13](https://github.com/edithatogo/osf-cli-go/issues/13); parity evidence in [`docs/osf-sync-parity.md`](osf-sync-parity.md) |
 | [J535D165/datahugger](https://github.com/J535D165/datahugger) | DOI-oriented cross-repository retrieval | [#14](https://github.com/edithatogo/osf-cli-go/issues/14) closed; dated comparison evidence in the archived Datahugger track |
 | [mims-harvard/ToolUniverse](https://github.com/mims-harvard/ToolUniverse) | AI-scientist OSF Preprints search and literature-agent ecosystem | [#15](https://github.com/edithatogo/osf-cli-go/issues/15); dated comparison evidence in the archived ToolUniverse track |
 | [wentorai/research-plugins](https://github.com/wentorai/research-plugins) | Agent skills for OSF discovery and full text | [#16](https://github.com/edithatogo/osf-cli-go/issues/16) |
