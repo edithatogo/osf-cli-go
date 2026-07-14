@@ -35,3 +35,15 @@ submission contracts become verifiable.
 
 The matrix intentionally contains no credentials, usage events, synthetic
 receipts, or approval claims.
+
+## Packet and track map
+
+| Target | Local packet/evidence | Dedicated track or follow-up |
+|---|---|---|
+| Cline | `integrations/cline/`, release MCPB artifacts; packet still incomplete | `conductor/tracks/cline-mcp-marketplace-adoption_20260713/` and issue #47 |
+| LobeHub | `registry/directory-submissions.json`; `lhm.plugin.json` still missing | `conductor/tracks/lobehub-mcp-marketplace-adoption_20260713/` and issue #48 |
+| Docker MCP Catalog | `registry/docker-mcp-registry/`, `docs/mcp-catalog-discoverability-evidence.md` | archived catalog sweep; submit upstream PR |
+| MCP.so and mcpservers.org | `docs/mcp-catalog-discoverability-evidence.md`, canonical metadata packet | submit manually and record receipts |
+| MCPize | canonical metadata and Docker/MCPB assets | authenticate and confirm deployment requirements before submission |
+| MCP.Directory | archived submission evidence and `registry/directory-submissions.json` | retain pending-review state |
+| PulseMCP | official registry metadata and access-denied evidence | contact provider or retry authenticated route |

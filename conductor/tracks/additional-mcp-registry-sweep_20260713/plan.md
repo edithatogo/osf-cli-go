@@ -8,11 +8,11 @@
 
 ## Phase 2: Submission planning
 
-- [~] Task: Update the registry matrix and prepare packets for worthwhile targets
-- [ ] Task: Create or link dedicated adoption tracks for authenticated targets
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Submission planning' (Protocol in workflow.md)
+- [x] Task: Update the registry matrix and prepare packets for worthwhile targets
+- [x] Task: Create or link dedicated adoption tracks for authenticated targets
+- [x] Task: Conductor - Automated Review and Checkpoint 'Submission planning' (Protocol in workflow.md)
 
 ## Phase 3: Closeout
 
-- [ ] Task: Run registry contract checks and reconcile issue #49
+- [~] Task: Run registry contract checks and reconcile issue #49
 - [ ] Task: Conductor - Automated Review and Checkpoint 'Closeout' (Protocol in workflow.md)
