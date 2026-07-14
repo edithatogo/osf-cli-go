@@ -34,6 +34,7 @@
 - `go run ./tools/checkreleasecontract`
 - `go run ./tools/checkzenodoapi`
 - `go run ./tools/checkzenodoapi -online`
+- Targeted checker statement coverage after Codecov remediation: 91.7%.
 - `mkdocs build --strict`
 - `git diff --check`
 

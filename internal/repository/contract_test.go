@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -37,6 +38,14 @@ func TestQualifiedIDRejectsProviderKindMismatch(t *testing.T) {
 	}
 }
 
+func TestParseQualifiedIDRejectsMalformedKeys(t *testing.T) {
+	for _, value := range []string{"missing", "osf:project:%zz", "zenodo:project:123", "osf:project: "} {
+		if _, err := ParseQualifiedID(value); err == nil || !errors.Is(err, ErrInvalidIdentity) {
+			t.Errorf("ParseQualifiedID(%q) error = %v", value, err)
+		}
+	}
+}
+
 func TestNativeMetadataPreservesAndCopiesJSON(t *testing.T) {
 	source := []byte(`{"provider_field":{"nested":[1,true,"x"]}}`)
 	metadata, err := NewNativeMetadata("application/json", source)
@@ -58,6 +67,34 @@ func TestNativeMetadataRejectsInvalidJSON(t *testing.T) {
 	_, err := NewNativeMetadata("application/json; charset=utf-8", []byte(`{"broken"`))
 	if err == nil {
 		t.Fatal("NewNativeMetadata() returned nil error for invalid JSON")
+	}
+}
+
+func TestNativeMetadataRejectsInvalidEnvelopeAndSupportsOpaqueBytes(t *testing.T) {
+	for _, test := range []struct {
+		mediaType string
+		data      []byte
+	}{
+		{mediaType: "", data: []byte("x")},
+		{mediaType: "application/json", data: nil},
+		{mediaType: "not a media type", data: []byte("x")},
+	} {
+		if _, err := NewNativeMetadata(test.mediaType, test.data); err == nil {
+			t.Errorf("NewNativeMetadata(%q) returned nil error", test.mediaType)
+		}
+	}
+	opaque, err := NewNativeMetadata("application/octet-stream", []byte{0, 255})
+	if err != nil || opaque.MediaType() != "application/octet-stream" {
+		t.Fatalf("opaque metadata = %#v, %v", opaque, err)
+	}
+	if _, err := json.Marshal(NativeMetadata{}); err == nil {
+		t.Fatal("MarshalJSON() accepted empty metadata")
+	}
+	for _, value := range []string{`{`, `{"media_type":"application/json","data":"eA=="}`} {
+		var metadata NativeMetadata
+		if err := json.Unmarshal([]byte(value), &metadata); err == nil {
+			t.Errorf("UnmarshalJSON(%q) returned nil error", value)
+		}
 	}
 }
 
@@ -129,6 +166,16 @@ func TestRequireCapabilityDistinguishesPartialSupport(t *testing.T) {
 	}
 }
 
+func TestCapabilitySupportErrorFormattingAndSupportedRequirement(t *testing.T) {
+	if err := OSFContract().Require(CapabilityFileDownload); err != nil {
+		t.Fatalf("Require() supported error = %v", err)
+	}
+	err := &CapabilitySupportError{Provider: ProviderZenodo, Capability: CapabilityPublish, Level: SupportPartial, Constraints: []string{"draft only", "confirmation required"}}
+	if got := err.Error(); !strings.Contains(got, "draft only; confirmation required") {
+		t.Fatalf("Error() = %q", got)
+	}
+}
+
 func TestContractValidationRejectsIncompleteOrUnexplainedDecisions(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -143,6 +190,9 @@ func TestContractValidationRejectsIncompleteOrUnexplainedDecisions(t *testing.T)
 		{name: "wrong order", mutate: func(contract *Contract) {
 			contract.Capabilities[0], contract.Capabilities[1] = contract.Capabilities[1], contract.Capabilities[0]
 		}},
+		{name: "provider", mutate: func(contract *Contract) { contract.Provider = "other" }},
+		{name: "model version", mutate: func(contract *Contract) { contract.ModelVersion = 2 }},
+		{name: "empty constraint", mutate: func(contract *Contract) { contract.Capabilities[0].Constraints = []string{""} }},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -206,5 +256,37 @@ func TestRecordEnvelopeJSONRoundTripPreservesNativeMetadata(t *testing.T) {
 	}
 	if !bytes.Equal(got.NativeMetadata.Bytes(), want.NativeMetadata.Bytes()) {
 		t.Fatalf("native metadata = %v, want %v", got.NativeMetadata.Bytes(), want.NativeMetadata.Bytes())
+	}
+}
+
+func TestRecordEnvelopeValidationFailures(t *testing.T) {
+	metadata, err := NewNativeMetadata("application/json", []byte(`{}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	valid := RecordEnvelope{
+		Identity:       QualifiedID{Provider: ProviderOSF, Kind: KindProject, NativeID: "abc"},
+		Lifecycle:      Lifecycle{Common: LifecycleActive, Native: "public"},
+		NativeMetadata: metadata,
+		Permissions:    Permissions{Read: PermissionAllowed, Write: PermissionUnknown, Delete: PermissionUnknown, Publish: PermissionUnsupported},
+	}
+	tests := []struct {
+		name   string
+		mutate func(*RecordEnvelope)
+	}{
+		{name: "identity", mutate: func(record *RecordEnvelope) { record.Identity.NativeID = "" }},
+		{name: "common lifecycle", mutate: func(record *RecordEnvelope) { record.Lifecycle.Common = "other" }},
+		{name: "native lifecycle", mutate: func(record *RecordEnvelope) { record.Lifecycle.Native = "" }},
+		{name: "metadata", mutate: func(record *RecordEnvelope) { record.NativeMetadata = NativeMetadata{} }},
+		{name: "permission", mutate: func(record *RecordEnvelope) { record.Permissions.Delete = "other" }},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			record := valid
+			test.mutate(&record)
+			if err := record.Validate(); err == nil {
+				t.Fatal("Validate() returned nil error")
+			}
+		})
 	}
 }

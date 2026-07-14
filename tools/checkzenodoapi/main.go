@@ -83,26 +83,50 @@ type capability struct {
 var tagPattern = regexp.MustCompile(`<[^>]+>`)
 
 func main() {
-	online := flag.Bool("online", false, "fetch official sources and verify reviewed evidence markers")
-	printDigest := flag.Bool("print-digest", false, "print the canonical snapshot digest")
-	flag.Parse()
-
-	m, err := loadManifest("docs/zenodo-api-source.json")
-	if err == nil {
-		err = validateManifest(m)
-	}
-	if err == nil && *online {
-		err = validateOnline(m, &http.Client{Timeout: 30 * time.Second})
-	}
-	if err != nil {
+	if err := execute(os.Args[1:], os.Stdout, &http.Client{Timeout: 30 * time.Second}); err != nil {
 		fmt.Fprintf(os.Stderr, "checkzenodoapi: %v\n", err)
 		os.Exit(1)
 	}
-	if *printDigest {
-		fmt.Println(snapshotDigest(m.Snapshot))
-		return
+}
+
+func execute(args []string, output io.Writer, client *http.Client) error {
+	flags := flag.NewFlagSet("checkzenodoapi", flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	online := flags.Bool("online", false, "fetch official sources and verify reviewed evidence markers")
+	printDigest := flags.Bool("print-digest", false, "print the canonical snapshot digest")
+	manifestPath := flags.String("manifest", "docs/zenodo-api-source.json", "path to the capability manifest")
+	if err := flags.Parse(args); err != nil {
+		return err
 	}
-	fmt.Println("Zenodo API capability snapshot: valid")
+	m, err := run(*manifestPath, *online, client)
+	if err != nil {
+		return err
+	}
+	if *printDigest {
+		_, err = fmt.Fprintln(output, snapshotDigest(m.Snapshot))
+	} else {
+		_, err = fmt.Fprintln(output, "Zenodo API capability snapshot: valid")
+	}
+	return err
+}
+
+func run(path string, online bool, client *http.Client) (manifest, error) {
+	m, err := loadManifest(path)
+	if err != nil {
+		return manifest{}, err
+	}
+	if err := validateManifest(m); err != nil {
+		return manifest{}, err
+	}
+	if online {
+		if client == nil {
+			return manifest{}, errors.New("online validation requires an HTTP client")
+		}
+		if err := validateOnline(m, client); err != nil {
+			return manifest{}, err
+		}
+	}
+	return m, nil
 }
 
 func loadManifest(path string) (manifest, error) {

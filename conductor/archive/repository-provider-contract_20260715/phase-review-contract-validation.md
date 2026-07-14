@@ -33,6 +33,7 @@
 - `go run ./tools/checkfeaturematrix`
 - `go run ./tools/checkreleasecontract`
 - `go run ./tools/checkzenodoapi`
+- Targeted provider/conformance aggregate statement coverage after Codecov remediation: 92.5%.
 - `go test ./internal/cli ./internal/mcpserver -run 'CompatibilityFixture|RootContractMatchesCompatibilityFixture'`
 - `mkdocs build --strict`
 - `git diff --check`
