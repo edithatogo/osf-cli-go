@@ -4,7 +4,7 @@
 
 - Track: #98 Release-candidate provenance
 - Phase: Candidate build, independent verification, and launch decision
-- Date: 2026-07-14
+- Date: 2026-07-15
 
 ## Implemented Behavior
 
@@ -40,17 +40,21 @@ git diff --check
 ```
 
 All commands passed. The six published checksum manifests passed with
-`shasum -a 256 -c`, and isolated-config Cosign verification passed for the
-immutable digest `sha256:1d6655b24d832e47782123c41743067562fbefaac5b8a85f0837b7f537d7aa6c`.
+`shasum -a 256 -c`, isolated-config Cosign verification passed for the
+immutable digest `sha256:1d6655b24d832e47782123c41743067562fbefaac5b8a85f0837b7f537d7aa6c`,
+and public GHCR OCI inspection verified the SPDX and SLSA provenance layers
+and their BuildKit source revision.
 
 ## Conductor Review
 
 - Review command: `$conductor-review #98`
-- Blocking findings: none after implementation review.
+- Blocking findings: the initial review identified missing registry-level
+  attestation evidence; this was fixed and rechecked.
 - Fixes applied: corrected MCPB integrity metadata, idempotent release
   uploads, tag-derived package versions, immutable digest signing, and native
   version checks; synchronized evidence with the final hosted runs.
-- Re-review result: clean local gates and clean hosted candidate verification.
+- Re-review result: clean local gates, clean hosted candidate verification,
+  and auditable OCI attestation evidence.
 
 ## Status
 

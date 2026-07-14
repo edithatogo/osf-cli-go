@@ -45,7 +45,7 @@ review before a `v1.0.0` tag is created.
 
 ## Provenance review for #98
 
-Reviewed 2026-07-14 against immutable RC commit `5a1004c`. The prior v0.3.2
+Reviewed 2026-07-15 against immutable RC commit `5a1004c`. The prior v0.3.2
 release was not a v1.0 release candidate; the RC workflows now produce the
 complete asset and security evidence set.
 
@@ -61,3 +61,6 @@ The final hosted candidate verification passed with 36 release assets, no
 stale `0.3.2` assets, six independently verified checksum manifests, and
 Cosign verification of the immutable GHCR digest
 `sha256:1d6655b24d832e47782123c41743067562fbefaac5b8a85f0837b7f537d7aa6c`.
+The public OCI index also exposes SPDX and SLSA v1 provenance attestation
+layers whose subject and BuildKit source revision match that digest and RC
+commit.

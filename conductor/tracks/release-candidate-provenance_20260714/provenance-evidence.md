@@ -1,6 +1,6 @@
 # Release Candidate Provenance Evidence
 
-Reviewed: 2026-07-14
+Reviewed: 2026-07-15
 
 ## Local candidate
 
@@ -50,6 +50,14 @@ Reviewed: 2026-07-14
   `sha256:1d6655b24d832e47782123c41743067562fbefaac5b8a85f0837b7f537d7aa6c`.
 - Independent Cosign verification passed against that digest with the
   expected GitHub Actions OIDC identity.
+- Clean registry inspection verified that the OCI index at the immutable
+  digest contains an `attestation-manifest` with SPDX and
+  `https://slsa.dev/provenance/v1` layers. The SLSA statement subject resolves
+  to the Linux amd64 image manifest and records BuildKit as the builder,
+  `Dockerfile.mcp`, source revision
+  `5a1004cc4ddddff5ce93c21ca5867e2647c980ba`, and workflow run `29339729423`.
+  Verification used the public GHCR token endpoint and OCI manifest/blob API,
+  without the source checkout or project credentials.
 - The final GitHub release contains 36 clean RC assets: 12 binaries, 6
   checksum files, 15 plugin archives, and 3 MCPB packages; no stale `0.3.2`
   assets remain. All six published checksum manifests passed independent
