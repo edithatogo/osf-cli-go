@@ -151,7 +151,7 @@ func run(ctx context.Context, live bool) (result evidence, runErr error) {
 		Authorized: true, Metadata: metadata,
 	}, now)
 	if err != nil {
-		return result, fmt.Errorf("reserve sandbox DOI: %w", err)
+		return result, fmt.Errorf("verify automatic sandbox DOI reservation: %w", err)
 	}
 	result.ReservedDOI = reserved.DOI
 	publishRequest := zenodopublish.Request{

@@ -38,6 +38,19 @@ type APIError struct {
 	Message    string
 }
 
+// PartialPublicationError reports that validated metadata was applied but the
+// subsequent irreversible publication action did not return success.
+type PartialPublicationError struct {
+	RecordID string
+	Cause    error
+}
+
+func (err *PartialPublicationError) Error() string {
+	return fmt.Sprintf("Zenodo sandbox metadata was applied to draft %s but publication was not confirmed; inspect the draft before retrying: %v", err.RecordID, err.Cause)
+}
+
+func (err *PartialPublicationError) Unwrap() error { return err.Cause }
+
 func (err *APIError) Error() string {
 	if err == nil {
 		return "<nil>"
@@ -172,6 +185,11 @@ func (err redactedError) Unwrap() error { return err.cause }
 
 func safeError(err error, token string) error {
 	message := auth.Redact(err.Error(), token)
+	var partial *PartialPublicationError
+	if errors.As(err, &partial) {
+		safePartial := &PartialPublicationError{RecordID: partial.RecordID, Cause: safeError(partial.Cause, token)}
+		return redactedError{cause: safePartial, message: message}
+	}
 	for _, sentinel := range []error{ErrCrossOrigin, ErrResponseTooLarge, ErrInvalidTransition, context.Canceled, context.DeadlineExceeded} {
 		if errors.Is(err, sentinel) {
 			return redactedError{cause: sentinel, message: message}
@@ -204,18 +222,18 @@ func (client *Client) execute(ctx context.Context, result Result) (Result, error
 		return result, nil
 	case ActionPublish:
 		if _, err := client.updateMetadata(ctx, plan); err != nil {
-			return Result{}, fmt.Errorf("apply validated Zenodo metadata before publication: %w", err)
+			return Result{}, fmt.Errorf("zenodo metadata update was not confirmed; inspect draft %s before retrying publication: %w", plan.RecordID, err)
 		}
 		response, err := client.action(ctx, plan.RecordID, "publish")
 		if err != nil {
-			return Result{}, err
+			return Result{}, &PartialPublicationError{RecordID: plan.RecordID, Cause: err}
 		}
 		result.DOI, result.ConceptDOI = response.DOI, response.ConceptDOI
 		return result, nil
 	case ActionNewVersion:
 		response, err := client.action(ctx, plan.RecordID, "newversion")
 		if err != nil {
-			return Result{}, err
+			return Result{}, fmt.Errorf("zenodo new-version action was not confirmed and was not retried; inspect the latest draft before retrying: %w", err)
 		}
 		latestDraft, err := client.approveLink(response.Links.LatestDraft)
 		if err != nil {
@@ -236,7 +254,10 @@ func (client *Client) execute(ctx context.Context, result Result) (Result, error
 			return Result{}, err
 		}
 		_, err = client.do(ctx, http.MethodDelete, endpoint, nil)
-		return result, err
+		if err != nil {
+			return Result{}, fmt.Errorf("zenodo discard was not confirmed and was not retried; inspect draft %s before retrying: %w", plan.RecordID, err)
+		}
+		return result, nil
 	default:
 		return Result{}, ErrInvalidTransition
 	}

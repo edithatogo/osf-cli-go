@@ -156,6 +156,35 @@ func TestExecutePublishAppliesMetadataThenPublishes(t *testing.T) {
 	}
 }
 
+func TestPublishFailureReportsAppliedMetadataBoundary(t *testing.T) {
+	t.Parallel()
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if calls.Add(1) == 1 {
+			_, _ = io.WriteString(w, `{"id":123}`)
+			return
+		}
+		http.Error(w, "publication unavailable", http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+	client, err := New(server.URL+"/api/", "secret", []Scope{ScopeDepositWrite, ScopeDepositActions})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := Request{RecordID: "123", State: StateDraft, Action: ActionPublish, Authorized: true, DryRun: true, Metadata: validMetadata()}
+	preview, err := client.Execute(t.Context(), request, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.DryRun = false
+	request.Confirmation = preview.Plan.Confirmation
+	_, err = client.Execute(t.Context(), request, time.Now())
+	var partial *PartialPublicationError
+	if !errors.As(err, &partial) || partial.RecordID != "123" || !strings.Contains(err.Error(), "inspect the draft before retrying") || calls.Load() != 2 {
+		t.Fatalf("partial error = %v calls=%d", err, calls.Load())
+	}
+}
+
 func TestExecuteReserveDOINewVersionAndDiscard(t *testing.T) {
 	t.Parallel()
 	var server *httptest.Server

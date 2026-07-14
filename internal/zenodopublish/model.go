@@ -55,7 +55,6 @@ var (
 	ErrScopeRequired         = errors.New("required Zenodo token scope is missing")
 	ErrConfirmationRequired  = errors.New("exact Zenodo publication confirmation is required")
 	ErrInvalidMetadata       = errors.New("invalid Zenodo publication metadata")
-	ErrDryRun                = errors.New("zenodo publication dry-run cannot execute")
 )
 
 // Creator is the minimum creator identity required for publication.

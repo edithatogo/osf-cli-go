@@ -45,6 +45,13 @@ the irreversible action is never retried automatically. Dry-run returns the expe
 target state and deterministic confirmation challenge without performing HTTP.
 Publish and discard execute only when that exact challenge is supplied.
 
+Lifecycle actions are not retried automatically. If metadata update,
+publication, new-version creation, or discard returns an ambiguous failure, the
+error directs the caller to inspect the current draft/latest-draft state before
+retrying. A publication-action failure after metadata update is a typed partial
+result: the draft may contain the validated metadata even though publication
+was not confirmed.
+
 Audit evidence records the record ID, transition, outcome, dry-run status, and
 irreversible/destructive flags. It omits metadata, token values, and scope
 inventories, and redacts token-shaped values from errors. No publication write
