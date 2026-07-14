@@ -1,0 +1,1 @@
+Conductor review: Phase 2 sandbox proof passed after live receipt, integral-size, inventory refresh, and content-negotiation fixes. Gates: live 1 MiB upload/download/resume/cleanup; fmt, test, race, vet, golangci-lint, checkstubs, checkfeaturematrix, checkzenodoapi. Credential was deposit:write only and revoked.
