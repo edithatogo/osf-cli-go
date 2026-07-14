@@ -49,7 +49,7 @@ metadata, or publication safety.
 - Manage tags, metadata fields, contributors, and licenses where OSF API permissions allow.
 - Export project snapshots including metadata, contributor lists, file inventories, wiki content, component hierarchy, and activity logs.
 - Support reproducible manifests for backup and audit workflows.
-- Maintain live-validated, sandbox-only Zenodo draft transfer primitives and
+- Maintain sandbox-validated, sandbox-only Zenodo draft transfer primitives and
   publication workflows through reviewed irreversible state machines. Keep
   production publication and stable CLI/MCP writes disabled until a separate
   public-write compatibility and safety review approves them.

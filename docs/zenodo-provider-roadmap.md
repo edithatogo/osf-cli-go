@@ -28,7 +28,7 @@ sandbox-validated and remain unavailable as public CLI or MCP writes.
 | 4 | [#105 CLI](https://github.com/edithatogo/osf-cli-go/issues/105), `conductor/archive/provider-scoped-cli_20260715/`; [#106 MCP](https://github.com/edithatogo/osf-cli-go/issues/106), `conductor/archive/provider-scoped-mcp_20260715/` | Provider-scoped read UX is compatible and no deferred writes are advertised |
 | 5 | [#108 transfers](https://github.com/edithatogo/osf-cli-go/issues/108), `conductor/archive/zenodo-sandbox-transfers_20260715/`; [#109 publication](https://github.com/edithatogo/osf-cli-go/issues/109), `conductor/archive/zenodo-publication-state_20260715/` | Disposable sandbox evidence proves integrity, cleanup, and irreversible-state safety |
 | 6 | [#110 cross-provider copy](https://github.com/edithatogo/osf-cli-go/issues/110), `conductor/archive/cross-provider-provenance-transfer_20260715/` | Dry-run, provenance, idempotency, compensation, and failure recovery pass |
-| 7 | [#111 release integration](https://github.com/edithatogo/osf-cli-go/issues/111), `conductor/tracks/multi-provider-release-integration_20260715/` | CI, release evidence, observability, docs, matrix, and registry claims agree |
+| 7 | [#111 release integration](https://github.com/edithatogo/osf-cli-go/issues/111), `conductor/archive/multi-provider-release-integration_20260715/` | CI, release evidence, observability, docs, matrix, and registry claims agree |
 
 ## Architecture guardrails
 

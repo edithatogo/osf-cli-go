@@ -61,10 +61,10 @@ scopes, rate limits, and OAI-PMH discovery.
 | 4 | [Provider-scoped CLI](../../archive/provider-scoped-cli_20260715/spec.md) | [#105](https://github.com/edithatogo/osf-cli-go/issues/105) |
 | 4 | [Provider-scoped MCP](../../archive/provider-scoped-mcp_20260715/spec.md) | [#106](https://github.com/edithatogo/osf-cli-go/issues/106) |
 | 3 | [Zenodo OAI-PMH](../../archive/zenodo-oai-pmh_20260715/spec.md) | [#107](https://github.com/edithatogo/osf-cli-go/issues/107) |
-| 5 | [Zenodo sandbox transfers](../zenodo-sandbox-transfers_20260715/spec.md) | [#108](https://github.com/edithatogo/osf-cli-go/issues/108) |
-| 5 | [Zenodo publication state](../zenodo-publication-state_20260715/spec.md) | [#109](https://github.com/edithatogo/osf-cli-go/issues/109) |
-| 6 | [Cross-provider provenance transfer](../cross-provider-provenance-transfer_20260715/spec.md) | [#110](https://github.com/edithatogo/osf-cli-go/issues/110) |
-| 7 | [Multi-provider release integration](../multi-provider-release-integration_20260715/spec.md) | [#111](https://github.com/edithatogo/osf-cli-go/issues/111) |
+| 5 | [Zenodo sandbox transfers](../../archive/zenodo-sandbox-transfers_20260715/spec.md) | [#108](https://github.com/edithatogo/osf-cli-go/issues/108) |
+| 5 | [Zenodo publication state](../../archive/zenodo-publication-state_20260715/spec.md) | [#109](https://github.com/edithatogo/osf-cli-go/issues/109) |
+| 6 | [Cross-provider provenance transfer](../../archive/cross-provider-provenance-transfer_20260715/spec.md) | [#110](https://github.com/edithatogo/osf-cli-go/issues/110) |
+| 7 | [Multi-provider release integration](../../archive/multi-provider-release-integration_20260715/spec.md) | [#111](https://github.com/edithatogo/osf-cli-go/issues/111) |
 
 The GitHub issues are native subissues of #101. The parent closes only after
 each child has its own review evidence and the final integration gate passes.
