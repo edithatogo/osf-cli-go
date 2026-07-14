@@ -1,0 +1,1 @@
+Conductor review for structured-observability_20260714: verified versioned redacted event schema, API/CLI/transfer/MCP instrumentation, stdout separation, opt-in destinations, path redaction, and local validation. Product, tech-stack, and safety documentation synchronized in e1719ac.
