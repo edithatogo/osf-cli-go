@@ -8,6 +8,6 @@
 
 ## Phase 2: Release closeout
 
-- [~] Task: Reconcile docs, feature matrix, compatibility fixtures, release artifacts, and registry metadata.
-- [ ] Task: Produce dated multi-provider validation evidence and complete the parent epic review.
+- [x] Task: Reconcile docs, feature matrix, compatibility fixtures, release artifacts, and registry metadata. (b332bd8)
+- [~] Task: Produce dated multi-provider validation evidence and complete the parent epic review.
 - [ ] Task: Conductor - Automated Review and Checkpoint 'Release closeout' (Protocol in workflow.md)

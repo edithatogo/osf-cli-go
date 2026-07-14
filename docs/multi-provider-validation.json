@@ -85,7 +85,8 @@
       "validatedAt": "2026-07-15",
       "evidence": [
         {"path": "docs/provider-release-operations.md", "sha256": "sha256:5ae6391c0dd6b0a3b39d92d76ce5c528d1a2b6d446429efbeedc6c832b180bf8"},
-        {"path": "docs/adr-001-multi-provider-release-contract.md", "sha256": "sha256:74e4fcacb374266881779895acb6c77b54c50ed52d3094d752e502f9d0487313"}
+        {"path": "docs/adr-001-multi-provider-release-contract.md", "sha256": "sha256:74e4fcacb374266881779895acb6c77b54c50ed52d3094d752e502f9d0487313"},
+        {"path": "docs/provider-environment-evidence.md", "sha256": "sha256:c55023589c71724b1fac90b6b890ebdbdc839515df9f4571ac58784f0d382c27"}
       ]
     },
     {

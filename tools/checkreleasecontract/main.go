@@ -112,6 +112,7 @@ func run() error {
 		"docs/multi-provider-validation.md",
 		"docs/multi-provider-validation-report.md",
 		"docs/provider-release-operations.md",
+		"docs/provider-environment-evidence.md",
 		"docs/adr-001-multi-provider-release-contract.md",
 		".github/workflows/provider-validation.yml",
 	}
