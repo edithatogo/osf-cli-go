@@ -9,5 +9,5 @@
 ## Phase 2: Sandbox proof
 
 - [x] Task: Add an opt-in disposable sandbox harness with cleanup guarantees.
-- [ ] Task: Capture dated integrity and failure-recovery evidence without secrets.
+- [~] Task: Capture dated integrity and failure-recovery evidence without secrets.
 - [ ] Task: Conductor - Automated Review and Checkpoint 'Sandbox proof' (Protocol in workflow.md)

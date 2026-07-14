@@ -56,4 +56,7 @@ go run ./tools/zenodosandboxvalidation -live
 The harness creates one unpublished draft, uploads a generated file, verifies a
 complete download, deliberately interrupts and resumes a second download, and
 then deletes the draft even when a transfer step fails. Its evidence contains
-only the sandbox host, byte counts, checksums, status, and cleanup outcome.
+only the sandbox host, byte counts, checksums, status, and cleanup outcome. An
+explicit `-live` invocation fails closed when either credential or opt-in gate
+is absent. The stable evidence record is
+`docs/zenodo-sandbox-validation-evidence.md`.

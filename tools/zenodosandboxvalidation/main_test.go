@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,6 +29,29 @@ func TestDryRunAndEvidenceRedaction(t *testing.T) {
 	text := string(data)
 	if strings.Contains(text, "secret-token") || !strings.Contains(text, "ZENODO_TOKEN: set") || !strings.Contains(text, "ZENODO_SANDBOX_VALIDATION=1") {
 		t.Fatalf("evidence = %s", text)
+	}
+}
+
+func TestDefaultEvidencePathIsStableAcrossTrackArchive(t *testing.T) {
+	t.Parallel()
+	if defaultEvidencePath != filepath.Join("docs", "zenodo-sandbox-validation-evidence.md") {
+		t.Fatalf("defaultEvidencePath = %q", defaultEvidencePath)
+	}
+}
+
+func TestExplicitLiveFailsClosedWithoutGates(t *testing.T) {
+	t.Parallel()
+	for name, env := range map[string]validationEnv{
+		"missing opt in": {token: "secret", baseURL: defaultBaseURL},
+		"missing token":  {enabled: true, baseURL: defaultBaseURL},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			report, err := runValidation(t.Context(), env, true, 64)
+			if !errors.Is(err, ErrLiveNotConfigured) || report.Mode != "skipped" {
+				t.Fatalf("runValidation = %+v err=%v", report, err)
+			}
+		})
 	}
 }
 

@@ -12,16 +12,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edithatogo/osf-cli-go/internal/auth"
 	"github.com/edithatogo/osf-cli-go/internal/download"
 	"github.com/edithatogo/osf-cli-go/internal/zenodotransfer"
 )
 
 const (
-	defaultEvidencePath = "conductor/tracks/zenodo-sandbox-transfers_20260715/sandbox-evidence.md"
+	defaultEvidencePath = "docs/zenodo-sandbox-validation-evidence.md"
 	defaultBaseURL      = "https://sandbox.zenodo.org/api/"
 	defaultPayloadBytes = 1 << 20
 )
+
+var ErrLiveNotConfigured = errors.New("live Zenodo sandbox validation is not configured")
 
 type validationEnv struct {
 	enabled bool
@@ -60,7 +61,7 @@ func main() {
 		os.Exit(1)
 	}
 	if runErr != nil {
-		fmt.Fprintf(os.Stderr, "zenodosandboxvalidation: %v\n", auth.Redact(runErr.Error(), env.token))
+		fmt.Fprintf(os.Stderr, "zenodosandboxvalidation: %s\n", exactRedact(runErr.Error(), env.token))
 		os.Exit(1)
 	}
 	if report.Mode != "live" {
@@ -108,7 +109,7 @@ func runValidation(ctx context.Context, env validationEnv, live bool, payloadSiz
 		for _, name := range planned {
 			report.Steps = append(report.Steps, validationStep{Name: name, Status: "skipped", Detail: "explicit opt-in is absent"})
 		}
-		return report, nil
+		return report, fmt.Errorf("%w: set ZENODO_SANDBOX_VALIDATION=1", ErrLiveNotConfigured)
 	}
 	if env.token == "" {
 		report.Mode = "skipped"
@@ -116,7 +117,7 @@ func runValidation(ctx context.Context, env validationEnv, live bool, payloadSiz
 		for _, name := range planned {
 			report.Steps = append(report.Steps, validationStep{Name: name, Status: "skipped", Detail: "sandbox credential is absent"})
 		}
-		return report, nil
+		return report, fmt.Errorf("%w: ZENODO_TOKEN is not set", ErrLiveNotConfigured)
 	}
 	if payloadSize < 3 || payloadSize > 50<<20 {
 		return report, errors.New("validation payload must be between 3 bytes and 50 MiB")
