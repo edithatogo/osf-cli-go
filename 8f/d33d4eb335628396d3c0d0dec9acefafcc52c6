@@ -1,0 +1,5 @@
+Conductor review: provider-scoped Zenodo MCP agent contract
+
+Review result: clean after shared identifier parsing, complete executable registry inventories, reachable branch cleanup, and compatibility fixtures.
+Validation: MCP, registry, CLI, and parser tests; lint; registry and anti-stub contracts.
+Coverage: new Zenodo REST MCP handlers 100%.
