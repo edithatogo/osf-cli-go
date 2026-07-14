@@ -31,7 +31,12 @@ jobs:
           node-version: "24"
 
       - name: Install MCPB CLI
-        run: npm install --global --ignore-scripts @anthropic-ai/mcpb@2.1.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm pack --ignore-scripts https://registry.npmjs.org/@anthropic-ai/mcpb/-/mcpb-2.1.2.tgz
+          node -e 'const fs=require("fs"); const crypto=require("crypto"); const expected="goRbBC8ySo7SWb7tRzr+tL6FxDc4JPTRCdgfD2omba7freofvjq5rom1lBnYHZHo6Mizs1jAHJeN53aZbDoy8A="; const actual=crypto.createHash("sha512").update(fs.readFileSync("anthropic-ai-mcpb-2.1.2.tgz")).digest("base64"); if (actual !== expected) { throw new Error(`MCPB integrity mismatch: ${actual}`); }'
+          npm install --global --ignore-scripts ./anthropic-ai-mcpb-2.1.2.tgz
 
       - name: Build MCPB bundle
         shell: pwsh

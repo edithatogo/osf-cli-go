@@ -14,6 +14,27 @@ import (
 	"testing"
 )
 
+func FuzzResolveReference(f *testing.F) {
+	for _, seed := range []string{"/v2/nodes/project-123/", "?page=2", "https://example.org/resource", "\x00"} {
+		f.Add(seed)
+	}
+
+	base, err := url.Parse("https://api.osf.io/v2/")
+	if err != nil {
+		f.Fatal(err)
+	}
+
+	f.Fuzz(func(t *testing.T, ref string) {
+		resolved, err := resolveReference(base, ref)
+		if err != nil {
+			return
+		}
+		if resolved == nil {
+			t.Fatal("resolveReference returned a nil URL without an error")
+		}
+	})
+}
+
 func TestCurrentUser(t *testing.T) {
 	t.Parallel()
 
