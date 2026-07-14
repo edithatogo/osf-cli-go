@@ -5,7 +5,9 @@ Reviewed: 2026-07-14
 ## Local candidate
 
 - Candidate version: `1.0.0-rc.1`
-- Source commit: `026f3c8fe147205986952b2f08c7a585039edd92`
+- Local build source commit: `cb988fe` (the local candidate directory is
+  intentionally ignored and is retained only as reproducible workstation
+  evidence).
 - Build output: ignored local directory `dist/release-candidate/`
 - Build command: cross-compiled `cmd/osf` and `cmd/osf-mcp` for Linux,
   macOS, and Windows amd64/arm64 with `CGO_ENABLED=0` and embedded version,
@@ -29,26 +31,29 @@ Reviewed: 2026-07-14
 
 ## Hosted candidate verification
 
-- Immutable tag: `v1.0.0-rc.1` at the source commit above.
+- Immutable tag: `v1.0.0-rc.1` at source commit
+  `5a1004cc4ddddff5ce93c21ca5867e2647c980ba`.
 - Release Artifacts workflow: run
-  [29339418104](https://github.com/edithatogo/osf-cli-go/actions/runs/29339418104)
+  [29339729495](https://github.com/edithatogo/osf-cli-go/actions/runs/29339729495)
   passed all six binary matrix jobs, native Linux/macOS/Windows version checks,
   checksum generation, and release publication.
 - MCPB workflow: run
-  [29339418373](https://github.com/edithatogo/osf-cli-go/actions/runs/29339418373)
+  [29339729375](https://github.com/edithatogo/osf-cli-go/actions/runs/29339729375)
   passed Linux, macOS, and Windows bundle builds and release upload.
 - Plugin workflow: run
-  [29339418952](https://github.com/edithatogo/osf-cli-go/actions/runs/29339418952)
+  [29339729457](https://github.com/edithatogo/osf-cli-go/actions/runs/29339729457)
   passed Linux, macOS, and Windows plugin builds and release upload.
 - Release Security workflow: run
-  [29339418109](https://github.com/edithatogo/osf-cli-go/actions/runs/29339418109)
+  [29339729423](https://github.com/edithatogo/osf-cli-go/actions/runs/29339729423)
   published the OCI image with BuildKit SBOM/provenance metadata and signed
-  immutable digest `sha256:7a34e65fab61c969ba144b05a0086a5f931da0d48ed3c48cf43034536bf08407`.
+  immutable digest
+  `sha256:1d6655b24d832e47782123c41743067562fbefaac5b8a85f0837b7f537d7aa6c`.
 - Independent Cosign verification passed against that digest with the
   expected GitHub Actions OIDC identity.
 - The final GitHub release contains 36 clean RC assets: 12 binaries, 6
   checksum files, 15 plugin archives, and 3 MCPB packages; no stale `0.3.2`
-  assets remain.
+  assets remain. All six published checksum manifests passed independent
+  verification.
 
 Residual risk: this macOS environment cannot execute Windows/Linux binaries,
 so cross-platform verification relies on the native hosted runner checks and
