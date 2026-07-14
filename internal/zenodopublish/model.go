@@ -55,7 +55,7 @@ var (
 	ErrScopeRequired         = errors.New("required Zenodo token scope is missing")
 	ErrConfirmationRequired  = errors.New("exact Zenodo publication confirmation is required")
 	ErrInvalidMetadata       = errors.New("invalid Zenodo publication metadata")
-	ErrDryRun                = errors.New("Zenodo publication dry-run cannot execute")
+	ErrDryRun                = errors.New("zenodo publication dry-run cannot execute")
 )
 
 // Creator is the minimum creator identity required for publication.
@@ -159,8 +159,18 @@ func BuildPlan(request Request, now time.Time) (Plan, error) {
 	return Plan{
 		RecordID: recordID, From: request.State, To: decision.to, Action: request.Action,
 		RequiredScope: decision.scope, DryRun: request.DryRun, Destructive: decision.destructive,
-		Irreversible: decision.irreversible, Confirmation: challenge, Metadata: request.Metadata,
+		Irreversible: decision.irreversible, Confirmation: challenge, Metadata: request.Metadata.clone(),
 	}, nil
+}
+
+func (metadata Metadata) clone() Metadata {
+	result := metadata
+	result.Creators = append([]Creator(nil), metadata.Creators...)
+	if metadata.EmbargoDate != nil {
+		embargoDate := *metadata.EmbargoDate
+		result.EmbargoDate = &embargoDate
+	}
+	return result
 }
 
 func hasScope(scopes []Scope, required Scope) bool {

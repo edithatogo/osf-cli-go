@@ -153,6 +153,27 @@ func TestAuditEventIsRedacted(t *testing.T) {
 	}
 }
 
+func TestPlanOwnsValidatedMetadata(t *testing.T) {
+	t.Parallel()
+	embargoDate := time.Date(2026, 8, 15, 0, 0, 0, 0, time.UTC)
+	metadata := validMetadata()
+	metadata.Access = AccessEmbargoed
+	metadata.EmbargoDate = &embargoDate
+	request := Request{
+		RecordID: "123", State: StateDraft, Action: ActionPublish, Authorized: true,
+		DryRun: true, Scopes: []Scope{ScopeDepositActions}, Metadata: metadata,
+	}
+	plan, err := BuildPlan(request, time.Date(2026, 7, 15, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Metadata.Creators[0].Name = "mutated"
+	*request.Metadata.EmbargoDate = time.Time{}
+	if plan.Metadata.Creators[0].Name != "Example, Researcher" || plan.Metadata.EmbargoDate.IsZero() {
+		t.Fatalf("plan metadata changed after validation: %+v", plan.Metadata)
+	}
+}
+
 func validMetadata() Metadata {
 	return Metadata{
 		Title: "Reproducible example", Description: "Sandbox lifecycle validation", UploadType: "dataset",
