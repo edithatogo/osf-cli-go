@@ -9,7 +9,7 @@ and repositories that merely mention the OSF API.
 | Repository | Distinct area to assess | Roadmap |
 |---|---|---|
 | [SourceShift/osf-mcp-server](https://github.com/SourceShift/osf-mcp-server) | Direct MCP competitor; search, registrations, preprints, and file management | [#8](https://github.com/edithatogo/osf-cli-go/issues/8) closed; dated comparison evidence in the archived SourceShift track |
-| [osfclient/osfclient](https://github.com/osfclient/osfclient) | Mature Python library and CLI for OSF Storage | [#9](https://github.com/edithatogo/osf-cli-go/issues/9) |
+| [osfclient/osfclient](https://github.com/osfclient/osfclient) | BSD-3-Clause Python library and CLI for OSF Storage with listing, fetch, clone, upload, and URL workflows | [#9](https://github.com/edithatogo/osf-cli-go/issues/9); dated comparison evidence in [`docs/osfclient-cli-parity.md`](osfclient-cli-parity.md) |
 | [ropensci/osfr](https://github.com/ropensci/osfr) | Broad R entity coverage and explicit conflict behavior | [#10](https://github.com/edithatogo/osf-cli-go/issues/10) |
 | [psychopy/pyosf](https://github.com/psychopy/pyosf) | Project synchronization workflows | [#11](https://github.com/edithatogo/osf-cli-go/issues/11) |
 | [datalad/datalad-osf](https://github.com/datalad/datalad-osf) | DataLad datasets, Git remotes, and git-annex-oriented workflows | [#12](https://github.com/edithatogo/osf-cli-go/issues/12) closed; dated comparison evidence in the archived DataLad track |
