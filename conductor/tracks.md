@@ -74,7 +74,7 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [ ] [zenodo-provider-abstraction](tracks/zenodo-provider-abstraction_20260715/spec.md) — Add Zenodo support through a provider-neutral OSF/Zenodo research repository model; issue #101.
 - [x] [zenodo-api-provenance](archive/zenodo-api-provenance_20260715/spec.md) — Pin Zenodo API evidence and detect upstream contract drift; subissue #102.
 - [x] [repository-provider-contract](archive/repository-provider-contract_20260715/spec.md) — Define capability-aware, lossless provider contracts; subissue #103.
-- [~] [zenodo-readonly-client](tracks/zenodo-readonly-client_20260715/spec.md) — Implement an offline-tested read-only Zenodo REST client; subissue #104.
+- [x] [zenodo-readonly-client](tracks/zenodo-readonly-client_20260715/spec.md) — Implement an offline-tested read-only Zenodo REST client; subissue #104.
 - [ ] [provider-scoped-cli](tracks/provider-scoped-cli_20260715/spec.md) — Add explicit provider-scoped CLI discovery workflows; subissue #105.
 - [ ] [provider-scoped-mcp](tracks/provider-scoped-mcp_20260715/spec.md) — Expose capability-aware provider-scoped MCP read tools; subissue #106.
 - [ ] [zenodo-oai-pmh](tracks/zenodo-oai-pmh_20260715/spec.md) — Implement Zenodo OAI-PMH harvesting as a separate adapter; subissue #107.
