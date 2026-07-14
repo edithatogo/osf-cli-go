@@ -1,0 +1,4 @@
+Conductor review: provider-scoped Zenodo CLI UX
+
+Review result: clean after canonical numeric ID validation, lossless native JSON exposure, and staticcheck remediation.
+Validation: targeted CLI and Zenodo API tests; vet; lint; anti-stub.
