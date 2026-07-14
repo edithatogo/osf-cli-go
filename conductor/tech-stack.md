@@ -25,6 +25,9 @@
 - Authenticated Zenodo draft transfer adapter: `internal/zenodotransfer`;
   writes are sandbox-only, whole-file uploads never claim partial resume, and
   verified byte-range downloads reuse `internal/download` checkpoints.
+- Cross-provider mapping and saga execution: `internal/crossprovider`; reports
+  retain qualified identity and semantic loss, while the concrete Zenodo
+  destination is sandbox-only, draft-only, checksum-verified, and compensating.
 - Provider-scoped Zenodo CLI commands consume the concrete REST and OAI-PMH
   clients; write-shaped commands consult `repository.ZenodoContract` only.
 - Provider-scoped MCP tools consume the same concrete clients and shared
@@ -71,6 +74,9 @@
   `tools/zenodopublicationvalidation` sandbox harness. Non-idempotent actions
   are never retried, live tokens are least-privilege and revoked after use, and
   production publication remains rejected.
+- Cross-provider execution uses failure injection, replay and compensation
+  tests plus the opt-in `tools/crossprovidervalidation` disposable sandbox
+  harness; provenance sidecars retain the complete deterministic mapping report.
 - Zenodo OAI-PMH tests use synthetic XML fixtures, deterministic expiry clocks,
   strict parsing, and a dedicated parser fuzz target without live harvesting.
 

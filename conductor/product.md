@@ -48,6 +48,9 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
   publication workflows through reviewed irreversible state machines. Keep
   production publication and stable CLI/MCP writes disabled until release-wide
   provider integration is complete.
+- Maintain explicit, provenance-preserving OSF-to-Zenodo and Zenodo-to-OSF
+  mapping contracts with deterministic checkpoints, truthful partial results,
+  and draft-only compensation. Keep unsupported rollback paths fail-closed.
 - Add shell completions and packaged releases for Windows, macOS, and Linux.
 
 ## Reference Tools And Lessons
