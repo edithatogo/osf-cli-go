@@ -18,6 +18,8 @@
 - Future download safety package: `internal/download`.
 - Provider-qualified identity, metadata, lifecycle, and capability contracts:
   `internal/repository`; this package does not define a generic network client.
+- Read-only Zenodo published-record REST adapter: `internal/zenodoapi`; writes,
+  depositions, publication, and OAI-PMH remain outside this package.
 - Future reusable core packages should begin under `internal/`. Promote public packages only after the CLI behavior stabilizes and an MCP server track proves the package boundary.
 
 ## API Direction
@@ -50,6 +52,8 @@
 - Live API tests, when added, must be opt-in and skipped unless explicit environment variables are present.
 - Concrete repository descriptors must pass the reusable
   `internal/repository/conformancetest` suite before CLI or MCP exposure.
+- Zenodo REST tests use dated synthetic fixtures, bounded `httptest` transports,
+  race tests, and dedicated parser/pagination fuzz targets without live network.
 
 ## Tooling
 
