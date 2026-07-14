@@ -5,7 +5,7 @@ Reviewed: 2026-07-14
 ## Local candidate
 
 - Candidate version: `1.0.0-rc.1`
-- Source commit: `cb988fe25eb61a88a5af4b0d39447413d8273c1a`
+- Source commit: `026f3c8fe147205986952b2f08c7a585039edd92`
 - Build output: ignored local directory `dist/release-candidate/`
 - Build command: cross-compiled `cmd/osf` and `cmd/osf-mcp` for Linux,
   macOS, and Windows amd64/arm64 with `CGO_ENABLED=0` and embedded version,
@@ -27,18 +27,29 @@ Reviewed: 2026-07-14
   their required manifests, MCP configuration, documentation, skills, and
   server binary. Their checksums are recorded in the local build output.
 
-## Unresolved release gates
+## Hosted candidate verification
 
-- No immutable `v1.0.0-rc.1` tag or GitHub release was created.
-- OCI image build and digest verification were not run because Docker is not
-  available in this environment.
-- Cosign signature generation and verification were not run; keyless signing
-  requires the GitHub Actions OIDC environment.
-- GitHub build-provenance attestations were not generated for this local build.
-- Windows/macOS/Linux package installation was not independently exercised on
-  each supported runner.
+- Immutable tag: `v1.0.0-rc.1` at the source commit above.
+- Release Artifacts workflow: run
+  [29339418104](https://github.com/edithatogo/osf-cli-go/actions/runs/29339418104)
+  passed all six binary matrix jobs, native Linux/macOS/Windows version checks,
+  checksum generation, and release publication.
+- MCPB workflow: run
+  [29339418373](https://github.com/edithatogo/osf-cli-go/actions/runs/29339418373)
+  passed Linux, macOS, and Windows bundle builds and release upload.
+- Plugin workflow: run
+  [29339418952](https://github.com/edithatogo/osf-cli-go/actions/runs/29339418952)
+  passed Linux, macOS, and Windows plugin builds and release upload.
+- Release Security workflow: run
+  [29339418109](https://github.com/edithatogo/osf-cli-go/actions/runs/29339418109)
+  published the OCI image with BuildKit SBOM/provenance metadata and signed
+  immutable digest `sha256:7a34e65fab61c969ba144b05a0086a5f931da0d48ed3c48cf43034536bf08407`.
+- Independent Cosign verification passed against that digest with the
+  expected GitHub Actions OIDC identity.
+- The final GitHub release contains 36 clean RC assets: 12 binaries, 6
+  checksum files, 15 plugin archives, and 3 MCPB packages; no stale `0.3.2`
+  assets remain.
 
-The candidate is locally buildable and checksum-verifiable, but this evidence
-does not satisfy #98 until the hosted release workflow produces and verifies
-the signed OCI, SBOM, provenance, and package artifacts from an immutable
-release-candidate tag.
+Residual risk: this macOS environment cannot execute Windows/Linux binaries,
+so cross-platform verification relies on the native hosted runner checks and
+published checksum verification rather than local execution of every target.

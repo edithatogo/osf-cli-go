@@ -69,6 +69,13 @@ jobs:
           mkdir -p dist
           go build -trimpath -ldflags "-s -w -X main.version=$version" -o "dist/osf-$GOOS-$GOARCH$suffix" ./cmd/osf
           go build -trimpath -ldflags "-s -w -X main.version=$version" -o "dist/osf-mcp-$GOOS-$GOARCH$suffix" ./cmd/osf-mcp
+          case "$RUNNER_OS:$GOOS:$GOARCH" in
+            Linux:linux:amd64|macOS:darwin:arm64|Windows:windows:amd64)
+              expected="$version"
+              actual=$("dist/osf-$GOOS-$GOARCH$suffix" --version)
+              test "$actual" = "$expected"
+              ;;
+          esac
           GOOS= GOARCH= go run ./tools/checksums dist "dist/SHA256SUMS-$GOOS-$GOARCH.txt"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
