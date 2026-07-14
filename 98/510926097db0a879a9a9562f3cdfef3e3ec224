@@ -1,0 +1,1 @@
+Zenodo provider epic #101 decomposed into native subissues #102-#111 and matching Conductor tracks. Validation: checkfeaturematrix, checkreleasecontract, checkstubs, checkregistries, go test ./..., mkdocs build --strict, git diff --check.
