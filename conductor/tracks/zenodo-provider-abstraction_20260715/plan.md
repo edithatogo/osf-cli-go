@@ -15,7 +15,7 @@
 ## Phase 3: User and agent surfaces
 
 - [x] Task: Complete [provider-scoped CLI #105](../../archive/provider-scoped-cli_20260715/plan.md).
-- [x] Task: Complete [provider-scoped MCP #106](../provider-scoped-mcp_20260715/plan.md).
+- [x] Task: Complete [provider-scoped MCP #106](../../archive/provider-scoped-mcp_20260715/plan.md).
 - [ ] Task: Conductor - Automated Review and Checkpoint 'User and agent surfaces' (Protocol in workflow.md)
 
 ## Phase 4: Safe writes and movement
