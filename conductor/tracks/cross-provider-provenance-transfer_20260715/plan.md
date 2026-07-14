@@ -2,7 +2,7 @@
 
 ## Phase 1: Mapping and provenance
 
-- [ ] Task: Define directional mapping, dry-run report, provenance, licensing, access, and conflict contracts.
+- [~] Task: Define directional mapping, dry-run report, provenance, licensing, access, and conflict contracts.
 - [ ] Task: Define idempotency, checkpoints, compensation, and partial-result schemas.
 - [ ] Task: Conductor - Automated Review and Checkpoint 'Mapping and provenance' (Protocol in workflow.md)
 
