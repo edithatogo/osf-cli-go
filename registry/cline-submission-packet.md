@@ -1,6 +1,6 @@
 # Cline MCP Marketplace submission packet
 
-Status: prepared; provider submission and approval are pending.
+Status: submitted; provider review and approval are pending.
 
 ## Submission fields
 
@@ -33,5 +33,7 @@ upstream repository records the submission.
 
 ## External receipt
 
-Pending provider submission. Record the issue URL and any review response here
-after submission; do not replace this status with an approval claim.
+Submitted on 2026-07-14: <https://github.com/cline/mcp-marketplace/issues/2024>
+
+The issue is the submission receipt. Approval remains pending until the
+official marketplace repository reflects acceptance.
