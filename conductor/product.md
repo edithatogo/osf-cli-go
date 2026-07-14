@@ -44,8 +44,9 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
 - Manage tags, metadata fields, contributors, and licenses where OSF API permissions allow.
 - Export project snapshots including metadata, contributor lists, file inventories, wiki content, component hierarchy, and activity logs.
 - Support reproducible manifests for backup and audit workflows.
-- Add carefully gated Zenodo transfer/publication workflows after sandbox
-  evidence is complete.
+- Maintain live-validated, sandbox-only Zenodo draft transfer primitives and
+  add publication workflows only through the reviewed irreversible state
+  machine.
 - Add shell completions and packaged releases for Windows, macOS, and Linux.
 
 ## Reference Tools And Lessons

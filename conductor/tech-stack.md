@@ -64,6 +64,9 @@
   `internal/repository/conformancetest` suite before CLI or MCP exposure.
 - Zenodo REST tests use dated synthetic fixtures, bounded `httptest` transports,
   race tests, and dedicated parser/pagination fuzz targets without live network.
+- Zenodo draft transfers use offline failure injection plus the opt-in
+  `tools/zenodosandboxvalidation` disposable live harness; live credentials are
+  scoped, ephemeral, and never required by routine tests.
 - Zenodo OAI-PMH tests use synthetic XML fixtures, deterministic expiry clocks,
   strict parsing, and a dedicated parser fuzz target without live harvesting.
 
