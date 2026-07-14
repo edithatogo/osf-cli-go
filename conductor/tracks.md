@@ -80,5 +80,5 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [x] [zenodo-oai-pmh](archive/zenodo-oai-pmh_20260715/spec.md) — Implement Zenodo OAI-PMH harvesting as a separate adapter; subissue #107.
 - [x] [zenodo-sandbox-transfers](archive/zenodo-sandbox-transfers_20260715/spec.md) — Validate safe resumable Zenodo transfers in the sandbox; subissue #108.
 - [x] [zenodo-publication-state](archive/zenodo-publication-state_20260715/spec.md) — Model DOI and publication workflows as an irreversible state machine; subissue #109.
-- [~] [cross-provider-provenance-transfer](tracks/cross-provider-provenance-transfer_20260715/spec.md) — Design explicit cross-provider copy with provenance and recovery; subissue #110.
+- [x] [cross-provider-provenance-transfer](tracks/cross-provider-provenance-transfer_20260715/spec.md) — Design explicit cross-provider copy with provenance and recovery; subissue #110.
 - [ ] [multi-provider-release-integration](tracks/multi-provider-release-integration_20260715/spec.md) — Integrate provider validation into CI, releases, observability, and docs; subissue #111.
