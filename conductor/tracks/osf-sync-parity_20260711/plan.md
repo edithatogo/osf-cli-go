@@ -20,6 +20,6 @@
 ## Phase 3: Validation and Closeout
 
 - [x] Task: Update user docs, examples, release metadata, and the comparison matrix
-- [~] Task: Run full local and CI quality gates
-- [~] Task: Reconcile GitHub issue #13 with evidence and remaining external validation
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Validation and Closeout' (Protocol in workflow.md)
+- [x] Task: Run full local and CI quality gates
+- [x] Task: Reconcile GitHub issue #13 with evidence and remaining external validation
+- [x] Task: Conductor - Automated Review and Checkpoint 'Validation and Closeout' (Protocol in workflow.md)

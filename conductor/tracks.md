@@ -35,11 +35,11 @@ The per-track `plan.md` files are the source of truth for completion state.
 
 - [ ] [osfclient-cli-parity](tracks/osfclient-cli-parity_20260711/spec.md) — Benchmark osfclient CLI workflows and close usability gaps; source osfclient/osfclient; issue #9.
 
-- [ ] [osfr-entity-parity](tracks/osfr-entity-parity_20260711/spec.md) — Benchmark osfr entity coverage and conflict semantics; source ropensci/osfr; issue #10.
+- [~] [osfr-entity-parity](tracks/osfr-entity-parity_20260711/spec.md) — Benchmark osfr entity coverage and conflict semantics; source ropensci/osfr; issue #10.
 
-- [ ] [pyosf-sync-parity](tracks/pyosf-sync-parity_20260711/spec.md) — Benchmark pyosf synchronization and project workflows; source psychopy/pyosf; issue #11.
+- [~] [pyosf-sync-parity](tracks/pyosf-sync-parity_20260711/spec.md) — Benchmark pyosf synchronization and project workflows; source psychopy/pyosf; issue #11.
 
-- [ ] [osf-sync-parity](tracks/osf-sync-parity_20260711/spec.md) — Benchmark OSF Sync desktop synchronization semantics; source CenterForOpenScience/osf-sync; issue #13.
+- [x] [osf-sync-parity](tracks/osf-sync-parity_20260711/spec.md) — Benchmark OSF Sync desktop synchronization semantics; source CenterForOpenScience/osf-sync; issue #13.
 
 - [ ] [research-plugins-osf-parity](tracks/research-plugins-osf-parity_20260711/spec.md) — Add research-agent OSF discovery and full-text workflow parity; source wentorai/research-plugins; issue #16.
 
