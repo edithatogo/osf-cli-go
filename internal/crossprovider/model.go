@@ -189,7 +189,7 @@ func BuildMapping(request Request, capturedAt time.Time) (Report, error) {
 	return Report{
 		Direction: request.Direction, Destination: request.Destination,
 		PublishIntent: request.PublishIntent, Conflict: request.Conflict,
-		Target: target, Files: append([]File(nil), request.Source.Files...), Fields: fields,
+		Target: target, Files: sortedFiles(request.Source.Files), Fields: fields,
 		Blockers: blockers, Executable: len(blockers) == 0, IdempotencyKey: key,
 		Provenance: Provenance{
 			SourceIdentity: request.Source.Identity, DestinationProvider: request.Destination.Provider,
@@ -330,6 +330,7 @@ func setMapping(fields []FieldMapping, source string, disposition Disposition, r
 }
 
 func idempotencyKey(request Request, target Metadata) (string, error) {
+	request.Source.Files = sortedFiles(request.Source.Files)
 	canonical := struct {
 		Direction     Direction      `json:"direction"`
 		Source        Snapshot       `json:"source"`
@@ -344,6 +345,12 @@ func idempotencyKey(request Request, target Metadata) (string, error) {
 	}
 	digest := sha256.Sum256(encoded)
 	return "xfer-v1-" + hex.EncodeToString(digest[:]), nil
+}
+
+func sortedFiles(files []File) []File {
+	result := append([]File(nil), files...)
+	slices.SortFunc(result, func(left, right File) int { return strings.Compare(left.Path, right.Path) })
+	return result
 }
 
 func (metadata Metadata) clone() Metadata {
