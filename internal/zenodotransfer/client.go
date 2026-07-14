@@ -78,6 +78,26 @@ type UploadResult struct {
 	CheckpointPath string     `json:"checkpointPath,omitempty"`
 }
 
+// APIError preserves safe sandbox HTTP failure details without response headers
+// or credentials.
+type APIError struct {
+	StatusCode int
+	Method     string
+	Path       string
+	Message    string
+}
+
+func (err *APIError) Error() string {
+	if err == nil {
+		return "<nil>"
+	}
+	message := fmt.Sprintf("Zenodo sandbox %s %s returned %d", err.Method, err.Path, err.StatusCode)
+	if err.Message != "" {
+		message += ": " + err.Message
+	}
+	return message
+}
+
 // Client performs authenticated writes only against a configured Zenodo sandbox.
 type Client struct {
 	baseURL          *url.URL
@@ -217,6 +237,9 @@ func (client *Client) DeleteDraft(ctx context.Context, id string) error {
 		return err
 	}
 	_, _, err = client.do(ctx, http.MethodDelete, endpoint, nil, 0, true)
+	if isStatus(err, http.StatusNotFound) {
+		return nil
+	}
 	return err
 }
 
@@ -506,6 +529,13 @@ func (client *Client) do(ctx context.Context, method string, endpoint *url.URL, 
 			}
 			return nil, retries, fmt.Errorf("Zenodo sandbox request: %w", err)
 		}
+		if response.StatusCode >= 300 && response.StatusCode < 400 {
+			location, locationErr := response.Location()
+			if locationErr == nil && !client.sameAPI(location) {
+				_ = response.Body.Close()
+				return nil, retries, ErrCrossOrigin
+			}
+		}
 		if retryable && retryableStatus(response.StatusCode) && attempt < client.maxRetries {
 			_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 4<<10))
 			_ = response.Body.Close()
@@ -543,10 +573,7 @@ func (client *Client) responseError(request *http.Request, response *http.Respon
 	if len(message) > 1024 {
 		message = message[:1024] + "..."
 	}
-	if message != "" {
-		return fmt.Errorf("Zenodo sandbox %s %s returned %d: %s", request.Method, request.URL.Path, response.StatusCode, message)
-	}
-	return fmt.Errorf("Zenodo sandbox %s %s returned %d", request.Method, request.URL.Path, response.StatusCode)
+	return &APIError{StatusCode: response.StatusCode, Method: request.Method, Path: request.URL.Path, Message: message}
 }
 
 func (client *Client) resolve(reference string) (*url.URL, error) {
@@ -625,6 +652,11 @@ func readBounded(reader io.Reader, limit int64) ([]byte, error) {
 
 func retryableStatus(status int) bool {
 	return status == http.StatusTooManyRequests || status == http.StatusBadGateway || status == http.StatusServiceUnavailable || status == http.StatusGatewayTimeout
+}
+
+func isStatus(err error, status int) bool {
+	var apiErr *APIError
+	return errors.As(err, &apiErr) && apiErr.StatusCode == status
 }
 
 func retryDelay(value string, fallback time.Duration) time.Duration {

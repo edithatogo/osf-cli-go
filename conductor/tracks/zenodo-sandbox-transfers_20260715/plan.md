@@ -3,7 +3,7 @@
 ## Phase 1: Transfer implementation
 
 - [x] Task: Add Zenodo transfer configuration, upload/download, integrity, conflicts, cancellation, and checkpoints.
-- [ ] Task: Add offline tests for retries, resume, corruption, limits, cleanup, and redaction.
+- [x] Task: Add offline tests for retries, resume, corruption, limits, cleanup, and redaction.
 - [ ] Task: Conductor - Automated Review and Checkpoint 'Transfer implementation' (Protocol in workflow.md)
 
 ## Phase 2: Sandbox proof

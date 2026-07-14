@@ -275,6 +275,94 @@ func TestCancellationAndErrorsAreTruthfulAndRedacted(t *testing.T) {
 	}
 }
 
+func TestCrossOriginRedirectDoesNotForwardAuthorization(t *testing.T) {
+	t.Parallel()
+	var received atomic.Bool
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "" {
+			received.Store(true)
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer target.Close()
+	source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, target.URL+"/api/deposit/depositions", http.StatusTemporaryRedirect)
+	}))
+	defer source.Close()
+	client, err := New(source.URL+"/api/", "secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.CreateDraft(t.Context()); !errors.Is(err, ErrCrossOrigin) {
+		t.Fatalf("CreateDraft error = %v", err)
+	}
+	if received.Load() {
+		t.Fatal("authorization reached cross-origin redirect target")
+	}
+}
+
+func TestControlResponseLimitAndIdempotentCleanup(t *testing.T) {
+	t.Parallel()
+	var deletes atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodDelete {
+			if deletes.Add(1) == 1 {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				return
+			}
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		_, _ = io.WriteString(w, strings.Repeat("x", 33))
+	}))
+	defer server.Close()
+	client, err := New(server.URL+"/api/", "secret", WithMaxResponseBytes(32), WithRetryPolicy(1, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.ListDraftFiles(t.Context(), "123"); !errors.Is(err, ErrResponseTooLarge) {
+		t.Fatalf("ListDraftFiles error = %v", err)
+	}
+	if err := client.DeleteDraft(t.Context(), "123"); err != nil {
+		t.Fatalf("DeleteDraft: %v", err)
+	}
+	if deletes.Load() != 2 {
+		t.Fatalf("delete attempts = %d, want 2", deletes.Load())
+	}
+}
+
+func TestInvalidConfigurationAndTransferInputs(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.NotFoundHandler())
+	defer server.Close()
+	for name, option := range map[string]Option{
+		"response limit": WithMaxResponseBytes(0),
+		"file limit":     WithMaxFileBytes(0),
+		"file count":     WithMaxFiles(0),
+		"retry count":    WithRetryPolicy(-1, 0),
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			if _, err := New(server.URL+"/api/", "secret", option); err == nil {
+				t.Fatal("New returned nil error")
+			}
+		})
+	}
+	client, err := New(server.URL+"/api/", "secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := client.DeleteDraft(t.Context(), ""); err == nil {
+		t.Fatal("DeleteDraft accepted empty id")
+	}
+	if _, err := client.DownloadFile(t.Context(), RemoteFile{}, filepath.Join(t.TempDir(), "out"), download.ConflictFail); err == nil {
+		t.Fatal("DownloadFile accepted empty remote")
+	}
+	if _, err := client.UploadFile(t.Context(), Draft{}, "missing", "../escape", download.ConflictFail); err == nil {
+		t.Fatal("UploadFile accepted invalid draft and filename")
+	}
+}
+
 func mustURL(t *testing.T, value string) *url.URL {
 	t.Helper()
 	parsed, err := url.Parse(value)
