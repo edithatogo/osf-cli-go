@@ -5,8 +5,8 @@ Score target: 100% of applicable criteria in
 
 ## Phase 1: Packet
 
-- [ ] Task: Prepare logo, reason for addition, and Cline installation guide
-- [ ] Task: Validate package, README, environment variables, and release version
+- [x] Task: Prepare logo, reason for addition, and Cline installation guide
+- [x] Task: Validate package, README, environment variables, and release version
 - [ ] Task: Conductor - Automated Review and Checkpoint 'Packet' (Protocol in workflow.md)
 
 ## Phase 2: Submission

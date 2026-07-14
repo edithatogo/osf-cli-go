@@ -1,0 +1,25 @@
+{
+  "identifier": "osf-cli-go",
+  "name": "OSF CLI Go",
+  "version": "0.3.2",
+  "description": "Read-only Open Science Framework MCP tools for projects, files, contributors, registrations, preprints, and search.",
+  "summary": "Read-only OSF research-data MCP server.",
+  "author": "edithatogo",
+  "homepage": "https://github.com/edithatogo/osf-cli-go",
+  "repository": "https://github.com/edithatogo/osf-cli-go",
+  "license": "Apache-2.0",
+  "icon": "https://raw.githubusercontent.com/edithatogo/osf-cli-go/main/assets/osf-mcp-logo.png",
+  "tags": ["osf", "open-science", "research", "mcp"],
+  "mcpServers": {
+    "osf": {
+      "type": "stdio",
+      "command": "go",
+      "args": ["run", "./cmd/osf-mcp"],
+      "env": {
+        "OSF_TOKEN": "${OSF_TOKEN}",
+        "OSF_USERNAME": "${OSF_USERNAME}",
+        "OSF_PASSWORD": "${OSF_PASSWORD}"
+      }
+    }
+  }
+}

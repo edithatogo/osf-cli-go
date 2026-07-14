@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" role="img" aria-labelledby="title desc">
+  <title id="title">OSF MCP</title>
+  <desc id="desc">Open Science Framework MCP server mark</desc>
+  <rect width="400" height="400" rx="48" fill="#1f4d3a"/>
+  <circle cx="200" cy="200" r="122" fill="#f3f0e8"/>
+  <path d="M200 96c-57 0-104 46-104 104 0 47 31 87 74 100v-43c-20-11-34-32-34-57 0-35 29-64 64-64s64 29 64 64c0 25-14 46-34 57v43c43-13 74-53 74-100 0-58-47-104-104-104Z" fill="#1f4d3a"/>
+  <path d="M200 153c-26 0-47 21-47 47s21 47 47 47 47-21 47-47-21-47-47-47Zm0 64c-9 0-17-8-17-17s8-17 17-17 17 8 17 17-8 17-17 17Z" fill="#d47b45"/>
+</svg>

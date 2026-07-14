@@ -5,8 +5,8 @@ Score target: 100% of applicable criteria in
 
 ## Phase 1: Prepare
 
-- [ ] Task: Validate LobeHub CLI prerequisites and inspect current listing state
-- [ ] Task: Add and validate `lhm.plugin.json` without credentials
+- [x] Task: Validate LobeHub CLI prerequisites and inspect current listing state
+- [x] Task: Add and validate `lhm.plugin.json` without credentials
 - [ ] Task: Conductor - Automated Review and Checkpoint 'Prepare' (Protocol in workflow.md)
 
 ## Phase 2: Authenticated submission
