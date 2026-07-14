@@ -217,11 +217,20 @@ func (client *Client) CreateDraft(ctx context.Context) (Draft, error) {
 		return Draft{}, fmt.Errorf("decode Zenodo draft: %w", err)
 	}
 	id := rawID(payload.ID)
-	if id == "" || strings.TrimSpace(payload.Links.Bucket) == "" {
+	if id == "" {
 		return Draft{}, errors.New("decode Zenodo draft: id or bucket link is missing")
 	}
+	cleanupFailure := func(cause error) (Draft, error) {
+		if cleanupErr := client.DeleteDraft(context.WithoutCancel(ctx), id); cleanupErr != nil {
+			return Draft{}, errors.Join(cause, fmt.Errorf("cleanup malformed Zenodo draft %s: %w", id, cleanupErr))
+		}
+		return Draft{}, cause
+	}
+	if strings.TrimSpace(payload.Links.Bucket) == "" {
+		return cleanupFailure(errors.New("decode Zenodo draft: id or bucket link is missing"))
+	}
 	if _, err := client.approveLink(payload.Links.Bucket); err != nil {
-		return Draft{}, fmt.Errorf("validate Zenodo draft bucket: %w", err)
+		return cleanupFailure(fmt.Errorf("validate Zenodo draft bucket: %w", err))
 	}
 	return Draft{ID: id, BucketURL: payload.Links.Bucket}, nil
 }
@@ -380,6 +389,10 @@ func (client *Client) DownloadFile(ctx context.Context, remote RemoteFile, desti
 	if remote.Size < 0 || strings.TrimSpace(remote.DownloadURL) == "" {
 		return download.ResumeResult{}, errors.New("Zenodo remote file size and download URL are required")
 	}
+	checksum := normalizeChecksum(remote.Checksum)
+	if !validMD5(checksum) {
+		return download.ResumeResult{}, errors.New("Zenodo remote file requires a valid MD5 checksum")
+	}
 	endpoint, err := client.approveLink(remote.DownloadURL)
 	if err != nil {
 		return download.ResumeResult{}, fmt.Errorf("validate Zenodo download link: %w", err)
@@ -388,7 +401,7 @@ func (client *Client) DownloadFile(ctx context.Context, remote RemoteFile, desti
 		return client.openDownload(ctx, endpoint, offset)
 	}, download.ResumeOptions{
 		Destination: destination, Source: endpoint.String(), ExpectedSize: &remote.Size,
-		ExpectedChecksum: normalizeChecksum(remote.Checksum), Policy: policy, Context: ctx, Emitter: client.emitter,
+		ExpectedChecksum: checksum, Policy: policy, Context: ctx, Emitter: client.emitter,
 	})
 }
 
@@ -515,7 +528,11 @@ func (client *Client) do(ctx context.Context, method string, endpoint *url.URL, 
 		request.Header.Set("Accept", "application/json")
 		request.Header.Set("Authorization", "Bearer "+client.token)
 		if body != nil {
-			request.Header.Set("Content-Type", "application/octet-stream")
+			contentType := "application/octet-stream"
+			if method == http.MethodPost {
+				contentType = "application/json"
+			}
+			request.Header.Set("Content-Type", contentType)
 			request.ContentLength = contentLength
 		}
 		response, err := client.httpClient.Do(request)
@@ -632,6 +649,14 @@ func normalizeChecksum(value string) string {
 		return "md5:" + value
 	}
 	return value
+}
+
+func validMD5(value string) bool {
+	if !strings.HasPrefix(value, "md5:") || len(value) != len("md5:")+32 {
+		return false
+	}
+	_, err := hex.DecodeString(strings.TrimPrefix(value, "md5:"))
+	return err == nil
 }
 
 func validContentRange(value string, offset int64) bool {

@@ -358,8 +358,39 @@ func TestInvalidConfigurationAndTransferInputs(t *testing.T) {
 	if _, err := client.DownloadFile(t.Context(), RemoteFile{}, filepath.Join(t.TempDir(), "out"), download.ConflictFail); err == nil {
 		t.Fatal("DownloadFile accepted empty remote")
 	}
+	if _, err := client.DownloadFile(t.Context(), RemoteFile{Size: 1, DownloadURL: server.URL + "/api/file"}, filepath.Join(t.TempDir(), "out"), download.ConflictFail); err == nil {
+		t.Fatal("DownloadFile accepted missing checksum")
+	}
 	if _, err := client.UploadFile(t.Context(), Draft{}, "missing", "../escape", download.ConflictFail); err == nil {
 		t.Fatal("UploadFile accepted invalid draft and filename")
+	}
+}
+
+func TestCreateDraftCleansMalformedProviderResponse(t *testing.T) {
+	t.Parallel()
+	var deleted atomic.Bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			if r.Header.Get("Content-Type") != "application/json" {
+				t.Errorf("Content-Type = %q", r.Header.Get("Content-Type"))
+			}
+			_, _ = io.WriteString(w, `{"id":123,"links":{"bucket":"https://zenodo.org/api/files/unsafe"}}`)
+		case http.MethodDelete:
+			deleted.Store(true)
+			w.WriteHeader(http.StatusNoContent)
+		}
+	}))
+	defer server.Close()
+	client, err := New(server.URL+"/api/", "secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.CreateDraft(t.Context()); err == nil {
+		t.Fatal("CreateDraft accepted unsafe bucket")
+	}
+	if !deleted.Load() {
+		t.Fatal("CreateDraft did not clean malformed draft")
 	}
 }
 
