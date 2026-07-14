@@ -25,6 +25,14 @@ The working evidence set is maintained in the [feature
 matrix](feature-matrix.md), [registry scorecard](registry-scorecard.md), and
 the [1.0 hardening and maturity track](https://github.com/edithatogo/osf-cli-go/blob/master/conductor/archive/v1-hardening-maturity_20260713/spec.md).
 
+## Post-1.0 provider roadmap
+
+Zenodo support is a staged post-1.0 roadmap item, tracked in [#101](https://github.com/edithatogo/osf-cli-go/issues/101). The first milestone is
+offline read-only capability mapping and fixture-backed discovery. Transfers,
+DOI reservation, publication, and any OSF-to-Zenodo movement require explicit
+provider capabilities, sandbox validation, authorization, cleanup, and
+provenance evidence; they are not implied by the roadmap entry.
+
 ## Recommended sequence
 
 1. Implement [resumable transfers (#95)](https://github.com/edithatogo/osf-cli-go/issues/95) and [structured observability (#96)](https://github.com/edithatogo/osf-cli-go/issues/96).

@@ -71,3 +71,4 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [~] [live-osf-release-validation](tracks/live-osf-release-validation_20260714/spec.md) — Run live OSF validation for the 1.0 release candidate; issue #97.
 - [x] [release-candidate-provenance](tracks/release-candidate-provenance_20260714/spec.md) — Verify v1.0 release-candidate supply chain and provenance; issue #98.
 - [x] [compatibility-contract-freeze](archive/compatibility-contract-freeze_20260714/spec.md) — Freeze OSF API and CLI/MCP compatibility contracts for 1.0; issue #99.
+- [ ] [zenodo-provider-abstraction](tracks/zenodo-provider-abstraction_20260715/spec.md) — Add Zenodo support through a provider-neutral OSF/Zenodo research repository model; issue #101.
