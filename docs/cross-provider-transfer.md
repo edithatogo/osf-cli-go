@@ -82,6 +82,14 @@ the exact checkpoint-derived challenge. A failed publication response is
 recorded as outcome `unknown`, not `false`, and requires destination inspection
 before retrying.
 
+Finalization writes a deterministic `.osf-cli-go-provenance.json` sidecar with
+the complete mapping report and source-to-destination filename map. This keeps
+identifier and version values, field dispositions, source identity, native-
+metadata digest, transformations, and the idempotency key inspectable with the
+unpublished destination draft.
+
 Compensating a partial saga marks successfully reversed mutations as
 `compensated` and never-executed steps as `abandoned`. Compensation failures
 remain serializable as `compensation_failed` checkpoints for operator recovery.
+Files acknowledged as `skip_identical` are recorded as non-mutations and are
+never deleted by compensation.

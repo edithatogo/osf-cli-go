@@ -107,6 +107,8 @@ func TestZenodoSandboxDestinationFailureReplayIntegrityAndCompensation(t *testin
 	digest := sha256.Sum256(content)
 	request := validRequest(t)
 	request.Source.Files = []File{{Path: "nested/data.txt", Size: int64(len(content)), Checksum: "sha256:" + hex.EncodeToString(digest[:])}}
+	request.Source.Metadata.Identifiers = []Identifier{{Scheme: "url", Value: "https://osf.io/example/"}}
+	request.Source.Metadata.Version = "2026.07"
 	report, err := BuildMapping(request, time.Now())
 	if err != nil {
 		t.Fatal(err)
@@ -131,11 +133,25 @@ func TestZenodoSandboxDestinationFailureReplayIntegrityAndCompensation(t *testin
 		t.Fatalf("creates=%d metadata=%d publish=%d", createCalls.Load(), metadataCalls.Load(), publishCalls.Load())
 	}
 	mu.Lock()
-	_, provenancePresent := files[provenanceFilename]
+	provenanceFile, provenancePresent := files[provenanceFilename]
 	_, dataPresent := files[zenodoRemoteName("nested/data.txt")]
 	mu.Unlock()
 	if !provenancePresent || !dataPresent {
 		t.Fatalf("provenance=%t data=%t", provenancePresent, dataPresent)
+	}
+	var sidecar struct {
+		Report Report `json:"report"`
+	}
+	if err := json.Unmarshal(provenanceFile.content, &sidecar); err != nil || sidecar.Report.Target.Version != "2026.07" || len(sidecar.Report.Target.Identifiers) != 1 {
+		t.Fatalf("sidecar=%+v err=%v", sidecar, err)
+	}
+	mu.Lock()
+	dataFile := files[zenodoRemoteName("nested/data.txt")]
+	dataFile.checksum = "md5:00000000000000000000000000000000"
+	files[dataFile.name] = dataFile
+	mu.Unlock()
+	if err := destination.VerifyDraft(t.Context(), completed.Checkpoint.DestinationRef, report, "verify-again"); err == nil || !strings.Contains(err.Error(), "checksum") {
+		t.Fatalf("tampered verification error = %v", err)
 	}
 	compensated, err := Compensate(t.Context(), completed.Checkpoint, destination)
 	if err != nil || compensated.Status != SagaCompensated || !deletedDraft.Load() {

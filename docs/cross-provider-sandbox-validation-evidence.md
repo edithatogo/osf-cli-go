@@ -4,7 +4,7 @@
 - Date: 2026-07-14
 - Sandbox host: sandbox.zenodo.org
 - Source identity: osf:project:synthetic-sandbox-validation
-- Destination draft: 565279
+- Destination draft: 565282
 - Idempotency key: xfer-v1-8feda86e0ab3f7989da8931fba4d353ea007856acfb1b85a1bd9c92f82015f80
 - File: bytes=45 checksum=sha256:a6d942581fb1076258a779f8974320ca1974991cb66a489a22d3a967a7795f4d
 - Execution status: completed

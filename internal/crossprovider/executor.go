@@ -27,7 +27,7 @@ type DraftDestination interface {
 	ApplyMetadata(context.Context, string, Metadata, Provenance, string) (string, error)
 	CopyFile(context.Context, string, File, io.Reader, ConflictPolicy, string) (FileReceipt, error)
 	VerifyDraft(context.Context, string, Report, string) error
-	FinalizeDraft(context.Context, string, Provenance, string) error
+	FinalizeDraft(context.Context, string, Report, string) error
 }
 
 // Publisher is deliberately separate from DraftDestination.
@@ -126,11 +126,11 @@ func executeDraftStep(ctx context.Context, report Report, checkpoint *Checkpoint
 		if strings.TrimSpace(receipt.ResourceRef) == "" {
 			return StepResult{}, fmt.Errorf("%w: file %s destination resource reference is missing", ErrIntegrityMismatch, step.File.Path)
 		}
-		return StepResult{DestinationRef: receipt.ResourceRef, RollbackRef: receipt.RollbackRef}, nil
+		return StepResult{DestinationRef: receipt.ResourceRef, RollbackRef: receipt.RollbackRef, Skipped: receipt.Skipped}, nil
 	case StepVerifyDraft:
 		return StepResult{}, destination.VerifyDraft(ctx, draft, report, step.ID)
 	case StepFinalizeDraft:
-		return StepResult{}, destination.FinalizeDraft(ctx, draft, report.Provenance, step.ID)
+		return StepResult{}, destination.FinalizeDraft(ctx, draft, report, step.ID)
 	default:
 		return StepResult{}, fmt.Errorf("%w: unsupported draft step %q", ErrInvalidCheckpoint, step.Kind)
 	}

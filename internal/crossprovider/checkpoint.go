@@ -73,6 +73,7 @@ type Step struct {
 	Error                string           `json:"error,omitempty"`
 	DestinationRef       string           `json:"destinationRef,omitempty"`
 	RollbackRef          string           `json:"rollbackRef,omitempty"`
+	Skipped              bool             `json:"skipped,omitempty"`
 	Compensation         CompensationKind `json:"compensation"`
 	RequiresConfirmation bool             `json:"requiresConfirmation"`
 }
@@ -81,6 +82,7 @@ type Step struct {
 type StepResult struct {
 	DestinationRef string `json:"destinationRef,omitempty"`
 	RollbackRef    string `json:"rollbackRef,omitempty"`
+	Skipped        bool   `json:"skipped,omitempty"`
 }
 
 // Checkpoint is a versioned, serializable saga state.
@@ -195,6 +197,9 @@ func (checkpoint Checkpoint) Validate() error {
 		if step.State != StepPending && step.State != StepCompleted && step.State != StepFailed && step.State != StepCompensated && step.State != StepAbandoned {
 			return fmt.Errorf("%w: step %s state %q is invalid", ErrInvalidCheckpoint, step.ID, step.State)
 		}
+		if step.Skipped && (step.Kind != StepCopyFile || step.State != StepCompleted || checkpoint.Conflict != ConflictSkipIdentical) {
+			return fmt.Errorf("%w: only a completed skip_identical copy step may be skipped", ErrInvalidCheckpoint)
+		}
 		if seenIncomplete && (step.State == StepCompleted || step.State == StepCompensated) {
 			return fmt.Errorf("%w: completed step follows an incomplete step", ErrInvalidCheckpoint)
 		}
@@ -231,6 +236,9 @@ func (checkpoint *Checkpoint) Complete(stepID string, result StepResult) error {
 	if step.Kind == StepCreateDestination && strings.TrimSpace(result.DestinationRef) == "" {
 		return fmt.Errorf("%w: destination creation requires its native reference", ErrInvalidCheckpoint)
 	}
+	if result.Skipped && (step.Kind != StepCopyFile || checkpoint.Conflict != ConflictSkipIdentical) {
+		return fmt.Errorf("%w: step %s cannot record a skipped mutation", ErrInvalidCheckpoint, step.ID)
+	}
 	if step.Compensation == CompensationRestoreFile || step.Compensation == CompensationRestoreMetadata {
 		if strings.TrimSpace(result.RollbackRef) == "" {
 			return fmt.Errorf("%w: step %s requires a rollback reference", ErrInvalidCheckpoint, step.ID)
@@ -238,7 +246,7 @@ func (checkpoint *Checkpoint) Complete(stepID string, result StepResult) error {
 	}
 	step.State, step.Error = StepCompleted, ""
 	step.Attempts++
-	step.DestinationRef, step.RollbackRef = result.DestinationRef, result.RollbackRef
+	step.DestinationRef, step.RollbackRef, step.Skipped = result.DestinationRef, result.RollbackRef, result.Skipped
 	if step.Kind == StepCreateDestination && result.DestinationRef != "" {
 		checkpoint.DestinationRef = result.DestinationRef
 	}
@@ -314,7 +322,7 @@ func (checkpoint Checkpoint) CompensationPlan() ([]CompensationAction, error) {
 	var actions []CompensationAction
 	for i := len(checkpoint.Steps) - 1; i >= 0; i-- {
 		step := checkpoint.Steps[i]
-		if step.State != StepCompleted || step.Compensation == CompensationNone {
+		if step.State != StepCompleted || step.Compensation == CompensationNone || step.Skipped {
 			continue
 		}
 		actions = append(actions, CompensationAction{

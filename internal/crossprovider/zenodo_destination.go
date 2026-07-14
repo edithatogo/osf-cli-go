@@ -35,6 +35,7 @@ type ZenodoSandboxDestination struct {
 	created  map[string]bool
 	receipts map[string]FileReceipt
 	files    map[string]map[string]string
+	md5s     map[string]map[string]string
 }
 
 // NewZenodoSandboxDestination creates a deposit:write-only destination.
@@ -50,7 +51,7 @@ func NewZenodoSandboxDestination(baseURL, token string) (*ZenodoSandboxDestinati
 	return &ZenodoSandboxDestination{
 		transfer: transfer, publish: publish, now: time.Now,
 		drafts: make(map[string]zenodotransfer.Draft), created: make(map[string]bool), receipts: make(map[string]FileReceipt),
-		files: make(map[string]map[string]string),
+		files: make(map[string]map[string]string), md5s: make(map[string]map[string]string),
 	}, nil
 }
 
@@ -143,8 +144,10 @@ func (destination *ZenodoSandboxDestination) CopyFile(ctx context.Context, draft
 	destination.receipts[stepID] = receipt
 	if destination.files[draftID] == nil {
 		destination.files[draftID] = make(map[string]string)
+		destination.md5s[draftID] = make(map[string]string)
 	}
 	destination.files[draftID][file.Path] = remoteName
+	destination.md5s[draftID][file.Path] = strings.TrimPrefix(result.Remote.Checksum, "md5:")
 	destination.mu.Unlock()
 	return receipt, nil
 }
@@ -160,14 +163,17 @@ func (destination *ZenodoSandboxDestination) VerifyDraft(ctx context.Context, dr
 	}
 	for _, source := range report.Files {
 		remoteFile, ok := inventory[zenodoRemoteName(source.Path)]
-		if !ok || remoteFile.Size != source.Size {
-			return fmt.Errorf("%w: Zenodo draft file %s is missing or has the wrong size", ErrIntegrityMismatch, source.Path)
+		destination.mu.Lock()
+		expectedMD5 := destination.md5s[draftID][source.Path]
+		destination.mu.Unlock()
+		if !ok || remoteFile.Size != source.Size || expectedMD5 == "" || !strings.EqualFold(strings.TrimPrefix(remoteFile.Checksum, "md5:"), expectedMD5) {
+			return fmt.Errorf("%w: Zenodo draft file %s is missing or has the wrong size or checksum", ErrIntegrityMismatch, source.Path)
 		}
 	}
 	return nil
 }
 
-func (destination *ZenodoSandboxDestination) FinalizeDraft(ctx context.Context, draftID string, provenance Provenance, stepID string) error {
+func (destination *ZenodoSandboxDestination) FinalizeDraft(ctx context.Context, draftID string, report Report, stepID string) error {
 	destination.mu.Lock()
 	fileMap := make(map[string]string, len(destination.files[draftID]))
 	for source, remote := range destination.files[draftID] {
@@ -177,9 +183,9 @@ func (destination *ZenodoSandboxDestination) FinalizeDraft(ctx context.Context, 
 	payload := struct {
 		SchemaVersion int               `json:"schemaVersion"`
 		StepID        string            `json:"stepId"`
-		Provenance    Provenance        `json:"provenance"`
+		Report        Report            `json:"report"`
 		Files         map[string]string `json:"files"`
-	}{SchemaVersion: 1, StepID: stepID, Provenance: provenance, Files: fileMap}
+	}{SchemaVersion: 1, StepID: stepID, Report: report, Files: fileMap}
 	encoded, err := json.MarshalIndent(payload, "", "  ")
 	if err != nil {
 		return err

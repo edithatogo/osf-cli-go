@@ -27,6 +27,7 @@ type fakeDestination struct {
 	published     bool
 	publishErr    error
 	compensateErr error
+	skipCopy      bool
 }
 
 func (destination *fakeDestination) CreateDraft(_ context.Context, stepID string) (string, error) {
@@ -52,7 +53,7 @@ func (destination *fakeDestination) CopyFile(_ context.Context, draft string, fi
 	if destination.badChecksum {
 		checksum = "sha256:wrong"
 	}
-	return FileReceipt{ResourceRef: "remote-" + file.Path, Size: int64(len(content)), Checksum: checksum}, nil
+	return FileReceipt{ResourceRef: "remote-" + file.Path, Size: int64(len(content)), Checksum: checksum, Skipped: destination.skipCopy}, nil
 }
 
 func (destination *fakeDestination) VerifyDraft(_ context.Context, draft string, _ Report, stepID string) error {
@@ -60,7 +61,7 @@ func (destination *fakeDestination) VerifyDraft(_ context.Context, draft string,
 	return nil
 }
 
-func (destination *fakeDestination) FinalizeDraft(_ context.Context, draft string, _ Provenance, stepID string) error {
+func (destination *fakeDestination) FinalizeDraft(_ context.Context, draft string, _ Report, stepID string) error {
 	destination.calls = append(destination.calls, "finalize:"+draft+":"+stepID)
 	return nil
 }
@@ -205,6 +206,33 @@ func TestCompensateAppliesReversePlan(t *testing.T) {
 		t.Fatalf("compensated = %+v err=%v", compensated, err)
 	}
 	if countCall(destination.calls, "compensate:") != 2 {
+		t.Fatalf("calls = %+v", destination.calls)
+	}
+}
+
+func TestCompensateDoesNotDeleteSkippedDestinationFile(t *testing.T) {
+	t.Parallel()
+	request := validRequest(t)
+	request.Conflict = ConflictSkipIdentical
+	report, err := BuildMapping(request, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkpoint, err := NewCheckpoint(report)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source := memorySource{files: map[string][]byte{"data.csv": bytes.Repeat([]byte("x"), 42)}}
+	destination := &fakeDestination{skipCopy: true}
+	result, err := Execute(t.Context(), report, checkpoint, source, destination)
+	if err != nil {
+		t.Fatal(err)
+	}
+	compensated, err := Compensate(t.Context(), result.Checkpoint, destination)
+	if err != nil || compensated.Status != SagaCompensated {
+		t.Fatalf("compensated = %+v err=%v", compensated, err)
+	}
+	if containsCall(destination.calls, "compensate:delete_file") || countCall(destination.calls, "compensate:") != 1 {
 		t.Fatalf("calls = %+v", destination.calls)
 	}
 }

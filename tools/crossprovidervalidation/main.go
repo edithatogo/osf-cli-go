@@ -128,9 +128,11 @@ func run(ctx context.Context, live bool) (result evidence, runErr error) {
 	result.DestinationDraft = executed.Checkpoint.DestinationRef
 	if err != nil {
 		if result.DestinationDraft != "" {
-			cleanupErr := destination.Compensate(context.WithoutCancel(ctx), crossprovider.CompensationAction{
+			cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+			cleanupErr := destination.Compensate(cleanupCtx, crossprovider.CompensationAction{
 				Kind: crossprovider.CompensationDiscardDraft, DestinationRef: result.DestinationDraft,
 			})
+			cancel()
 			result.DraftDeleted = cleanupErr == nil
 			result.CompensationStatus = "emergency-cleanup"
 			err = errors.Join(err, cleanupErr)
@@ -139,7 +141,9 @@ func run(ctx context.Context, live bool) (result evidence, runErr error) {
 	}
 	result.ExecutionStatus = string(executed.Checkpoint.Status)
 	result.Published = executed.Partial.Published
-	compensated, err := crossprovider.Compensate(ctx, executed.Checkpoint, destination)
+	cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+	compensated, err := crossprovider.Compensate(cleanupCtx, executed.Checkpoint, destination)
+	cancel()
 	result.CompensationStatus = string(compensated.Status)
 	result.DraftDeleted = err == nil && compensated.Status == crossprovider.SagaCompensated
 	if err != nil {
