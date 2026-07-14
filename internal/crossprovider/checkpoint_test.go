@@ -231,6 +231,37 @@ func TestPartialResultReportsEveryFileTruthfully(t *testing.T) {
 	}
 }
 
+func TestCompensatePartialSagaMarksUnexecutedStepsAbandoned(t *testing.T) {
+	t.Parallel()
+	request := validRequest(t)
+	request.Source.Files = append(request.Source.Files, File{Path: "later.txt", Size: 1, Checksum: "sha256:def"})
+	report, err := BuildMapping(request, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkpoint, err := NewCheckpoint(report)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := checkpoint.Complete(checkpoint.Steps[0].ID, StepResult{DestinationRef: "draft-123"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkpoint.Complete(checkpoint.Steps[1].ID, StepResult{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkpoint.Fail(checkpoint.Steps[2].ID, errors.New("copy failed")); err != nil {
+		t.Fatal(err)
+	}
+	compensated, err := Compensate(t.Context(), checkpoint, &fakeDestination{})
+	if err != nil || compensated.Status != SagaCompensated {
+		t.Fatalf("checkpoint = %+v err=%v", compensated, err)
+	}
+	partial, err := compensated.PartialResult()
+	if err != nil || len(partial.AbandonedFiles) != 2 || len(partial.CompletedFiles) != 0 {
+		t.Fatalf("partial = %+v err=%v", partial, err)
+	}
+}
+
 func TestFileOrderingDoesNotChangeIdempotency(t *testing.T) {
 	t.Parallel()
 	request := validRequest(t)

@@ -21,8 +21,8 @@ identifiers, version, native metadata, and files. Each field is marked as:
 A private OSF source has no implicit Zenodo access equivalent. The report stays
 non-executable until the caller chooses an explicit open, embargoed, restricted,
 or closed Zenodo policy. Open and embargoed Zenodo targets also require an
-explicit source or target license. Zenodo open access maps to OSF public visibility; embargoed,
-restricted, and closed access map only to private visibility, with the richer
+explicit source or target license. Zenodo open access maps to OSF public
+visibility; embargoed, restricted, and closed access map only to private visibility, with the richer
 access, license, identifier, and version semantics preserved in provenance.
 
 ## Identity and replay
@@ -61,3 +61,21 @@ files are deleted, replaced files/metadata require caller-provided rollback
 references, and a newly created draft is discarded last. Once publication has
 completed, compensation is rejected because the provider boundary is
 irreversible.
+
+## Safe execution
+
+The executor consumes provider adapters rather than inferring provider behavior.
+Each create, metadata, file, verify, and finalize call receives its deterministic
+step ID, allowing an adapter to return the prior receipt after an ambiguous
+response. Completed steps are never replayed. Destination file receipts must
+match the source size and checksum and include a concrete resource reference.
+
+Draft execution never calls a publisher. When `publish_after_copy` was planned,
+execution stops with a pending publish step. A separate publish call requires
+the exact checkpoint-derived challenge. A failed publication response is
+recorded as outcome `unknown`, not `false`, and requires destination inspection
+before retrying.
+
+Compensating a partial saga marks successfully reversed mutations as
+`compensated` and never-executed steps as `abandoned`. Compensation failures
+remain serializable as `compensation_failed` checkpoints for operator recovery.

@@ -20,11 +20,13 @@ var (
 type SagaStatus string
 
 const (
-	SagaPending     SagaStatus = "pending"
-	SagaRunning     SagaStatus = "running"
-	SagaPartial     SagaStatus = "partial"
-	SagaCompleted   SagaStatus = "completed"
-	SagaCompensated SagaStatus = "compensated"
+	SagaPending            SagaStatus = "pending"
+	SagaRunning            SagaStatus = "running"
+	SagaPartial            SagaStatus = "partial"
+	SagaCompleted          SagaStatus = "completed"
+	SagaCompensating       SagaStatus = "compensating"
+	SagaCompensationFailed SagaStatus = "compensation_failed"
+	SagaCompensated        SagaStatus = "compensated"
 )
 
 // StepKind identifies one ordered transfer operation.
@@ -47,6 +49,7 @@ const (
 	StepCompleted   StepState = "completed"
 	StepFailed      StepState = "failed"
 	StepCompensated StepState = "compensated"
+	StepAbandoned   StepState = "abandoned"
 )
 
 // CompensationKind describes a reversible draft-only action.
@@ -104,12 +107,15 @@ type CompensationAction struct {
 
 // PartialResult reports file and lifecycle outcomes without claiming completion.
 type PartialResult struct {
-	Status         SagaStatus `json:"status"`
-	DestinationRef string     `json:"destinationRef,omitempty"`
-	CompletedFiles []File     `json:"completedFiles,omitempty"`
-	FailedFiles    []File     `json:"failedFiles,omitempty"`
-	PendingFiles   []File     `json:"pendingFiles,omitempty"`
-	Published      bool       `json:"published"`
+	Status             SagaStatus `json:"status"`
+	DestinationRef     string     `json:"destinationRef,omitempty"`
+	CompletedFiles     []File     `json:"completedFiles,omitempty"`
+	FailedFiles        []File     `json:"failedFiles,omitempty"`
+	PendingFiles       []File     `json:"pendingFiles,omitempty"`
+	CompensatedFiles   []File     `json:"compensatedFiles,omitempty"`
+	AbandonedFiles     []File     `json:"abandonedFiles,omitempty"`
+	Published          bool       `json:"published"`
+	PublicationOutcome string     `json:"publicationOutcome"`
 }
 
 // NewCheckpoint constructs deterministic ordered steps from an executable report.
@@ -159,7 +165,7 @@ func (checkpoint Checkpoint) Validate() error {
 	if checkpoint.SchemaVersion != 1 || !strings.HasPrefix(checkpoint.IdempotencyKey, "xfer-v1-") || len(checkpoint.Steps) == 0 {
 		return fmt.Errorf("%w: schema, idempotency key, and steps are required", ErrInvalidCheckpoint)
 	}
-	validStatus := checkpoint.Status == SagaPending || checkpoint.Status == SagaRunning || checkpoint.Status == SagaPartial || checkpoint.Status == SagaCompleted || checkpoint.Status == SagaCompensated
+	validStatus := checkpoint.Status == SagaPending || checkpoint.Status == SagaRunning || checkpoint.Status == SagaPartial || checkpoint.Status == SagaCompleted || checkpoint.Status == SagaCompensating || checkpoint.Status == SagaCompensationFailed || checkpoint.Status == SagaCompensated
 	if !validStatus {
 		return fmt.Errorf("%w: status %q is invalid", ErrInvalidCheckpoint, checkpoint.Status)
 	}
@@ -186,13 +192,13 @@ func (checkpoint Checkpoint) Validate() error {
 		if step.ID != deterministicStepID(checkpoint.IdempotencyKey, i, step) {
 			return fmt.Errorf("%w: step %d id is invalid", ErrInvalidCheckpoint, i+1)
 		}
-		if step.State != StepPending && step.State != StepCompleted && step.State != StepFailed && step.State != StepCompensated {
+		if step.State != StepPending && step.State != StepCompleted && step.State != StepFailed && step.State != StepCompensated && step.State != StepAbandoned {
 			return fmt.Errorf("%w: step %s state %q is invalid", ErrInvalidCheckpoint, step.ID, step.State)
 		}
-		if seenIncomplete && step.State == StepCompleted {
+		if seenIncomplete && (step.State == StepCompleted || step.State == StepCompensated) {
 			return fmt.Errorf("%w: completed step follows an incomplete step", ErrInvalidCheckpoint)
 		}
-		if step.State != StepCompleted && step.State != StepCompensated {
+		if step.State != StepCompleted && step.State != StepCompensated && step.State != StepAbandoned {
 			seenIncomplete = true
 			allComplete = false
 		}
@@ -203,10 +209,10 @@ func (checkpoint Checkpoint) Validate() error {
 			return fmt.Errorf("%w: step %s compensation %q is invalid", ErrInvalidCheckpoint, step.ID, step.Compensation)
 		}
 	}
-	if hasFailed && checkpoint.Status != SagaPartial {
+	if hasFailed && checkpoint.Status != SagaPartial && checkpoint.Status != SagaCompensating && checkpoint.Status != SagaCompensationFailed {
 		return fmt.Errorf("%w: failed step requires partial status", ErrInvalidCheckpoint)
 	}
-	if allComplete && checkpoint.Status != SagaCompleted && checkpoint.Status != SagaCompensated {
+	if allComplete && checkpoint.Status != SagaCompleted && checkpoint.Status != SagaCompensating && checkpoint.Status != SagaCompensationFailed && checkpoint.Status != SagaCompensated {
 		return fmt.Errorf("%w: completed steps require terminal status", ErrInvalidCheckpoint)
 	}
 	if !allComplete && !hasFailed && (checkpoint.Status == SagaCompleted || checkpoint.Status == SagaCompensated) {
@@ -268,7 +274,7 @@ func (checkpoint *Checkpoint) nextIndex(stepID string) (int, error) {
 	}
 	for i := range checkpoint.Steps {
 		state := checkpoint.Steps[i].State
-		if state == StepCompleted || state == StepCompensated {
+		if state == StepCompleted || state == StepCompensated || state == StepAbandoned {
 			continue
 		}
 		if checkpoint.Steps[i].ID != stepID {
@@ -288,7 +294,7 @@ func Resume(report Report, checkpoint Checkpoint) ([]Step, error) {
 		return nil, err
 	}
 	for i, step := range checkpoint.Steps {
-		if step.State != StepCompleted && step.State != StepCompensated {
+		if step.State != StepCompleted && step.State != StepCompensated && step.State != StepAbandoned {
 			return append([]Step(nil), checkpoint.Steps[i:]...), nil
 		}
 	}
@@ -324,10 +330,18 @@ func (checkpoint Checkpoint) PartialResult() (PartialResult, error) {
 	if err := checkpoint.Validate(); err != nil {
 		return PartialResult{}, err
 	}
-	result := PartialResult{Status: checkpoint.Status, DestinationRef: checkpoint.DestinationRef}
+	result := PartialResult{Status: checkpoint.Status, DestinationRef: checkpoint.DestinationRef, PublicationOutcome: "not_requested"}
 	for _, step := range checkpoint.Steps {
-		if step.Kind == StepPublish && step.State == StepCompleted {
-			result.Published = true
+		if step.Kind == StepPublish {
+			switch step.State {
+			case StepCompleted:
+				result.Published = true
+				result.PublicationOutcome = "confirmed"
+			case StepFailed:
+				result.PublicationOutcome = "unknown"
+			default:
+				result.PublicationOutcome = "pending"
+			}
 		}
 		if step.Kind != StepCopyFile {
 			continue
@@ -337,6 +351,10 @@ func (checkpoint Checkpoint) PartialResult() (PartialResult, error) {
 			result.CompletedFiles = append(result.CompletedFiles, step.File)
 		case StepFailed:
 			result.FailedFiles = append(result.FailedFiles, step.File)
+		case StepCompensated:
+			result.CompensatedFiles = append(result.CompensatedFiles, step.File)
+		case StepAbandoned:
+			result.AbandonedFiles = append(result.AbandonedFiles, step.File)
 		default:
 			result.PendingFiles = append(result.PendingFiles, step.File)
 		}
