@@ -67,6 +67,10 @@
 - Zenodo draft transfers use offline failure injection plus the opt-in
   `tools/zenodosandboxvalidation` disposable live harness; live credentials are
   scoped, ephemeral, and never required by routine tests.
+- Zenodo publication uses offline state/transport tests plus the opt-in
+  `tools/zenodopublicationvalidation` sandbox harness. Non-idempotent actions
+  are never retried, live tokens are least-privilege and revoked after use, and
+  production publication remains rejected.
 - Zenodo OAI-PMH tests use synthetic XML fixtures, deterministic expiry clocks,
   strict parsing, and a dedicated parser fuzz target without live harvesting.
 
