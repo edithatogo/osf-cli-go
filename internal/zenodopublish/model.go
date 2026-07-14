@@ -89,41 +89,41 @@ type Request struct {
 
 // Plan is the validated, non-secret lifecycle decision consumed by execution.
 type Plan struct {
-	RecordID      string   `json:"recordId"`
-	From          State    `json:"from"`
-	To            State    `json:"to"`
-	Action        Action   `json:"action"`
-	RequiredScope Scope    `json:"requiredScope"`
-	DryRun        bool     `json:"dryRun"`
-	Destructive   bool     `json:"destructive"`
-	Irreversible  bool     `json:"irreversible"`
-	Confirmation  string   `json:"confirmation,omitempty"`
-	Metadata      Metadata `json:"metadata"`
+	RecordID       string   `json:"recordId"`
+	From           State    `json:"from"`
+	To             State    `json:"to"`
+	Action         Action   `json:"action"`
+	RequiredScopes []Scope  `json:"requiredScopes"`
+	DryRun         bool     `json:"dryRun"`
+	Destructive    bool     `json:"destructive"`
+	Irreversible   bool     `json:"irreversible"`
+	Confirmation   string   `json:"confirmation,omitempty"`
+	Metadata       Metadata `json:"metadata"`
 }
 
 type transition struct {
 	to           State
-	scope        Scope
+	scopes       []Scope
 	destructive  bool
 	irreversible bool
 }
 
 var transitions = map[State]map[Action]transition{
 	StateDraft: {
-		ActionReserveDOI: {to: StateDOIReserved, scope: ScopeDepositWrite},
-		ActionPublish:    {to: StatePublished, scope: ScopeDepositActions, irreversible: true},
-		ActionDiscard:    {to: StateDiscarded, scope: ScopeDepositWrite, destructive: true},
+		ActionReserveDOI: {to: StateDOIReserved, scopes: []Scope{ScopeDepositWrite}},
+		ActionPublish:    {to: StatePublished, scopes: []Scope{ScopeDepositWrite, ScopeDepositActions}, irreversible: true},
+		ActionDiscard:    {to: StateDiscarded, scopes: []Scope{ScopeDepositWrite}, destructive: true},
 	},
 	StateDOIReserved: {
-		ActionPublish: {to: StatePublished, scope: ScopeDepositActions, irreversible: true},
-		ActionDiscard: {to: StateDiscarded, scope: ScopeDepositWrite, destructive: true},
+		ActionPublish: {to: StatePublished, scopes: []Scope{ScopeDepositWrite, ScopeDepositActions}, irreversible: true},
+		ActionDiscard: {to: StateDiscarded, scopes: []Scope{ScopeDepositWrite}, destructive: true},
 	},
 	StatePublished: {
-		ActionNewVersion: {to: StateVersionDraft, scope: ScopeDepositActions},
+		ActionNewVersion: {to: StateVersionDraft, scopes: []Scope{ScopeDepositActions}},
 	},
 	StateVersionDraft: {
-		ActionPublish: {to: StatePublished, scope: ScopeDepositActions, irreversible: true},
-		ActionDiscard: {to: StatePublished, scope: ScopeDepositWrite, destructive: true},
+		ActionPublish: {to: StatePublished, scopes: []Scope{ScopeDepositWrite, ScopeDepositActions}, irreversible: true},
+		ActionDiscard: {to: StatePublished, scopes: []Scope{ScopeDepositWrite}, destructive: true},
 	},
 }
 
@@ -144,10 +144,12 @@ func BuildPlan(request Request, now time.Time) (Plan, error) {
 	if !request.Authorized {
 		return Plan{}, ErrAuthorizationRequired
 	}
-	if !hasScope(request.Scopes, decision.scope) {
-		return Plan{}, fmt.Errorf("%w: %s", ErrScopeRequired, decision.scope)
+	for _, required := range decision.scopes {
+		if !hasScope(request.Scopes, required) {
+			return Plan{}, fmt.Errorf("%w: %s", ErrScopeRequired, required)
+		}
 	}
-	if request.Action == ActionPublish {
+	if request.Action == ActionPublish || request.Action == ActionReserveDOI {
 		if err := request.Metadata.validate(now); err != nil {
 			return Plan{}, err
 		}
@@ -158,7 +160,7 @@ func BuildPlan(request Request, now time.Time) (Plan, error) {
 	}
 	return Plan{
 		RecordID: recordID, From: request.State, To: decision.to, Action: request.Action,
-		RequiredScope: decision.scope, DryRun: request.DryRun, Destructive: decision.destructive,
+		RequiredScopes: append([]Scope(nil), decision.scopes...), DryRun: request.DryRun, Destructive: decision.destructive,
 		Irreversible: decision.irreversible, Confirmation: challenge, Metadata: request.Metadata.clone(),
 	}, nil
 }

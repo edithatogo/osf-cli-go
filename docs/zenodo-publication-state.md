@@ -10,12 +10,12 @@ created.
 | Current state | Action | Result | Scope | Confirmation |
 |---|---|---|---|---|
 | `draft` | reserve DOI | `doi_reserved` | `deposit:write` | explicit authorization |
-| `draft` | publish | `published` | `deposit:actions` | exact challenge; irreversible |
+| `draft` | publish | `published` | `deposit:write`, `deposit:actions` | exact challenge; irreversible |
 | `draft` | discard | `discarded` | `deposit:write` | exact challenge; destructive |
-| `doi_reserved` | publish | `published` | `deposit:actions` | exact challenge; irreversible |
+| `doi_reserved` | publish | `published` | `deposit:write`, `deposit:actions` | exact challenge; irreversible |
 | `doi_reserved` | discard | `discarded` | `deposit:write` | exact challenge; destructive |
 | `published` | new version | `version_draft` | `deposit:actions` | explicit authorization |
-| `version_draft` | publish | `published` | `deposit:actions` | exact challenge; irreversible |
+| `version_draft` | publish | `published` | `deposit:write`, `deposit:actions` | exact challenge; irreversible |
 | `version_draft` | discard | `published` | `deposit:write` | exact challenge; destructive |
 
 All other state/action pairs fail locally. `discarded` is terminal. A published
@@ -24,8 +24,8 @@ new-version draft leaves the preceding published version available.
 
 ## Publication metadata
 
-Publication requires a non-empty title, description, upload type, and at least
-one named creator. Access policy is validated as follows:
+DOI reservation and publication require a non-empty title, description, upload
+type, and at least one named creator. Access policy is validated as follows:
 
 - `open` requires a license and rejects embargo or access-condition fields.
 - `embargoed` requires a license and a future embargo date.
@@ -39,7 +39,9 @@ whether a particular identifier is accepted.
 ## Safety gates
 
 Every action requires a provider-specific record ID, explicit authorization,
-and the exact token scope represented in the plan. Dry-run returns the expected
+and every token scope represented in the plan. Publication requires both write
+and action scopes because validated metadata is applied before publication;
+the irreversible action is never retried automatically. Dry-run returns the expected
 target state and deterministic confirmation challenge without performing HTTP.
 Publish and discard execute only when that exact challenge is supplied.
 

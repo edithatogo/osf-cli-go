@@ -19,10 +19,10 @@ func TestPlanAcceptsEverySupportedTransition(t *testing.T) {
 		scopes []Scope
 	}{
 		{name: "reserve DOI", state: StateDraft, action: ActionReserveDOI, to: StateDOIReserved, scopes: []Scope{ScopeDepositWrite}},
-		{name: "publish draft", state: StateDraft, action: ActionPublish, to: StatePublished, scopes: []Scope{ScopeDepositActions}},
-		{name: "publish reserved DOI", state: StateDOIReserved, action: ActionPublish, to: StatePublished, scopes: []Scope{ScopeDepositActions}},
+		{name: "publish draft", state: StateDraft, action: ActionPublish, to: StatePublished, scopes: []Scope{ScopeDepositWrite, ScopeDepositActions}},
+		{name: "publish reserved DOI", state: StateDOIReserved, action: ActionPublish, to: StatePublished, scopes: []Scope{ScopeDepositWrite, ScopeDepositActions}},
 		{name: "new version", state: StatePublished, action: ActionNewVersion, to: StateVersionDraft, scopes: []Scope{ScopeDepositActions}},
-		{name: "publish version", state: StateVersionDraft, action: ActionPublish, to: StatePublished, scopes: []Scope{ScopeDepositActions}},
+		{name: "publish version", state: StateVersionDraft, action: ActionPublish, to: StatePublished, scopes: []Scope{ScopeDepositWrite, ScopeDepositActions}},
 		{name: "discard draft", state: StateDraft, action: ActionDiscard, to: StateDiscarded, scopes: []Scope{ScopeDepositWrite}},
 		{name: "discard reserved DOI", state: StateDOIReserved, action: ActionDiscard, to: StateDiscarded, scopes: []Scope{ScopeDepositWrite}},
 		{name: "discard version draft", state: StateVersionDraft, action: ActionDiscard, to: StatePublished, scopes: []Scope{ScopeDepositWrite}},
@@ -69,7 +69,7 @@ func TestPlanRejectsEveryOtherStateActionPair(t *testing.T) {
 func TestPlanRequiresAuthorizationScopesAndConfirmation(t *testing.T) {
 	t.Parallel()
 	now := time.Date(2026, 7, 15, 0, 0, 0, 0, time.UTC)
-	base := Request{RecordID: "123", State: StateDraft, Action: ActionPublish, Scopes: []Scope{ScopeDepositActions}, Metadata: validMetadata()}
+	base := Request{RecordID: "123", State: StateDraft, Action: ActionPublish, Scopes: []Scope{ScopeDepositWrite, ScopeDepositActions}, Metadata: validMetadata()}
 	if _, err := BuildPlan(base, now); !errors.Is(err, ErrAuthorizationRequired) {
 		t.Fatalf("authorization error = %v", err)
 	}
@@ -78,7 +78,7 @@ func TestPlanRequiresAuthorizationScopesAndConfirmation(t *testing.T) {
 	if _, err := BuildPlan(base, now); !errors.Is(err, ErrScopeRequired) {
 		t.Fatalf("scope error = %v", err)
 	}
-	base.Scopes = []Scope{ScopeDepositActions}
+	base.Scopes = []Scope{ScopeDepositWrite, ScopeDepositActions}
 	if _, err := BuildPlan(base, now); !errors.Is(err, ErrConfirmationRequired) {
 		t.Fatalf("confirmation error = %v", err)
 	}
@@ -131,7 +131,7 @@ func TestMetadataPolicy(t *testing.T) {
 			t.Parallel()
 			metadata := validMetadata()
 			test.mutate(&metadata)
-			request := Request{RecordID: "123", State: StateDraft, Action: ActionPublish, Authorized: true, DryRun: true, Scopes: []Scope{ScopeDepositActions}, Metadata: metadata}
+			request := Request{RecordID: "123", State: StateDraft, Action: ActionPublish, Authorized: true, DryRun: true, Scopes: []Scope{ScopeDepositWrite, ScopeDepositActions}, Metadata: metadata}
 			if _, err := BuildPlan(request, now); !errors.Is(err, ErrInvalidMetadata) {
 				t.Fatalf("metadata error = %v", err)
 			}
@@ -141,7 +141,7 @@ func TestMetadataPolicy(t *testing.T) {
 
 func TestAuditEventIsRedacted(t *testing.T) {
 	t.Parallel()
-	request := Request{RecordID: "123", State: StateDraft, Action: ActionPublish, Authorized: true, DryRun: true, Scopes: []Scope{ScopeDepositActions}, Metadata: validMetadata()}
+	request := Request{RecordID: "123", State: StateDraft, Action: ActionPublish, Authorized: true, DryRun: true, Scopes: []Scope{ScopeDepositWrite, ScopeDepositActions}, Metadata: validMetadata()}
 	plan, err := BuildPlan(request, time.Date(2026, 7, 15, 0, 0, 0, 0, time.UTC))
 	if err != nil {
 		t.Fatal(err)
@@ -161,7 +161,7 @@ func TestPlanOwnsValidatedMetadata(t *testing.T) {
 	metadata.EmbargoDate = &embargoDate
 	request := Request{
 		RecordID: "123", State: StateDraft, Action: ActionPublish, Authorized: true,
-		DryRun: true, Scopes: []Scope{ScopeDepositActions}, Metadata: metadata,
+		DryRun: true, Scopes: []Scope{ScopeDepositWrite, ScopeDepositActions}, Metadata: metadata,
 	}
 	plan, err := BuildPlan(request, time.Date(2026, 7, 15, 0, 0, 0, 0, time.UTC))
 	if err != nil {
