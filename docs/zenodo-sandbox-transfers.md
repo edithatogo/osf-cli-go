@@ -34,3 +34,26 @@ authorization header.
 This package is an internal sandbox validation surface. No Zenodo write command
 or MCP tool is advertised. Publication is separately governed by the
 publication-state track and cannot be reached through this adapter.
+
+## Disposable validation
+
+Generate a credential-free dry-run evidence record with:
+
+```sh
+go run ./tools/zenodosandboxvalidation
+```
+
+Run the live sandbox proof only with a dedicated sandbox token and explicit
+opt-in:
+
+```sh
+ZENODO_TOKEN="..." \
+ZENODO_BASE_URL="https://sandbox.zenodo.org/api/" \
+ZENODO_SANDBOX_VALIDATION=1 \
+go run ./tools/zenodosandboxvalidation -live
+```
+
+The harness creates one unpublished draft, uploads a generated file, verifies a
+complete download, deliberately interrupts and resumes a second download, and
+then deletes the draft even when a transfer step fails. Its evidence contains
+only the sandbox host, byte counts, checksums, status, and cleanup outcome.

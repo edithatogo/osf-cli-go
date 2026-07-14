@@ -253,6 +253,36 @@ func TestDownloadRejectsWrongContentRange(t *testing.T) {
 	}
 }
 
+func TestValidateResumableDownloadUsesProviderRange(t *testing.T) {
+	t.Parallel()
+	content := []byte("sandbox-resume-content")
+	digest := md5.Sum(content)
+	var ranges []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ranges = append(ranges, r.Header.Get("Range"))
+		if r.Header.Get("Range") == "bytes=7-" {
+			w.Header().Set("Content-Range", fmt.Sprintf("bytes 7-%d/%d", len(content)-1, len(content)))
+			w.WriteHeader(http.StatusPartialContent)
+			_, _ = w.Write(content[7:])
+			return
+		}
+		_, _ = w.Write(content)
+	}))
+	defer server.Close()
+	client, err := New(server.URL+"/api/", "secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	remote := RemoteFile{ID: "file", Name: "result.txt", Size: int64(len(content)), Checksum: "md5:" + hex.EncodeToString(digest[:]), DownloadURL: server.URL + "/api/file"}
+	result, err := client.ValidateResumableDownload(t.Context(), remote, filepath.Join(t.TempDir(), "download"), 7)
+	if err != nil || !result.Resumed || !result.Completed {
+		t.Fatalf("ValidateResumableDownload = %+v err=%v", result, err)
+	}
+	if len(ranges) != 2 || ranges[0] != "" || ranges[1] != "bytes=7-" {
+		t.Fatalf("ranges = %#v", ranges)
+	}
+}
+
 func TestCancellationAndErrorsAreTruthfulAndRedacted(t *testing.T) {
 	t.Parallel()
 	const token = "sandbox-secret-token"

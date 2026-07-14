@@ -405,6 +405,51 @@ func (client *Client) DownloadFile(ctx context.Context, remote RemoteFile, desti
 	})
 }
 
+// ValidateResumableDownload deterministically interrupts a sandbox download at
+// the requested byte count and then requires the normal checkpointed transfer
+// to continue with a provider range response. It is intended for the opt-in
+// disposable sandbox validation harness.
+func (client *Client) ValidateResumableDownload(ctx context.Context, remote RemoteFile, destination string, interruptAfter int64) (download.ResumeResult, error) {
+	if interruptAfter <= 0 || interruptAfter >= remote.Size {
+		return download.ResumeResult{}, errors.New("Zenodo resume validation offset must be within the remote file")
+	}
+	checksum := normalizeChecksum(remote.Checksum)
+	if !validMD5(checksum) {
+		return download.ResumeResult{}, errors.New("Zenodo remote file requires a valid MD5 checksum")
+	}
+	endpoint, err := client.approveLink(remote.DownloadURL)
+	if err != nil {
+		return download.ResumeResult{}, fmt.Errorf("validate Zenodo download link: %w", err)
+	}
+	first, firstErr := download.ResumeStreamAtomically(func(offset int64) (io.ReadCloser, error) {
+		body, err := client.openDownload(ctx, endpoint, offset)
+		if err != nil {
+			return nil, err
+		}
+		return &limitedReadCloser{Reader: io.LimitReader(body, interruptAfter), Closer: body}, nil
+	}, download.ResumeOptions{
+		Destination: destination, Source: endpoint.String(), ExpectedSize: &remote.Size,
+		ExpectedChecksum: checksum, Policy: download.ConflictOverwrite, Context: ctx, Emitter: client.emitter,
+	})
+	partialInfo, statErr := os.Stat(destination + ".part")
+	if firstErr == nil || first.Completed || statErr != nil || partialInfo.Size() != interruptAfter {
+		return download.ResumeResult{}, fmt.Errorf("Zenodo resume validation did not stop at %d bytes: result=%+v error=%v", interruptAfter, first, firstErr)
+	}
+	result, err := client.DownloadFile(ctx, remote, destination, download.ConflictOverwrite)
+	if err != nil {
+		return result, fmt.Errorf("resume Zenodo validation download: %w", err)
+	}
+	if !result.Resumed {
+		return result, errors.New("Zenodo validation download restarted instead of resuming")
+	}
+	return result, nil
+}
+
+type limitedReadCloser struct {
+	io.Reader
+	io.Closer
+}
+
 type filePayload struct {
 	ID       json.RawMessage `json:"id"`
 	Filename string          `json:"filename"`
