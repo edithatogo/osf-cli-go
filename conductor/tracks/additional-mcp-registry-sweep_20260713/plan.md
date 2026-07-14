@@ -14,5 +14,5 @@
 
 ## Phase 3: Closeout
 
-- [~] Task: Run registry contract checks and reconcile issue #49
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Closeout' (Protocol in workflow.md)
+- [x] Task: Run registry contract checks and reconcile issue #49
+- [x] Task: Conductor - Automated Review and Checkpoint 'Closeout' (Protocol in workflow.md)
