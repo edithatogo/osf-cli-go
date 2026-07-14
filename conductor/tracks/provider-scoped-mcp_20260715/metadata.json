@@ -1,7 +1,7 @@
 {
   "track_id": "provider-scoped-mcp_20260715",
   "type": "feature",
-  "status": "in_progress",
+  "status": "completed",
   "created_at": "2026-07-15T00:00:00Z",
   "updated_at": "2026-07-15T00:00:00Z",
   "description": "Expose capability-aware provider-scoped MCP read tools",
