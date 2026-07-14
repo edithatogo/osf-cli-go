@@ -8,6 +8,6 @@
 
 ## Phase 2: Read operations
 
-- [~] Task: Implement records search, record retrieval, and file listing.
-- [ ] Task: Validate cancellation, retries, observability, and public access offline.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Read operations' (Protocol in workflow.md)
+- [x] Task: Implement records search, record retrieval, and file listing.
+- [x] Task: Validate cancellation, retries, observability, and public access offline.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Read operations' (Protocol in workflow.md)

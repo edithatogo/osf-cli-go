@@ -17,6 +17,7 @@ nav:
   - Zenodo API provenance: zenodo-api-provenance.md
   - Zenodo provider roadmap: zenodo-provider-roadmap.md
   - Repository provider contract: repository-provider-contract.md
+  - Zenodo read-only client: zenodo-readonly-client.md
   - Development: development.md
   - Contributing: contributing.md
   - Release checklist: release-checklist.md

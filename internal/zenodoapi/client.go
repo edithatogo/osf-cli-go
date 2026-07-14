@@ -91,12 +91,12 @@ func New(baseURL string, options ...Option) (*Client, error) {
 		return nil, fmt.Errorf("parse Zenodo base URL: %w", err)
 	}
 	if (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.Host == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" {
-		return nil, errors.New("Zenodo base URL must be a plain HTTP(S) URL without credentials, query, or fragment")
+		return nil, errors.New("zenodo base URL must be a plain HTTP(S) URL without credentials, query, or fragment")
 	}
 	host := strings.ToLower(parsed.Hostname())
 	isLocal := host == "127.0.0.1" || host == "localhost" || host == "::1"
 	if parsed.Scheme == "http" && !isLocal {
-		return nil, errors.New("Zenodo base URL requires HTTPS except for local tests")
+		return nil, errors.New("zenodo base URL requires HTTPS except for local tests")
 	}
 	if !isLocal && host != "zenodo.org" && host != "sandbox.zenodo.org" {
 		return nil, fmt.Errorf("unapproved Zenodo API host %q", parsed.Host)
@@ -116,7 +116,7 @@ func New(baseURL string, options ...Option) (*Client, error) {
 		client.httpClient = &http.Client{Timeout: defaultHTTPTimeout}
 	}
 	if client.maxResponseBytes <= 0 || client.maxPages <= 0 || client.maxConcurrency <= 0 || client.maxRetries < 0 || client.retryDelay < 0 {
-		return nil, errors.New("Zenodo response, page, and retry budgets must be positive and retries non-negative")
+		return nil, errors.New("zenodo response, page, and retry budgets must be positive and retries non-negative")
 	}
 	configuredHTTP := *client.httpClient
 	previousRedirect := configuredHTTP.CheckRedirect
@@ -147,7 +147,7 @@ func (client *Client) LastRateLimit() RateLimit {
 // SearchRecords searches published records and follows bounded same-origin pagination.
 func (client *Client) SearchRecords(ctx context.Context, query string, limit int) ([]Record, error) {
 	if limit < 0 {
-		return nil, errors.New("Zenodo search limit must not be negative")
+		return nil, errors.New("zenodo search limit must not be negative")
 	}
 	endpoint, err := client.resolve("records/")
 	if err != nil {
@@ -171,7 +171,7 @@ func (client *Client) SearchRecords(ctx context.Context, query string, limit int
 			return nil, ErrPaginationLimit
 		}
 		if seen[endpoint.String()] {
-			return nil, errors.New("Zenodo pagination cycle detected")
+			return nil, errors.New("zenodo pagination cycle detected")
 		}
 		seen[endpoint.String()] = true
 		body, _, err := client.get(ctx, endpoint)
@@ -206,7 +206,7 @@ func (client *Client) SearchRecords(ctx context.Context, query string, limit int
 func (client *Client) GetRecord(ctx context.Context, id string) (Record, error) {
 	id = strings.TrimSpace(id)
 	if id == "" {
-		return Record{}, errors.New("Zenodo record id is required")
+		return Record{}, errors.New("zenodo record id is required")
 	}
 	endpoint, err := client.resolve("records/" + url.PathEscape(id))
 	if err != nil {
