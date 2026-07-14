@@ -17,17 +17,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type countingReader struct {
-	reader io.Reader
-	n      int64
-}
-
-func (r *countingReader) Read(p []byte) (int, error) {
-	n, err := r.reader.Read(p)
-	r.n += int64(n)
-	return n, err
-}
-
 func int64Ptr(v int64) *int64 {
 	return &v
 }
