@@ -23,6 +23,8 @@ Reviewed: 2026-07-14
   classes, stdout separation, API events, transfer events, and MCP errors.
 - `docs/observability.md` and `docs/operations-runbook.md` document opt-in
   configuration, destinations, retention, troubleshooting, and compatibility.
+- Review remediation redacts directly supplied event error messages and forces
+  existing file destinations to owner-only `0600` permissions before use.
 
 ## Safety boundary
 

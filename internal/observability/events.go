@@ -139,6 +139,10 @@ func OpenFromEnv(stderr io.Writer) (Emitter, io.Closer, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("open observability log: %w", err)
 	}
+	if err := file.Chmod(0o600); err != nil {
+		_ = file.Close()
+		return nil, nil, fmt.Errorf("set observability log permissions: %w", err)
+	}
 	return &FileEmitter{JSONEmitter: NewJSONEmitter(file, os.Getenv("OSF_EVENT_LEVEL")), file: file}, file, nil
 }
 
@@ -286,7 +290,7 @@ func RedactedError(err error, secrets ...string) *Error {
 func sanitizeEvent(event Event) Event {
 	event.Fields = redactMap(event.Fields)
 	if event.Error != nil {
-		event.Error = &Error{Class: event.Error.Class, Message: redactMessage(event.Error.Message)}
+		event.Error = &Error{Class: event.Error.Class, Message: redactMessage(auth.Redact(event.Error.Message))}
 	}
 	return event
 }
