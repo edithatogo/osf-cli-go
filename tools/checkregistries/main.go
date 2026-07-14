@@ -77,6 +77,15 @@ type glamaMetadata struct {
 	Maintainers []string `json:"maintainers"`
 }
 
+type qualityReport struct {
+	SchemaVersion int    `json:"schemaVersion"`
+	Version       string `json:"version"`
+	Summary       struct {
+		Failed int    `json:"failed"`
+		Status string `json:"status"`
+	} `json:"summary"`
+}
+
 type submissionScorecard struct {
 	SchemaVersion int               `json:"schemaVersion"`
 	ReviewedDate  string            `json:"reviewedDate"`
@@ -215,6 +224,13 @@ func run() error {
 	}
 	if err := checkSubmissionScorecard(scorecard, server.Version); err != nil {
 		return err
+	}
+	var quality qualityReport
+	if err := readJSON("docs/mcp-quality-report.json", &quality); err != nil {
+		return err
+	}
+	if quality.SchemaVersion != 1 || quality.Version != server.Version || quality.Summary.Status != "passed" || quality.Summary.Failed != 0 {
+		return fmt.Errorf("MCP quality report is not a passing report for server version %q", server.Version)
 	}
 	return nil
 }

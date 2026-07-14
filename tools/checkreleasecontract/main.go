@@ -13,6 +13,15 @@ type manifest struct {
 	Version string `json:"version"`
 }
 
+type qualityReport struct {
+	SchemaVersion int    `json:"schemaVersion"`
+	Version       string `json:"version"`
+	Summary       struct {
+		Failed int    `json:"failed"`
+		Status string `json:"status"`
+	} `json:"summary"`
+}
+
 type apiSchemaSource struct {
 	SchemaVersion int    `json:"schemaVersion"`
 	SourceCommit  string `json:"sourceCommit"`
@@ -98,6 +107,7 @@ func run() error {
 		"docs/release-candidate-evidence.md",
 		"docs/v1-launch-roadmap.md",
 		"docs/v1-launch-review.md",
+		"docs/mcp-quality-report.json",
 	}
 	for _, path := range required {
 		if _, err := os.Stat(path); err != nil {
@@ -115,6 +125,13 @@ func run() error {
 	}
 	if openPlugin.Version != server.Version {
 		return fmt.Errorf(".plugin/plugin.json version %q does not match server version %q", openPlugin.Version, server.Version)
+	}
+	var quality qualityReport
+	if err := readJSON("docs/mcp-quality-report.json", &quality); err != nil {
+		return err
+	}
+	if quality.SchemaVersion != 1 || quality.Version != server.Version || quality.Summary.Status != "passed" || quality.Summary.Failed != 0 {
+		return fmt.Errorf("MCP quality report is not a passing report for server version %q", server.Version)
 	}
 	var schemaSource apiSchemaSource
 	if err := readJSON("docs/osf-api-schema-source.json", &schemaSource); err != nil {

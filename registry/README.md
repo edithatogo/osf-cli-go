@@ -9,6 +9,10 @@ readiness score, evidence, next action, and blocker for every target. A score
 is never treated as provider approval without a provider receipt and public
 listing URL.
 
+The compatibility harness emits [`docs/mcp-quality-report.json`](../docs/mcp-quality-report.json).
+Release and registry checks require this report to have the current package
+version and a passing offline status; live OSF validation remains opt-in.
+
 ## Official MCP Registry
 
 Primary package route: OCI image on GitHub Container Registry.
