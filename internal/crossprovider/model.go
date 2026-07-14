@@ -116,6 +116,7 @@ type Request struct {
 	PublishIntent PublishIntent  `json:"publishIntent"`
 	Conflict      ConflictPolicy `json:"conflict"`
 	TargetAccess  *AccessPolicy  `json:"targetAccess,omitempty"`
+	TargetLicense string         `json:"targetLicense,omitempty"`
 }
 
 // Disposition states how one source semantic is handled.
@@ -154,6 +155,7 @@ type Report struct {
 	Target         Metadata       `json:"target"`
 	Files          []File         `json:"files"`
 	Fields         []FieldMapping `json:"fields"`
+	NativeFields   []FieldMapping `json:"nativeFields,omitempty"`
 	Blockers       []string       `json:"blockers,omitempty"`
 	Executable     bool           `json:"executable"`
 	IdempotencyKey string         `json:"idempotencyKey"`
@@ -164,10 +166,13 @@ var mappedFields = []string{"title", "description", "upload_type", "creators", "
 
 // BuildMapping validates explicit intent and returns a deterministic dry-run report.
 func BuildMapping(request Request, capturedAt time.Time) (Report, error) {
-	if err := request.validate(); err != nil {
+	if err := request.validate(capturedAt); err != nil {
 		return Report{}, err
 	}
 	target := request.Source.Metadata.clone()
+	if strings.TrimSpace(request.TargetLicense) != "" {
+		target.License = strings.TrimSpace(request.TargetLicense)
+	}
 	fields := exactMappings()
 	var blockers []string
 	if request.Direction == DirectionOSFToZenodo {
@@ -182,6 +187,8 @@ func BuildMapping(request Request, capturedAt time.Time) (Report, error) {
 			transformations = append(transformations, mapping)
 		}
 	}
+	nativeFields := nativeFieldMappings(request.Source.NativeMetadata)
+	transformations = append(transformations, nativeFields...)
 	key, err := idempotencyKey(request, target)
 	if err != nil {
 		return Report{}, err
@@ -189,7 +196,7 @@ func BuildMapping(request Request, capturedAt time.Time) (Report, error) {
 	return Report{
 		Direction: request.Direction, Destination: request.Destination,
 		PublishIntent: request.PublishIntent, Conflict: request.Conflict,
-		Target: target, Files: sortedFiles(request.Source.Files), Fields: fields,
+		Target: target, Files: sortedFiles(request.Source.Files), Fields: fields, NativeFields: nativeFields,
 		Blockers: blockers, Executable: len(blockers) == 0, IdempotencyKey: key,
 		Provenance: Provenance{
 			SourceIdentity: request.Source.Identity, DestinationProvider: request.Destination.Provider,
@@ -199,7 +206,7 @@ func BuildMapping(request Request, capturedAt time.Time) (Report, error) {
 	}, nil
 }
 
-func (request Request) validate() error {
+func (request Request) validate(capturedAt time.Time) error {
 	if err := request.Source.Identity.Validate(); err != nil {
 		return fmt.Errorf("%w: source identity: %v", ErrInvalidRequest, err)
 	}
@@ -232,6 +239,9 @@ func (request Request) validate() error {
 	}
 	if request.TargetAccess != nil {
 		if err := request.TargetAccess.validateFor(request.Destination.Provider); err != nil {
+			return fmt.Errorf("%w: target access: %v", ErrInvalidRequest, err)
+		}
+		if err := request.TargetAccess.validateTarget(capturedAt); err != nil {
 			return fmt.Errorf("%w: target access: %v", ErrInvalidRequest, err)
 		}
 	}
@@ -281,7 +291,7 @@ func (access AccessPolicy) validateFor(provider repository.Provider) error {
 
 func mapOSFToZenodo(request Request, target *Metadata, fields []FieldMapping, blockers *[]string) {
 	if request.TargetAccess != nil {
-		target.Access = *request.TargetAccess
+		target.Access = cloneAccess(*request.TargetAccess)
 		setMapping(fields, "access", DispositionTransformed, "caller selected an explicit Zenodo access policy")
 	} else if request.Source.Metadata.Access.Kind == AccessPublic {
 		target.Access = AccessPolicy{Kind: AccessOpen}
@@ -301,7 +311,7 @@ func mapOSFToZenodo(request Request, target *Metadata, fields []FieldMapping, bl
 
 func mapZenodoToOSF(request Request, target *Metadata, fields []FieldMapping) {
 	if request.TargetAccess != nil {
-		target.Access = *request.TargetAccess
+		target.Access = cloneAccess(*request.TargetAccess)
 	} else if request.Source.Metadata.Access.Kind == AccessOpen {
 		target.Access = AccessPolicy{Kind: AccessPublic}
 	} else {
@@ -361,6 +371,50 @@ func (metadata Metadata) clone() Metadata {
 	if metadata.Access.EmbargoUntil != nil {
 		value := *metadata.Access.EmbargoUntil
 		result.Access.EmbargoUntil = &value
+	}
+	return result
+}
+
+func cloneAccess(access AccessPolicy) AccessPolicy {
+	result := access
+	if access.EmbargoUntil != nil {
+		value := *access.EmbargoUntil
+		result.EmbargoUntil = &value
+	}
+	return result
+}
+
+func (access AccessPolicy) validateTarget(capturedAt time.Time) error {
+	switch access.Kind {
+	case AccessPublic, AccessPrivate, AccessOpen, AccessClosed:
+		if access.EmbargoUntil != nil || strings.TrimSpace(access.Conditions) != "" {
+			return fmt.Errorf("access %q cannot set embargo or conditions", access.Kind)
+		}
+	case AccessEmbargoed:
+		if access.EmbargoUntil == nil || !access.EmbargoUntil.After(capturedAt) || strings.TrimSpace(access.Conditions) != "" {
+			return errors.New("embargoed target access requires a future date and no restricted conditions")
+		}
+	case AccessRestricted:
+		if strings.TrimSpace(access.Conditions) == "" || access.EmbargoUntil != nil {
+			return errors.New("restricted target access requires conditions and no embargo date")
+		}
+	}
+	return nil
+}
+
+func nativeFieldMappings(metadata repository.NativeMetadata) []FieldMapping {
+	var object map[string]json.RawMessage
+	if json.Unmarshal(metadata.Bytes(), &object) != nil {
+		return []FieldMapping{{SourceField: "<opaque>", Disposition: DispositionPreservedNative, Reason: "non-JSON provider metadata remains in the lossless provenance envelope"}}
+	}
+	names := make([]string, 0, len(object))
+	for name := range object {
+		names = append(names, name)
+	}
+	slices.Sort(names)
+	result := make([]FieldMapping, 0, len(names))
+	for _, name := range names {
+		result = append(result, FieldMapping{SourceField: name, Disposition: DispositionPreservedNative, Reason: "provider-native field remains in the lossless provenance envelope"})
 	}
 	return result
 }

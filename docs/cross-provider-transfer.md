@@ -21,7 +21,7 @@ identifiers, version, native metadata, and files. Each field is marked as:
 A private OSF source has no implicit Zenodo access equivalent. The report stays
 non-executable until the caller chooses an explicit open, embargoed, restricted,
 or closed Zenodo policy. Open and embargoed Zenodo targets also require an
-explicit license. Zenodo open access maps to OSF public visibility; embargoed,
+explicit source or target license. Zenodo open access maps to OSF public visibility; embargoed,
 restricted, and closed access map only to private visibility, with the richer
 access, license, identifier, and version semantics preserved in provenance.
 
@@ -31,6 +31,8 @@ Source and destination identities remain provider-qualified. Source identifiers
 may become related metadata but never replace a destination's native identity.
 The report includes a SHA-256 digest of lossless provider-native metadata and a
 list of every non-exact transformation.
+Top-level provider-native JSON fields are inventoried in stable order and marked
+`preserved_native`; opaque native formats receive an explicit opaque entry.
 
 The `xfer-v1-...` idempotency key is derived from direction, source snapshot,
 file sizes/checksums, destination, mapped target metadata, conflict policy, and

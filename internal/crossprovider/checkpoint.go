@@ -97,6 +97,7 @@ type CompensationAction struct {
 	StepID         string           `json:"stepId"`
 	Kind           CompensationKind `json:"kind"`
 	DestinationRef string           `json:"destinationRef,omitempty"`
+	ResourceRef    string           `json:"resourceRef,omitempty"`
 	RollbackRef    string           `json:"rollbackRef,omitempty"`
 	File           File             `json:"file,omitempty"`
 }
@@ -232,7 +233,7 @@ func (checkpoint *Checkpoint) Complete(stepID string, result StepResult) error {
 	step.State, step.Error = StepCompleted, ""
 	step.Attempts++
 	step.DestinationRef, step.RollbackRef = result.DestinationRef, result.RollbackRef
-	if result.DestinationRef != "" {
+	if step.Kind == StepCreateDestination && result.DestinationRef != "" {
 		checkpoint.DestinationRef = result.DestinationRef
 	}
 	checkpoint.Status = SagaRunning
@@ -312,7 +313,7 @@ func (checkpoint Checkpoint) CompensationPlan() ([]CompensationAction, error) {
 		}
 		actions = append(actions, CompensationAction{
 			StepID: step.ID, Kind: step.Compensation, DestinationRef: checkpoint.DestinationRef,
-			RollbackRef: step.RollbackRef, File: step.File,
+			ResourceRef: step.DestinationRef, RollbackRef: step.RollbackRef, File: step.File,
 		})
 	}
 	return actions, nil

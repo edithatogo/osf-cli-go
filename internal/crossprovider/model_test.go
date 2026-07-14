@@ -44,6 +44,9 @@ func TestOSFToZenodoDryRunAccountsForEveryField(t *testing.T) {
 	if !report.Executable || report.IdempotencyKey == "" || report.Provenance.NativeMetadataSHA256 == "" {
 		t.Fatalf("report = %+v", report)
 	}
+	if len(report.NativeFields) != 2 || report.NativeFields[1].SourceField != "providerOnly" {
+		t.Fatalf("native fields = %+v", report.NativeFields)
+	}
 	wantFields := []string{"title", "description", "upload_type", "creators", "keywords", "access", "license", "embargo", "identifiers", "version", "native_metadata", "files"}
 	if len(report.Fields) != len(wantFields) {
 		t.Fatalf("field count = %d, want %d", len(report.Fields), len(wantFields))
@@ -55,6 +58,43 @@ func TestOSFToZenodoDryRunAccountsForEveryField(t *testing.T) {
 	}
 	if report.Target.Access.Kind != AccessOpen || report.Target.License != "cc-by-4.0" || report.Target.Title != request.Source.Metadata.Title {
 		t.Fatalf("target = %+v", report.Target)
+	}
+}
+
+func TestExplicitTargetLicenseResolvesOpenAccessBlocker(t *testing.T) {
+	t.Parallel()
+	request := validRequest(t)
+	request.Source.Metadata.License = ""
+	report, err := BuildMapping(request, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Executable {
+		t.Fatal("missing license report is executable")
+	}
+	request.TargetLicense = "cc-by-4.0"
+	report, err = BuildMapping(request, time.Now())
+	if err != nil || !report.Executable || report.Target.License != "cc-by-4.0" {
+		t.Fatalf("licensed report = %+v err=%v", report, err)
+	}
+}
+
+func TestTargetAccessIsValidatedAndCopied(t *testing.T) {
+	t.Parallel()
+	request := validRequest(t)
+	date := time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC)
+	request.TargetAccess = &AccessPolicy{Kind: AccessEmbargoed, EmbargoUntil: &date}
+	report, err := BuildMapping(request, time.Date(2026, 7, 15, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatal(err)
+	}
+	*request.TargetAccess.EmbargoUntil = time.Time{}
+	if report.Target.Access.EmbargoUntil.IsZero() {
+		t.Fatal("report retained caller-owned embargo date")
+	}
+	request.TargetAccess = &AccessPolicy{Kind: AccessRestricted}
+	if _, err := BuildMapping(request, time.Now()); !errors.Is(err, ErrInvalidRequest) {
+		t.Fatalf("restricted access error = %v", err)
 	}
 }
 

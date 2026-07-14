@@ -128,8 +128,11 @@ func TestCompensationPlanReversesCompletedDraftMutations(t *testing.T) {
 	}
 	for i := 0; i < 3; i++ {
 		result := StepResult{}
-		if i == 0 {
+		switch i {
+		case 0:
 			result.DestinationRef = "draft-123"
+		case 2:
+			result.DestinationRef = "file-456"
 		}
 		if err := checkpoint.Complete(checkpoint.Steps[i].ID, result); err != nil {
 			t.Fatal(err)
@@ -139,8 +142,11 @@ func TestCompensationPlanReversesCompletedDraftMutations(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(actions) != 2 || actions[0].Kind != CompensationDeleteFile || actions[1].Kind != CompensationDiscardDraft {
+	if len(actions) != 2 || actions[0].Kind != CompensationDeleteFile || actions[0].DestinationRef != "draft-123" || actions[0].ResourceRef != "file-456" || actions[1].Kind != CompensationDiscardDraft {
 		t.Fatalf("actions = %+v", actions)
+	}
+	if checkpoint.DestinationRef != "draft-123" {
+		t.Fatalf("destination ref was overwritten: %s", checkpoint.DestinationRef)
 	}
 }
 
