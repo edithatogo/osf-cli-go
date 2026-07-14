@@ -40,7 +40,7 @@ receipts, or approval claims.
 
 | Target | Local packet/evidence | Dedicated track or follow-up |
 |---|---|---|
-| Cline | `integrations/cline/`, `registry/cline-submission-packet.md`, 400x400 logo, install guide, and upstream issue #2024 | `conductor/tracks/cline-mcp-marketplace-adoption_20260713/` and issue #47 |
+| Cline | `integrations/cline/`, `registry/cline-submission-packet.md`, 400x400 logo, install guide, and upstream issue #2024 | `conductor/archive/cline-mcp-marketplace-adoption_20260713/` and issue #47 |
 | LobeHub | `registry/directory-submissions.json`; `lhm.plugin.json` still missing | `conductor/tracks/lobehub-mcp-marketplace-adoption_20260713/` and issue #48 |
 | Docker MCP Catalog | `registry/docker-mcp-registry/`, `docs/mcp-catalog-discoverability-evidence.md` | archived catalog sweep; submit upstream PR |
 | MCP.so and mcpservers.org | `docs/mcp-catalog-discoverability-evidence.md`, canonical metadata packet | submit manually and record receipts |
