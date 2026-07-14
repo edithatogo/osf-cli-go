@@ -23,6 +23,7 @@ func TestRunValidatesDigestBoundLevels(t *testing.T) {
 		ID: "zenodo-transfer", Provider: "zenodo", Capability: "files.transfer", Level: "sandbox-validated", ValidatedAt: "2026-07-15",
 		Evidence: []evidence{{Path: "evidence.md", SHA256: "sha256:" + hex.EncodeToString(digest[:])}},
 	}}}
+	document.OptInWorkflow = writeWorkflow(t, root)
 	writeManifest(t, root, document)
 	if err := run(root, "manifest.json", time.Date(2026, 7, 15, 1, 0, 0, 0, time.UTC)); err != nil {
 		t.Fatal(err)
@@ -49,6 +50,7 @@ func TestRunRejectsInflatedOrStaleClaims(t *testing.T) {
 				ID: "osf-contract", Provider: "osf", Capability: "contract", Level: "offline-tested", ValidatedAt: "2026-07-15",
 				Evidence: []evidence{{Path: "evidence.md", SHA256: hex.EncodeToString(digest[:])}},
 			}}}
+			document.OptInWorkflow = writeWorkflow(t, root)
 			mutate(&document)
 			writeManifest(t, root, document)
 			if err := run(root, "manifest.json", time.Date(2026, 7, 15, 1, 0, 0, 0, time.UTC)); err == nil {
@@ -56,6 +58,53 @@ func TestRunRejectsInflatedOrStaleClaims(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestWriteReportIsReproducible(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	payload := []byte("offline evidence")
+	if err := os.WriteFile(filepath.Join(root, "evidence.md"), payload, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	digest := sha256.Sum256(payload)
+	document := manifest{SchemaVersion: 1, GeneratedAt: "2026-07-15T00:00:00Z", OptInWorkflow: writeWorkflow(t, root), Claims: []claim{{
+		ID: "osf-contract", Provider: "osf", Capability: "contract", Level: "offline-tested", ValidatedAt: "2026-07-15",
+		Evidence: []evidence{{Path: "evidence.md", SHA256: hex.EncodeToString(digest[:])}},
+	}}}
+	writeManifest(t, root, document)
+	if err := writeReport(root, "manifest.json", "report.md"); err != nil {
+		t.Fatal(err)
+	}
+	first, _ := os.ReadFile(filepath.Join(root, "report.md"))
+	if err := writeReport(root, "manifest.json", "report.md"); err != nil {
+		t.Fatal(err)
+	}
+	second, _ := os.ReadFile(filepath.Join(root, "report.md"))
+	if string(first) != string(second) || !strings.Contains(string(first), "Production-validated claims: 0") {
+		t.Fatalf("report = %s", first)
+	}
+}
+
+func writeWorkflow(t *testing.T, root string) string {
+	t.Helper()
+	name := "provider-validation.yml"
+	content := `on:
+  workflow_dispatch:
+env:
+  ZENODO_SANDBOX_VALIDATION: 1
+  ZENODO_PUBLICATION_VALIDATION: 1
+  CROSS_PROVIDER_SANDBOX_VALIDATION: 1
+  OSF_LIVE_VALIDATION: 1
+  ZENODO_SANDBOX_TOKEN: secret
+  ZENODO_SANDBOX_PUBLICATION_TOKEN: secret
+  OSF_VALIDATION_TOKEN: secret
+  OSF_VALIDATE_PROJECT: secret
+`
+	if err := os.WriteFile(filepath.Join(root, name), []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return name
 }
 
 func writeManifest(t *testing.T, root string, document manifest) {

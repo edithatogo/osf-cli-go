@@ -21,6 +21,7 @@ const defaultManifest = "docs/multi-provider-validation.json"
 type manifest struct {
 	SchemaVersion int     `json:"schemaVersion"`
 	GeneratedAt   string  `json:"generatedAt"`
+	OptInWorkflow string  `json:"optInWorkflow"`
 	Claims        []claim `json:"claims"`
 }
 
@@ -42,10 +43,17 @@ type evidence struct {
 func main() {
 	manifestPath := flag.String("manifest", defaultManifest, "provider validation manifest")
 	root := flag.String("root", ".", "repository root")
+	report := flag.String("report", "", "write a reproducible Markdown validation report")
 	flag.Parse()
 	if err := run(*root, *manifestPath, time.Now().UTC()); err != nil {
 		fmt.Fprintf(os.Stderr, "provider release contract: %v\n", err)
 		os.Exit(1)
+	}
+	if *report != "" {
+		if err := writeReport(*root, *manifestPath, *report); err != nil {
+			fmt.Fprintf(os.Stderr, "provider release report: %v\n", err)
+			os.Exit(1)
+		}
 	}
 }
 
@@ -73,6 +81,9 @@ func run(root, manifestPath string, now time.Time) error {
 	}
 	if document.SchemaVersion != 1 || len(document.Claims) == 0 {
 		return errors.New("schema version 1 and at least one claim are required")
+	}
+	if err := validateOptInWorkflow(root, document.OptInWorkflow); err != nil {
+		return err
 	}
 	generatedAt, err := time.Parse(time.RFC3339, document.GeneratedAt)
 	if err != nil || generatedAt.After(now.Add(time.Minute)) || generatedAt.Before(now.Add(-30*24*time.Hour)) {
@@ -116,6 +127,91 @@ func run(root, manifestPath string, now time.Time) error {
 		}
 	}
 	return nil
+}
+
+func validateOptInWorkflow(root, name string) error {
+	filename, err := confinedPath(root, name)
+	if err != nil {
+		return fmt.Errorf("opt-in workflow: %w", err)
+	}
+	payload, err := os.ReadFile(filename)
+	if err != nil {
+		return fmt.Errorf("read opt-in workflow: %w", err)
+	}
+	content := string(payload)
+	if !strings.Contains(content, "workflow_dispatch:") {
+		return errors.New("opt-in workflow must use workflow_dispatch")
+	}
+	for _, forbidden := range []string{"pull_request:", "push:", "schedule:"} {
+		if strings.Contains(content, forbidden) {
+			return fmt.Errorf("opt-in workflow cannot declare %s", forbidden)
+		}
+	}
+	for _, required := range []string{
+		"ZENODO_SANDBOX_VALIDATION", "ZENODO_PUBLICATION_VALIDATION", "CROSS_PROVIDER_SANDBOX_VALIDATION", "OSF_LIVE_VALIDATION",
+		"ZENODO_SANDBOX_TOKEN", "ZENODO_SANDBOX_PUBLICATION_TOKEN", "OSF_VALIDATION_TOKEN", "OSF_VALIDATE_PROJECT",
+	} {
+		if !strings.Contains(content, required) {
+			return fmt.Errorf("opt-in workflow is missing %s", required)
+		}
+	}
+	return nil
+}
+
+func writeReport(root, manifestPath, reportPath string) error {
+	root, err := filepath.Abs(root)
+	if err != nil {
+		return err
+	}
+	manifestFile, err := confinedPath(root, manifestPath)
+	if err != nil {
+		return err
+	}
+	payload, err := os.ReadFile(manifestFile)
+	if err != nil {
+		return err
+	}
+	var document manifest
+	if err := json.Unmarshal(payload, &document); err != nil {
+		return err
+	}
+	var builder strings.Builder
+	builder.WriteString("# Multi-provider validation report\n\n")
+	fmt.Fprintf(&builder, "- Schema: %d\n- Generated: %s\n- Opt-in workflow: `%s`\n- Production-validated claims: %d\n\n", document.SchemaVersion, document.GeneratedAt, document.OptInWorkflow, countLevel(document.Claims, "production-validated"))
+	builder.WriteString("| Provider | Capability | Level | Validated | Evidence |\n|---|---|---|---|---|\n")
+	for _, claim := range document.Claims {
+		paths := make([]string, 0, len(claim.Evidence))
+		for _, item := range claim.Evidence {
+			paths = append(paths, "`"+item.Path+"` ("+shortDigest(item.SHA256)+")")
+		}
+		fmt.Fprintf(&builder, "| %s | %s | %s | %s | %s |\n", claim.Provider, claim.Capability, claim.Level, claim.ValidatedAt, strings.Join(paths, "; "))
+	}
+	filename, err := confinedPath(root, reportPath)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(filename), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(filename, []byte(builder.String()), 0o644)
+}
+
+func countLevel(claims []claim, level string) int {
+	count := 0
+	for _, claim := range claims {
+		if claim.Level == level {
+			count++
+		}
+	}
+	return count
+}
+
+func shortDigest(value string) string {
+	value = strings.TrimPrefix(value, "sha256:")
+	if len(value) > 12 {
+		value = value[:12]
+	}
+	return "sha256:" + value
 }
 
 func validateEvidence(root string, claim claim, item evidence) error {

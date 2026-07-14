@@ -109,6 +109,8 @@ func run() error {
 		"docs/v1-launch-review.md",
 		"docs/mcp-quality-report.json",
 		"docs/multi-provider-validation.json",
+		"docs/multi-provider-validation.md",
+		".github/workflows/provider-validation.yml",
 	}
 	for _, path := range required {
 		if _, err := os.Stat(path); err != nil {

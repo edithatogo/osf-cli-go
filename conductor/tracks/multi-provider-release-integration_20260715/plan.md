@@ -2,8 +2,8 @@
 
 ## Phase 1: Quality integration
 
-- [~] Task: Add provider contract, API drift, observability, and claim-consistency gates to CI.
-- [ ] Task: Add explicit validation-level evidence and opt-in sandbox/live workflows.
+- [x] Task: Add provider contract, API drift, observability, and claim-consistency gates to CI. (4166e6b)
+- [~] Task: Add explicit validation-level evidence and opt-in sandbox/live workflows.
 - [ ] Task: Conductor - Automated Review and Checkpoint 'Quality integration' (Protocol in workflow.md)
 
 ## Phase 2: Release closeout
