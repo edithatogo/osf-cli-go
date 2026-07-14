@@ -1,0 +1,8 @@
+{
+  "track_id": "datalad-git-annex-interoperability_20260714",
+  "type": "design",
+  "status": "completed",
+  "created_at": "2026-07-14T00:00:00Z",
+  "updated_at": "2026-07-14T00:00:00Z",
+  "description": "Define a fixture-backed optional Git, DataLad, and git-annex companion-tool contract"
+}

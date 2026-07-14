@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
 	"github.com/edithatogo/osf-cli-go/internal/output"
@@ -51,6 +53,22 @@ type addonRecord struct {
 	Name     string `json:"name"`
 	Category string `json:"category,omitempty"`
 	URL      string `json:"url,omitempty"`
+}
+
+type fileVersionRecord struct {
+	ID           string    `json:"id"`
+	Type         string    `json:"type,omitempty"`
+	Size         int64     `json:"size,omitempty"`
+	DateCreated  time.Time `json:"date_created,omitempty"`
+	DateModified time.Time `json:"date_modified,omitempty"`
+	URL          string    `json:"url,omitempty"`
+}
+
+type relatedResourceRecord struct {
+	ID         string         `json:"id"`
+	Type       string         `json:"type,omitempty"`
+	Attributes map[string]any `json:"attributes,omitempty"`
+	URL        string         `json:"url,omitempty"`
 }
 
 func newProjectsCommand(client readonlyClient) *cobra.Command {
@@ -120,7 +138,81 @@ func newFilesCommand(client readonlyClient) *cobra.Command {
 	cmd.AddCommand(newFilesMkdirCommand(client))
 	cmd.AddCommand(newFilesRmCommand(client))
 	cmd.AddCommand(newFilesAddonsCommand(client))
+	cmd.AddCommand(newFilesVersionsCommand(client))
 	return cmd
+}
+
+func newFilesVersionsCommand(client readonlyClient) *cobra.Command {
+	return &cobra.Command{
+		Use:   "versions <file-id>",
+		Short: "List versions for an OSF Storage file",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			outputMode, err := resolveOutputMode(cmd)
+			if err != nil {
+				return err
+			}
+			versions, err := client.ListFileVersions(cmd.Context(), args[0])
+			if err != nil {
+				return err
+			}
+			rows := make([]fileVersionRecord, 0, len(versions))
+			for _, version := range versions {
+				rows = append(rows, fileVersionRecord{ID: version.ID, Type: version.Type, Size: version.Attributes.Size, DateCreated: version.Attributes.DateCreated, DateModified: version.Attributes.DateModified, URL: version.Links.Self})
+			}
+			if outputMode == outputModeJSON {
+				return output.WriteJSON(cmd.OutOrStdout(), rows)
+			}
+			tableRows := make([][]string, 0, len(rows))
+			for _, row := range rows {
+				tableRows = append(tableRows, []string{row.ID, row.Type, strconv.FormatInt(row.Size, 10), row.DateModified.Format(time.RFC3339), row.URL})
+			}
+			return output.WriteTable(cmd.OutOrStdout(), []string{"ID", "TYPE", "SIZE", "MODIFIED", "URL"}, tableRows)
+		},
+	}
+}
+
+func newNodeRelationsCommand(client readonlyClient) *cobra.Command {
+	cmd := &cobra.Command{Use: "nodes", Short: "List related OSF node resources"}
+	cmd.AddCommand(newNodeRelationListCommand("wikis", "List wiki pages for an OSF node", client.ListWikiPages, client))
+	cmd.AddCommand(newNodeRelationListCommand("comments", "List comments for an OSF node", client.ListNodeComments, client))
+	cmd.AddCommand(newNodeRelationListCommand("logs", "List audit logs for an OSF node", client.ListNodeLogs, client))
+	cmd.AddCommand(newNodeRelationListCommand("identifiers", "List identifiers for an OSF node", client.ListNodeIdentifiers, client))
+	return cmd
+}
+
+type relatedResourceList func(context.Context, string) ([]osfapi.RelatedResource, error)
+
+func newNodeRelationListCommand(name, short string, list relatedResourceList, _ readonlyClient) *cobra.Command {
+	return &cobra.Command{
+		Use: name + " <node-id>", Short: short, Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			outputMode, err := resolveOutputMode(cmd)
+			if err != nil {
+				return err
+			}
+			nodeID, err := parseNodeIDOrURL(args[0])
+			if err != nil {
+				return err
+			}
+			resources, err := list(cmd.Context(), nodeID)
+			if err != nil {
+				return err
+			}
+			rows := make([]relatedResourceRecord, 0, len(resources))
+			for _, resource := range resources {
+				rows = append(rows, relatedResourceRecord{ID: resource.ID, Type: resource.Type, Attributes: resource.Attributes, URL: resource.Links.Self})
+			}
+			if outputMode == outputModeJSON {
+				return output.WriteJSON(cmd.OutOrStdout(), rows)
+			}
+			tableRows := make([][]string, 0, len(rows))
+			for _, row := range rows {
+				tableRows = append(tableRows, []string{row.ID, row.Type, row.URL})
+			}
+			return output.WriteTable(cmd.OutOrStdout(), []string{"ID", "TYPE", "URL"}, tableRows)
+		},
+	}
 }
 
 func newProjectsListCommand(client readonlyClient) *cobra.Command {

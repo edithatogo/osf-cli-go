@@ -667,23 +667,23 @@ func (c *Client) ListNodeRegistrations(ctx context.Context, id string) ([]Node, 
 }
 
 // ListWikiPages loads wiki pages linked to a node.
-func (c *Client) ListWikiPages(ctx context.Context, id string) ([]Node, error) {
-	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/wikis/")
+func (c *Client) ListWikiPages(ctx context.Context, id string) ([]RelatedResource, error) {
+	return collectPages[RelatedResource](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/wikis/")
 }
 
 // ListNodeComments loads comments linked to a node.
-func (c *Client) ListNodeComments(ctx context.Context, id string) ([]Node, error) {
-	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/comments/")
+func (c *Client) ListNodeComments(ctx context.Context, id string) ([]RelatedResource, error) {
+	return collectPages[RelatedResource](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/comments/")
 }
 
 // ListNodeLogs loads audit log entries linked to a node.
-func (c *Client) ListNodeLogs(ctx context.Context, id string) ([]Node, error) {
-	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/logs/")
+func (c *Client) ListNodeLogs(ctx context.Context, id string) ([]RelatedResource, error) {
+	return collectPages[RelatedResource](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/logs/")
 }
 
 // ListNodeIdentifiers loads identifiers linked to a node.
-func (c *Client) ListNodeIdentifiers(ctx context.Context, id string) ([]Node, error) {
-	return collectPages[Node](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/identifiers/")
+func (c *Client) ListNodeIdentifiers(ctx context.Context, id string) ([]RelatedResource, error) {
+	return collectPages[RelatedResource](ctx, c, "/v2/nodes/"+url.PathEscape(id)+"/identifiers/")
 }
 
 // CreateNode creates an OSF node with the supplied title, category, and description.

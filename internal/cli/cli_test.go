@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
@@ -277,6 +279,38 @@ func TestDefaultReadonlyClientListChildren(t *testing.T) {
 	}
 	if len(children) != 0 {
 		t.Fatalf("children = %d, want 0", len(children))
+	}
+}
+
+func TestDefaultReadonlyClientEntityCoverageForwarders(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		_, _ = w.Write([]byte(`{"data":[],"links":{}}`))
+	}))
+	defer server.Close()
+
+	api, err := osfapi.New(server.URL + "/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := &defaultReadonlyClient{api: api}
+	if _, err := client.ListFileVersions(t.Context(), "file-1"); err != nil {
+		t.Fatalf("ListFileVersions returned error: %v", err)
+	}
+	if _, err := client.ListNodeAddons(t.Context(), "node-1"); err != nil {
+		t.Fatalf("ListNodeAddons returned error: %v", err)
+	}
+	if _, err := client.ListWikiPages(t.Context(), "node-1"); err != nil {
+		t.Fatalf("ListWikiPages returned error: %v", err)
+	}
+	if _, err := client.ListNodeComments(t.Context(), "node-1"); err != nil {
+		t.Fatalf("ListNodeComments returned error: %v", err)
+	}
+	if _, err := client.ListNodeLogs(t.Context(), "node-1"); err != nil {
+		t.Fatalf("ListNodeLogs returned error: %v", err)
+	}
+	if _, err := client.ListNodeIdentifiers(t.Context(), "node-1"); err != nil {
+		t.Fatalf("ListNodeIdentifiers returned error: %v", err)
 	}
 }
 
@@ -675,13 +709,13 @@ func TestWriteRootContractWithJSON(t *testing.T) {
 	if err := json.Unmarshal(buf.Bytes(), &contract); err != nil {
 		t.Fatalf("stdout is not valid JSON: %v\n%s", err, buf.String())
 	}
-	if len(contract.Commands) != 13 {
-		t.Fatalf("command count = %d, want 13", len(contract.Commands))
+	if len(contract.Commands) != 14 {
+		t.Fatalf("command count = %d, want 14", len(contract.Commands))
 	}
 	if contract.Commands[0].Status != "implemented" || contract.Commands[1].Status != "implemented" {
 		t.Fatalf("unexpected command statuses: %#v", contract.Commands)
 	}
-	wantNames := []string{"auth", "projects", "components", "files", "export", "validate", "search", "preprints", "registrations", "resolve", "open", "whoami", "completion"}
+	wantNames := []string{"auth", "projects", "components", "files", "nodes", "export", "validate", "search", "preprints", "registrations", "resolve", "open", "whoami", "completion"}
 	for i, want := range wantNames {
 		if contract.Commands[i].Name != want || contract.Commands[i].Status != "implemented" {
 			t.Fatalf("command %d = %#v, want implemented %q", i, contract.Commands[i], want)
@@ -1477,6 +1511,11 @@ type fakeReadonlyClient struct {
 	preprints                []osfapi.Node
 	searchedPreprints        []osfapi.Preprint
 	addons                   []osfapi.Node
+	fileVersions             []osfapi.FileVersion
+	wikis                    []osfapi.RelatedResource
+	comments                 []osfapi.RelatedResource
+	logs                     []osfapi.RelatedResource
+	identifiers              []osfapi.RelatedResource
 	searchResults            []osfapi.SearchResult
 	files                    []osfapi.StorageFile
 	storageFiles             map[string]osfapi.StorageFile
@@ -1500,6 +1539,8 @@ type fakeReadonlyClient struct {
 	gotPreprintQuery         string
 	gotSearchLimit           int
 	gotAddonNodeID           string
+	gotFileVersionID         string
+	gotRelationNodeID        string
 	gotRegistrationNode      string
 	gotRegistrationReq       osfapi.RegistrationRequest
 	gotCreateNodeTitle       string
@@ -1509,6 +1550,7 @@ type fakeReadonlyClient struct {
 	gotUpdateNodeTitle       string
 	gotUpdateNodeDescription string
 	gotDeleteNodeID          string
+	entityErr                error
 }
 
 func (f *fakeReadonlyClient) CurrentUser(context.Context) (osfapi.User, error) {
@@ -1601,7 +1643,50 @@ func (f *fakeReadonlyClient) SearchOSF(_ context.Context, query string, limit ..
 
 func (f *fakeReadonlyClient) ListNodeAddons(_ context.Context, id string) ([]osfapi.Node, error) {
 	f.gotAddonNodeID = id
+	if f.entityErr != nil {
+		return nil, f.entityErr
+	}
 	return append([]osfapi.Node(nil), f.addons...), nil
+}
+
+func (f *fakeReadonlyClient) ListFileVersions(_ context.Context, id string) ([]osfapi.FileVersion, error) {
+	f.gotFileVersionID = id
+	if f.entityErr != nil {
+		return nil, f.entityErr
+	}
+	return append([]osfapi.FileVersion(nil), f.fileVersions...), nil
+}
+
+func (f *fakeReadonlyClient) ListWikiPages(_ context.Context, id string) ([]osfapi.RelatedResource, error) {
+	f.gotRelationNodeID = id
+	if f.entityErr != nil {
+		return nil, f.entityErr
+	}
+	return append([]osfapi.RelatedResource(nil), f.wikis...), nil
+}
+
+func (f *fakeReadonlyClient) ListNodeComments(_ context.Context, id string) ([]osfapi.RelatedResource, error) {
+	f.gotRelationNodeID = id
+	if f.entityErr != nil {
+		return nil, f.entityErr
+	}
+	return append([]osfapi.RelatedResource(nil), f.comments...), nil
+}
+
+func (f *fakeReadonlyClient) ListNodeLogs(_ context.Context, id string) ([]osfapi.RelatedResource, error) {
+	f.gotRelationNodeID = id
+	if f.entityErr != nil {
+		return nil, f.entityErr
+	}
+	return append([]osfapi.RelatedResource(nil), f.logs...), nil
+}
+
+func (f *fakeReadonlyClient) ListNodeIdentifiers(_ context.Context, id string) ([]osfapi.RelatedResource, error) {
+	f.gotRelationNodeID = id
+	if f.entityErr != nil {
+		return nil, f.entityErr
+	}
+	return append([]osfapi.RelatedResource(nil), f.identifiers...), nil
 }
 
 func (f *fakeReadonlyClient) CreateRegistration(_ context.Context, nodeID string, request osfapi.RegistrationRequest) (osfapi.Node, error) {
@@ -1968,6 +2053,114 @@ func TestFilesAddonsOutput(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "OSF Storage") {
 		t.Fatalf("stdout = %q, want OSF Storage", stdout.String())
+	}
+}
+
+func TestFilesVersionsOutput(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{fileVersions: []osfapi.FileVersion{{
+		ID: "version-1", Type: "file_versions",
+		Attributes: osfapi.FileVersionAttributes{Size: 42, DateModified: time.Date(2026, 7, 14, 1, 2, 3, 0, time.UTC)},
+		Links:      osfapi.Links{Self: "https://api.osf.io/v2/files/file-1/versions/version-1/"},
+	}}}
+	var stdout, stderr bytes.Buffer
+	code := runWithClient([]string{"files", "versions", "file-1"}, &stdout, &stderr, client)
+	if code != 0 || client.gotFileVersionID != "file-1" {
+		t.Fatalf("files versions returned %d, id=%q, stderr=%q", code, client.gotFileVersionID, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "version-1") {
+		t.Fatalf("table output = %q, want version-1", stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = runWithClient([]string{"files", "versions", "file-1", "--json"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("files versions --json returned %d, stderr=%q", code, stderr.String())
+	}
+	var got []fileVersionRecord
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil || len(got) != 1 || got[0].ID != "version-1" {
+		t.Fatalf("versions JSON = %q, err=%v", stdout.String(), err)
+	}
+}
+
+func TestNodeRelationsNormalizeURLAndOutputJSON(t *testing.T) {
+	t.Parallel()
+
+	client := &fakeReadonlyClient{wikis: []osfapi.RelatedResource{{
+		ID: "wiki-1", Type: "wiki_pages", Attributes: map[string]any{"name": "README"},
+		Links: osfapi.Links{Self: "https://api.osf.io/v2/nodes/project-1/wikis/wiki-1/"},
+	}}}
+	var stdout, stderr bytes.Buffer
+	code := runWithClient([]string{"nodes", "wikis", "https://osf.io/project-1/"}, &stdout, &stderr, client)
+	if code != 0 || client.gotRelationNodeID != "project-1" {
+		t.Fatalf("nodes wikis returned %d, id=%q, stderr=%q", code, client.gotRelationNodeID, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "wiki-1") {
+		t.Fatalf("wiki table = %q, want wiki-1", stdout.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = runWithClient([]string{"nodes", "wikis", "https://osf.io/project-1/", "--json"}, &stdout, &stderr, client)
+	if code != 0 {
+		t.Fatalf("nodes wikis --json returned %d, stderr=%q", code, stderr.String())
+	}
+	var got []relatedResourceRecord
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil || len(got) != 1 || got[0].ID != "wiki-1" {
+		t.Fatalf("wiki JSON = %q, err=%v", stdout.String(), err)
+	}
+}
+
+func TestNodeRelationCommandsOutputJSON(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name string
+		data func(*fakeReadonlyClient)
+		id   string
+	}{
+		{name: "wikis", data: func(c *fakeReadonlyClient) { c.wikis = []osfapi.RelatedResource{{ID: "wiki-1"}} }, id: "wiki-1"},
+		{name: "comments", data: func(c *fakeReadonlyClient) { c.comments = []osfapi.RelatedResource{{ID: "comment-1"}} }, id: "comment-1"},
+		{name: "logs", data: func(c *fakeReadonlyClient) { c.logs = []osfapi.RelatedResource{{ID: "log-1"}} }, id: "log-1"},
+		{name: "identifiers", data: func(c *fakeReadonlyClient) { c.identifiers = []osfapi.RelatedResource{{ID: "identifier-1"}} }, id: "identifier-1"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			client := &fakeReadonlyClient{}
+			tc.data(client)
+			var stdout, stderr bytes.Buffer
+			code := runWithClient([]string{"nodes", tc.name, "https://osf.io/project-1/", "--json"}, &stdout, &stderr, client)
+			if code != 0 || client.gotRelationNodeID != "project-1" {
+				t.Fatalf("nodes %s returned %d, id=%q, stderr=%q", tc.name, code, client.gotRelationNodeID, stderr.String())
+			}
+			var got []relatedResourceRecord
+			if err := json.Unmarshal(stdout.Bytes(), &got); err != nil || len(got) != 1 || got[0].ID != tc.id {
+				t.Fatalf("%s JSON = %q, err=%v", tc.name, stdout.String(), err)
+			}
+		})
+	}
+}
+
+func TestEntityCommandsPropagateClientErrors(t *testing.T) {
+	for _, name := range []string{"versions", "addons"} {
+		t.Run("files-"+name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			args := []string{"files", name, "file-1"}
+			code := runWithClient(args, &stdout, &stderr, &fakeReadonlyClient{entityErr: errors.New("backend unavailable")})
+			if code != 1 || !strings.Contains(stderr.String(), "backend unavailable") {
+				t.Fatalf("%s returned %d, stderr=%q", name, code, stderr.String())
+			}
+		})
+	}
+	for _, name := range []string{"wikis", "comments", "logs", "identifiers"} {
+		t.Run("nodes-"+name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			code := runWithClient([]string{"nodes", name, "node-1"}, &stdout, &stderr, &fakeReadonlyClient{entityErr: errors.New("backend unavailable")})
+			if code != 1 || !strings.Contains(stderr.String(), "backend unavailable") {
+				t.Fatalf("%s returned %d, stderr=%q", name, code, stderr.String())
+			}
+		})
 	}
 }
 

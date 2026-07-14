@@ -157,6 +157,16 @@ type FileVersionAttributes struct {
 	DateModified time.Time `json:"date_modified,omitempty"`
 }
 
+// RelatedResource models a JSON:API resource linked from an OSF node.
+// Attributes remain structured JSON because OSF uses different fields for
+// wiki pages, comments, logs, identifiers, and provider add-ons.
+type RelatedResource struct {
+	ID         string         `json:"id"`
+	Type       string         `json:"type"`
+	Attributes map[string]any `json:"attributes,omitempty"`
+	Links      Links          `json:"links"`
+}
+
 // SearchResult models one OSF search result across supported resource types.
 type SearchResult struct {
 	ID          string   `json:"id"`

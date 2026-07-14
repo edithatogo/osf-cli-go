@@ -33,6 +33,11 @@ type readonlyClient interface {
 	SearchPreprints(context.Context, string, string, ...int) ([]osfapi.Preprint, error)
 	SearchOSF(context.Context, string, ...int) ([]osfapi.SearchResult, error)
 	ListNodeAddons(context.Context, string) ([]osfapi.Node, error)
+	ListFileVersions(context.Context, string) ([]osfapi.FileVersion, error)
+	ListWikiPages(context.Context, string) ([]osfapi.RelatedResource, error)
+	ListNodeComments(context.Context, string) ([]osfapi.RelatedResource, error)
+	ListNodeLogs(context.Context, string) ([]osfapi.RelatedResource, error)
+	ListNodeIdentifiers(context.Context, string) ([]osfapi.RelatedResource, error)
 	CreateRegistration(context.Context, string, osfapi.RegistrationRequest) (osfapi.Node, error)
 }
 
@@ -162,6 +167,26 @@ func (c *defaultReadonlyClient) SearchOSF(ctx context.Context, query string, lim
 
 func (c *defaultReadonlyClient) ListNodeAddons(ctx context.Context, id string) ([]osfapi.Node, error) {
 	return c.api.ListNodeAddons(ctx, id)
+}
+
+func (c *defaultReadonlyClient) ListFileVersions(ctx context.Context, id string) ([]osfapi.FileVersion, error) {
+	return c.api.ListFileVersions(ctx, id)
+}
+
+func (c *defaultReadonlyClient) ListWikiPages(ctx context.Context, id string) ([]osfapi.RelatedResource, error) {
+	return c.api.ListWikiPages(ctx, id)
+}
+
+func (c *defaultReadonlyClient) ListNodeComments(ctx context.Context, id string) ([]osfapi.RelatedResource, error) {
+	return c.api.ListNodeComments(ctx, id)
+}
+
+func (c *defaultReadonlyClient) ListNodeLogs(ctx context.Context, id string) ([]osfapi.RelatedResource, error) {
+	return c.api.ListNodeLogs(ctx, id)
+}
+
+func (c *defaultReadonlyClient) ListNodeIdentifiers(ctx context.Context, id string) ([]osfapi.RelatedResource, error) {
+	return c.api.ListNodeIdentifiers(ctx, id)
 }
 
 func (c *defaultReadonlyClient) CreateRegistration(ctx context.Context, nodeID string, request osfapi.RegistrationRequest) (osfapi.Node, error) {
