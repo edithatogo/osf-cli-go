@@ -298,7 +298,7 @@ func (client *Client) fetch(ctx context.Context, verb string, query url.Values) 
 				outcome = observability.OutcomeCancel
 			}
 		}
-		observability.Emit(ctx, client.emitter, observability.Event{Name: "api.request", Level: level, Outcome: outcome, DurationMS: time.Since(started).Milliseconds(), RetryCount: retries, EndpointClass: "zenodo_oai_pmh", Error: observability.RedactedError(finalErr), Fields: map[string]any{"provider": "zenodo", "protocol": "oai-pmh", "verb": verb}})
+		observability.Emit(ctx, client.emitter, observability.Event{Name: "api.request", Provider: "zenodo", Level: level, Outcome: outcome, DurationMS: time.Since(started).Milliseconds(), RetryCount: retries, EndpointClass: "zenodo_oai_pmh", Error: observability.RedactedError(finalErr), Fields: map[string]any{"protocol": "oai-pmh", "verb": verb}})
 	}()
 	for attempt := 0; ; attempt++ {
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint.String(), nil)

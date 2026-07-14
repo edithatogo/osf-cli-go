@@ -39,6 +39,7 @@ type Event struct {
 	Timestamp     string         `json:"timestamp"`
 	Level         string         `json:"level"`
 	Name          string         `json:"name"`
+	Provider      string         `json:"provider,omitempty"`
 	OperationID   string         `json:"operationId"`
 	RequestID     string         `json:"requestId"`
 	DurationMS    int64          `json:"durationMs"`
@@ -172,6 +173,7 @@ func Emit(ctx context.Context, emitter Emitter, event Event) {
 	if event.Outcome == "" {
 		event.Outcome = OutcomeOK
 	}
+	event.Provider = normalizeProvider(event.Provider)
 	emitter.Emit(event)
 }
 
@@ -288,11 +290,21 @@ func RedactedError(err error, secrets ...string) *Error {
 }
 
 func sanitizeEvent(event Event) Event {
+	event.Provider = normalizeProvider(event.Provider)
 	event.Fields = redactMap(event.Fields)
 	if event.Error != nil {
 		event.Error = &Error{Class: event.Error.Class, Message: redactMessage(auth.Redact(event.Error.Message))}
 	}
 	return event
+}
+
+func normalizeProvider(provider string) string {
+	switch strings.ToLower(strings.TrimSpace(provider)) {
+	case "", "osf", "zenodo", "cross-provider":
+		return strings.ToLower(strings.TrimSpace(provider))
+	default:
+		return "unknown"
+	}
 }
 
 func redactMap(fields map[string]any) map[string]any {

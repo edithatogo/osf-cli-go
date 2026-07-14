@@ -372,6 +372,7 @@ func (c *Client) doHTTP(req *http.Request) (*http.Response, error) {
 			}
 		}
 		observability.Emit(req.Context(), c.emitter, observability.Event{
+			Provider:      "osf",
 			Level:         levelForHTTP(outcome),
 			Name:          "api.request",
 			DurationMS:    time.Since(started).Milliseconds(),

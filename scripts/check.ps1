@@ -25,6 +25,7 @@ go run ./tools/checkreviews
 go run ./tools/checkregistries
 go run ./tools/checkfeaturematrix
 go run ./tools/checkzenodoapi
+go run ./tools/checkproviderrelease
 go run ./tools/checkreleasecontract
 go test ./... "-coverprofile=coverage.out"
 go tool cover "-func=coverage.out"

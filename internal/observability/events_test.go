@@ -16,17 +16,18 @@ func TestJSONEmitterWritesStableRedactedEvent(t *testing.T) {
 	emitter := NewJSONEmitter(&output, LevelInfo)
 	ctx := WithOperationID(context.Background(), "op-test")
 	Emit(ctx, emitter, Event{
-		Level:   LevelError,
-		Name:    "api.request",
-		Fields:  map[string]any{"token": "secret-token", "path": "/Users/test/private.txt", "nested": map[string]any{"authorization": "Bearer secret"}},
-		Error:   RedactedError(errors.New("request failed with Bearer abcdefghijklmnop")),
-		Outcome: OutcomeError,
+		Level:    LevelError,
+		Name:     "api.request",
+		Provider: "zenodo",
+		Fields:   map[string]any{"token": "secret-token", "path": "/Users/test/private.txt", "nested": map[string]any{"authorization": "Bearer secret"}},
+		Error:    RedactedError(errors.New("request failed with Bearer abcdefghijklmnop")),
+		Outcome:  OutcomeError,
 	})
 	var event Event
 	if err := json.Unmarshal([]byte(output.String()), &event); err != nil {
 		t.Fatalf("decode event: %v", err)
 	}
-	if event.SchemaVersion != SchemaVersion || event.OperationID != "op-test" || event.RequestID == "" {
+	if event.SchemaVersion != SchemaVersion || event.OperationID != "op-test" || event.RequestID == "" || event.Provider != "zenodo" {
 		t.Fatalf("event envelope=%+v", event)
 	}
 	encoded := output.String()
@@ -34,6 +35,18 @@ func TestJSONEmitterWritesStableRedactedEvent(t *testing.T) {
 		if strings.Contains(encoded, secret) {
 			t.Fatalf("event leaked %q: %s", secret, encoded)
 		}
+	}
+}
+
+func TestJSONEmitterNormalizesProviderCardinality(t *testing.T) {
+	var output strings.Builder
+	Emit(context.Background(), NewJSONEmitter(&output, LevelInfo), Event{Name: "api.request", Provider: "attacker.example"})
+	var event Event
+	if err := json.Unmarshal([]byte(output.String()), &event); err != nil {
+		t.Fatal(err)
+	}
+	if event.Provider != "unknown" || strings.Contains(output.String(), "attacker.example") {
+		t.Fatalf("event = %+v", event)
 	}
 }
 

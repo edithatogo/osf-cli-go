@@ -16,8 +16,9 @@ with owner-only permissions and appended to; `stdout` is rejected. The event
 level defaults to `info` and supports `debug`, `info`, `warn`, and `error`.
 
 Each event uses the `osf.event.v1` schema and includes timestamp, level, event
-name, operation ID, request ID, duration, retry count, outcome, endpoint class,
-and a classified error when applicable. API endpoint URLs, authorization
+name, a low-cardinality `provider` (`osf`, `zenodo`, `cross-provider`, or
+`unknown`) when applicable, operation ID, request ID, duration, retry count,
+outcome, endpoint class, and a classified error when applicable. API endpoint URLs, authorization
 headers, tokens, passwords, credentials, and local paths are never retained in
 event fields. Paths are represented as `[REDACTED_PATH]`.
 

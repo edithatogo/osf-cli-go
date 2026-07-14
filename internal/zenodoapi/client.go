@@ -288,10 +288,11 @@ func (client *Client) get(ctx context.Context, endpoint *url.URL) ([]byte, *http
 			}
 		}
 		observability.Emit(ctx, client.emitter, observability.Event{
-			Name: "api.request", Level: level, Outcome: outcome,
+			Provider: "zenodo",
+			Name:     "api.request", Level: level, Outcome: outcome,
 			DurationMS: time.Since(started).Milliseconds(), RetryCount: retries,
 			EndpointClass: "zenodo_api", Error: observability.RedactedError(finalErr, client.token),
-			Fields: map[string]any{"provider": "zenodo", "method": http.MethodGet, "status": finalStatus},
+			Fields: map[string]any{"method": http.MethodGet, "status": finalStatus},
 		})
 	}()
 

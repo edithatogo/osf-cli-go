@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-14T18:14:28Z",
+  "claims": [
+    {
+      "id": "repository-provider-contract",
+      "provider": "cross-provider",
+      "capability": "repository.contract.v1",
+      "level": "offline-tested",
+      "validatedAt": "2026-07-15",
+      "evidence": [
+        {"path": "docs/repository-provider-contract.md", "sha256": "sha256:c3920b60c95518772bb3fd2111b2b17893feceb67565427be6fb600214e8c7d0"}
+      ]
+    },
+    {
+      "id": "osf-compatibility",
+      "provider": "osf",
+      "capability": "cli.api.mcp.compatibility",
+      "level": "offline-tested",
+      "validatedAt": "2026-07-15",
+      "evidence": [
+        {"path": "docs/compatibility-policy.md", "sha256": "sha256:9ec4abfb5de84b5b6b7054f91019349f832fc97782246360d0f7ccf563f7c98b"}
+      ]
+    },
+    {
+      "id": "zenodo-api-contract",
+      "provider": "zenodo",
+      "capability": "rest.oai.contract",
+      "level": "offline-tested",
+      "validatedAt": "2026-07-15",
+      "evidence": [
+        {"path": "docs/zenodo-api-source.json", "sha256": "sha256:468eca003f23b5156be7e439e9b48f677c4315b91ee75d26b995819575ffaabf"}
+      ]
+    },
+    {
+      "id": "provider-observability",
+      "provider": "cross-provider",
+      "capability": "operational.events.v1",
+      "level": "offline-tested",
+      "validatedAt": "2026-07-15",
+      "evidence": [
+        {"path": "docs/observability.md", "sha256": "sha256:6daff0663d845f610419386dc411d3a3fdc8e3eeb8e7aa7aa18cebaa7fa8c003"}
+      ]
+    },
+    {
+      "id": "zenodo-sandbox-transfer",
+      "provider": "zenodo",
+      "capability": "draft.files.transfer",
+      "level": "sandbox-validated",
+      "validatedAt": "2026-07-15",
+      "evidence": [
+        {"path": "docs/zenodo-sandbox-validation-evidence.md", "sha256": "sha256:60b3181b8fc09eaffea5135e27603e08d442cb3e686ed6251baa011674255082"}
+      ]
+    },
+    {
+      "id": "zenodo-sandbox-publication",
+      "provider": "zenodo",
+      "capability": "deposit.publication.lifecycle",
+      "level": "sandbox-validated",
+      "validatedAt": "2026-07-15",
+      "evidence": [
+        {"path": "docs/zenodo-publication-validation-evidence.md", "sha256": "sha256:21340a7634a9bc3e04c651ae7b585a68a9885b1da1bc8c5652f5b94e6049988e"}
+      ]
+    },
+    {
+      "id": "cross-provider-sandbox-copy",
+      "provider": "cross-provider",
+      "capability": "osf.zenodo.copy.saga",
+      "level": "sandbox-validated",
+      "validatedAt": "2026-07-15",
+      "evidence": [
+        {"path": "docs/cross-provider-sandbox-validation-evidence.md", "sha256": "sha256:1b7542e8dd903222aa030580a7bf7c5fb75586b9ba1c4344e0e97dd65b06c8f9"}
+      ]
+    }
+  ]
+}
