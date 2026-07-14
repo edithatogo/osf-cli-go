@@ -1,35 +1,32 @@
 # Implementation Plan
 
-## Phase 1: API and capability mapping
+## Phase 1: Evidence and contract
 
-- [ ] Task: Pin official Zenodo API source, terms, retrieval date, sandbox, and endpoint evidence.
-- [ ] Task: Map OSF and Zenodo records, metadata, files, identifiers, auth, limits, and publication states.
-- [ ] Task: Define shared provider capability vocabulary and explicit non-equivalences.
-- [ ] Task: Conductor - User Manual Verification 'API and capability mapping' (Protocol in workflow.md)
+- [ ] Task: Complete [Zenodo API provenance #102](../zenodo-api-provenance_20260715/plan.md).
+- [ ] Task: Complete [repository provider contract #103](../repository-provider-contract_20260715/plan.md).
+- [ ] Task: Conductor - Automated Review and Checkpoint 'Evidence and contract' (Protocol in workflow.md)
 
-## Phase 2: Shared provider contract
+## Phase 2: Independent read adapters
 
-- [ ] Task: Define typed provider interfaces and domain models without weakening existing OSF contracts.
-- [ ] Task: Add fixture-backed Zenodo read-only client tests and redacted error behavior.
-- [ ] Task: Add provider-neutral transfer, pagination, retry, cancellation, checksum, and rate-limit contracts.
-- [ ] Task: Conductor - User Manual Verification 'Shared provider contract' (Protocol in workflow.md)
+- [ ] Task: Complete [read-only Zenodo REST client #104](../zenodo-readonly-client_20260715/plan.md).
+- [ ] Task: Complete [Zenodo OAI-PMH adapter #107](../zenodo-oai-pmh_20260715/plan.md).
+- [ ] Task: Conductor - Automated Review and Checkpoint 'Independent read adapters' (Protocol in workflow.md)
 
-## Phase 3: CLI and MCP read-only parity
+## Phase 3: User and agent surfaces
 
-- [ ] Task: Add read-only Zenodo discovery behind an explicit provider boundary.
-- [ ] Task: Add CLI/MCP compatibility fixtures and documentation for supported and deferred operations.
-- [ ] Task: Validate OSF behavior remains unchanged and no unsupported Zenodo writes are advertised.
-- [ ] Task: Conductor - User Manual Verification 'CLI and MCP read-only parity' (Protocol in workflow.md)
+- [ ] Task: Complete [provider-scoped CLI #105](../provider-scoped-cli_20260715/plan.md).
+- [ ] Task: Complete [provider-scoped MCP #106](../provider-scoped-mcp_20260715/plan.md).
+- [ ] Task: Conductor - Automated Review and Checkpoint 'User and agent surfaces' (Protocol in workflow.md)
 
-## Phase 4: Transfers and publication workflows
+## Phase 4: Safe writes and movement
 
-- [ ] Task: Design sandbox-first upload, download, DOI reservation, publish, discard, and cleanup workflows.
-- [ ] Task: Validate provider-specific checksums, limits, conflicts, resumability, and cancellation.
-- [ ] Task: Add explicit authorization and confirmation gates for publication and destructive actions.
-- [ ] Task: Conductor - User Manual Verification 'Transfers and publication workflows' (Protocol in workflow.md)
+- [ ] Task: Complete [sandbox transfers #108](../zenodo-sandbox-transfers_20260715/plan.md).
+- [ ] Task: Complete [publication state machine #109](../zenodo-publication-state_20260715/plan.md).
+- [ ] Task: Complete [cross-provider provenance transfer #110](../cross-provider-provenance-transfer_20260715/plan.md).
+- [ ] Task: Conductor - Automated Review and Checkpoint 'Safe writes and movement' (Protocol in workflow.md)
 
 ## Phase 5: Release integration
 
-- [ ] Task: Add provider contract checks to CI, release validation, feature matrix, and launch review.
-- [ ] Task: Record live/sandbox evidence or a dated external-validation blocker.
-- [ ] Task: Conductor - User Manual Verification 'Release integration' (Protocol in workflow.md)
+- [ ] Task: Complete [multi-provider release integration #111](../multi-provider-release-integration_20260715/plan.md).
+- [ ] Task: Verify all ten GitHub subissues and child tracks are reviewed and closed or explicitly deferred.
+- [ ] Task: Conductor - Automated Review and Checkpoint 'Release integration' (Protocol in workflow.md)

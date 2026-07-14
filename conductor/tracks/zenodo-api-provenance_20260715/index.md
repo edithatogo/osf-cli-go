@@ -1,0 +1,5 @@
+# Zenodo API provenance
+
+- [Specification](spec.md)
+- [Implementation plan](plan.md)
+- GitHub: [#102](https://github.com/edithatogo/osf-cli-go/issues/102), child of [#101](https://github.com/edithatogo/osf-cli-go/issues/101)

@@ -1,0 +1,10 @@
+{
+  "track_id": "zenodo-readonly-client_20260715",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-07-15T00:00:00Z",
+  "updated_at": "2026-07-15T00:00:00Z",
+  "description": "Implement an offline-tested read-only Zenodo REST client",
+  "github_issue": "https://github.com/edithatogo/osf-cli-go/issues/104",
+  "parent_issue": "https://github.com/edithatogo/osf-cli-go/issues/101"
+}

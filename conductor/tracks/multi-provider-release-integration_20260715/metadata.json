@@ -1,0 +1,10 @@
+{
+  "track_id": "multi-provider-release-integration_20260715",
+  "type": "chore",
+  "status": "new",
+  "created_at": "2026-07-15T00:00:00Z",
+  "updated_at": "2026-07-15T00:00:00Z",
+  "description": "Integrate provider validation into CI, releases, observability, and docs",
+  "github_issue": "https://github.com/edithatogo/osf-cli-go/issues/111",
+  "parent_issue": "https://github.com/edithatogo/osf-cli-go/issues/101"
+}

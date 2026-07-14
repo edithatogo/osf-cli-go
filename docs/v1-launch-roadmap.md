@@ -31,7 +31,11 @@ Zenodo support is a staged post-1.0 roadmap item, tracked in [#101](https://gith
 offline read-only capability mapping and fixture-backed discovery. Transfers,
 DOI reservation, publication, and any OSF-to-Zenodo movement require explicit
 provider capabilities, sandbox validation, authorization, cleanup, and
-provenance evidence; they are not implied by the roadmap entry.
+provenance evidence; they are not implied by the roadmap entry. The epic is
+decomposed into native subissues [#102](https://github.com/edithatogo/osf-cli-go/issues/102)
+through [#111](https://github.com/edithatogo/osf-cli-go/issues/111), with the
+dependency order and maturity controls recorded in the [Zenodo provider
+roadmap](zenodo-provider-roadmap.md).
 
 ## Recommended sequence
 
