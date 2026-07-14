@@ -1,0 +1,1 @@
+Conductor review: Zenodo client-primitives phase passed. Fixed host allowlisting, redirect authorization safety, concurrency bounds, missing-hits validation, and fuzz coverage. Targeted tests/race/vet passed; phase-two coverage target remains.
