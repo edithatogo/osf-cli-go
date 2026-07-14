@@ -9,7 +9,7 @@
 ## Phase 2: Independent read adapters
 
 - [x] Task: Complete [read-only Zenodo REST client #104](../../archive/zenodo-readonly-client_20260715/plan.md).
-- [ ] Task: Complete [Zenodo OAI-PMH adapter #107](../zenodo-oai-pmh_20260715/plan.md).
+- [x] Task: Complete [Zenodo OAI-PMH adapter #107](../zenodo-oai-pmh_20260715/plan.md).
 - [ ] Task: Conductor - Automated Review and Checkpoint 'Independent read adapters' (Protocol in workflow.md)
 
 ## Phase 3: User and agent surfaces
