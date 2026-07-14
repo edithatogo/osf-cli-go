@@ -38,6 +38,8 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
 - Manage tags, metadata fields, contributors, and licenses where OSF API permissions allow.
 - Export project snapshots including metadata, contributor lists, file inventories, wiki content, component hierarchy, and activity logs.
 - Support reproducible manifests for backup and audit workflows.
+- Add provider-scoped Zenodo discovery and carefully gated transfer/publication
+  workflows after the provider contract and sandbox evidence are complete.
 - Add shell completions and packaged releases for Windows, macOS, and Linux.
 
 ## Reference Tools And Lessons
@@ -45,6 +47,8 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
 - OSF API v2 docs: authoritative data model, endpoints, pagination, relationships, and validation rules.
 - OSF Dictionary: user-facing terminology for projects, components, registrations, preregistrations, embargoes, wikis, files, contributors, and add-ons.
 - OSF Metadata Profile: metadata vocabulary and FAIR/discovery mapping reference.
+- Zenodo developer documentation, sandbox guidance, terms, and repository
+  policies: authoritative inputs for the post-1.0 provider roadmap.
 - `osfclient`: familiar CLI concepts such as init, list, clone, fetch, upload, remove, and local config.
 - `osfr`: broad OSF entity coverage, explicit conflicts behavior, and distinction between nodes, files, and users.
 - `osf-project-exporter`: project export target that includes metadata, files, contributors, wiki content, and components.

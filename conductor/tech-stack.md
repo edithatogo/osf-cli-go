@@ -21,6 +21,8 @@
 ## API Direction
 
 - Target OSF API v2 at `https://api.osf.io/v2/`.
+- Pin future Zenodo support to the dated, digested capability contract in
+  `docs/zenodo-api-source.json`; treat REST and OAI-PMH as separate adapters.
 - Model OSF entities explicitly around nodes, files, users, contributors, registrations, and metadata.
 - Implement pagination and relationship traversal as core client primitives, not per-command afterthoughts.
 - Prefer context-aware HTTP functions and typed errors that preserve status code, endpoint, and OSF error details.
@@ -54,6 +56,8 @@
 - Lint: `golangci-lint run`
 - Vulnerability scan: `govulncheck ./...`
 - Anti-stub scan: `go run ./tools/checkstubs`
+- Zenodo API contract: `go run ./tools/checkzenodoapi` offline in normal CI;
+  `-online` only in the scheduled/manual credential-free drift workflow.
 - Release packaging: later use GoReleaser or a similarly conventional Go release pipeline once command behavior stabilizes.
 - Dependency updates: Renovate for Go modules and GitHub Actions, without automerge initially.
 
