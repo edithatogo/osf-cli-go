@@ -8,6 +8,6 @@
 
 ## Phase 2: Contract validation
 
-- [~] Task: Add provider contract fixtures for supported, partial, and unsupported operations.
-- [ ] Task: Prove existing OSF compatibility fixtures and public contracts remain unchanged.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Contract validation' (Protocol in workflow.md)
+- [x] Task: Add provider contract fixtures for supported, partial, and unsupported operations.
+- [x] Task: Prove existing OSF compatibility fixtures and public contracts remain unchanged.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Contract validation' (Protocol in workflow.md)

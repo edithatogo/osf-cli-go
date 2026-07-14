@@ -41,6 +41,8 @@ jobs:
         run: go run ./tools/checkfeaturematrix
       - name: Zenodo API capability contract
         run: go run ./tools/checkzenodoapi
+      - name: Repository provider conformance
+        run: go test ./internal/repository/...
       - name: Release readiness contract
         run: go run ./tools/checkreleasecontract
       - name: Compatibility contract

@@ -116,9 +116,49 @@ func TestRequireCapabilityReturnsTypedError(t *testing.T) {
 	if err == nil || !errors.Is(err, ErrUnsupportedCapability) {
 		t.Fatalf("Require() error = %v, want ErrUnsupportedCapability", err)
 	}
-	var unsupported *UnsupportedCapabilityError
+	var unsupported *CapabilitySupportError
 	if !errors.As(err, &unsupported) || unsupported.Provider != ProviderOSF || unsupported.Capability != CapabilityOAIHarvest {
 		t.Fatalf("Require() error = %#v", err)
+	}
+}
+
+func TestRequireCapabilityDistinguishesPartialSupport(t *testing.T) {
+	err := ZenodoContract().Require(CapabilityPublish)
+	if err == nil || !errors.Is(err, ErrPartialCapability) || errors.Is(err, ErrUnsupportedCapability) {
+		t.Fatalf("Require() error = %v, want only ErrPartialCapability", err)
+	}
+}
+
+func TestContractValidationRejectsIncompleteOrUnexplainedDecisions(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*Contract)
+	}{
+		{name: "missing capability", mutate: func(contract *Contract) { contract.Capabilities = contract.Capabilities[:len(contract.Capabilities)-1] }},
+		{name: "invalid level", mutate: func(contract *Contract) { contract.Capabilities[0].Level = "maybe" }},
+		{name: "partial without reason", mutate: func(contract *Contract) {
+			contract.Capabilities[0].Level = SupportPartial
+			contract.Capabilities[0].Constraints = nil
+		}},
+		{name: "wrong order", mutate: func(contract *Contract) {
+			contract.Capabilities[0], contract.Capabilities[1] = contract.Capabilities[1], contract.Capabilities[0]
+		}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			contract := OSFContract()
+			test.mutate(&contract)
+			if err := contract.Validate(); err == nil {
+				t.Fatal("Validate() returned nil error")
+			}
+		})
+	}
+}
+
+func TestUnknownCapabilityIsExplicitlyUnsupported(t *testing.T) {
+	detail := ZenodoContract().Support("future.operation")
+	if detail.Level != SupportUnsupported || len(detail.Constraints) == 0 {
+		t.Fatalf("Support() = %#v", detail)
 	}
 }
 
@@ -139,5 +179,32 @@ func TestRecordEnvelopeValidatesNativeIdentityAndState(t *testing.T) {
 	record.Lifecycle.Native = ""
 	if err := record.Validate(); err == nil {
 		t.Fatal("Validate() accepted missing native lifecycle state")
+	}
+}
+
+func TestRecordEnvelopeJSONRoundTripPreservesNativeMetadata(t *testing.T) {
+	metadata, err := NewNativeMetadata("application/octet-stream", []byte{0, 1, 2, 255})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := RecordEnvelope{
+		Identity:       QualifiedID{Provider: ProviderZenodo, Kind: KindRecord, NativeID: "123"},
+		Lifecycle:      Lifecycle{Common: LifecyclePublished, Native: "done"},
+		NativeMetadata: metadata,
+		Permissions:    Permissions{Read: PermissionAllowed, Write: PermissionDenied, Delete: PermissionDenied, Publish: PermissionUnsupported},
+	}
+	encoded, err := json.Marshal(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got RecordEnvelope
+	if err := json.Unmarshal(encoded, &got); err != nil {
+		t.Fatal(err)
+	}
+	if err := got.Validate(); err != nil {
+		t.Fatalf("round-trip Validate() error = %v", err)
+	}
+	if !bytes.Equal(got.NativeMetadata.Bytes(), want.NativeMetadata.Bytes()) {
+		t.Fatalf("native metadata = %v, want %v", got.NativeMetadata.Bytes(), want.NativeMetadata.Bytes())
 	}
 }

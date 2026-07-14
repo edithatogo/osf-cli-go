@@ -86,19 +86,19 @@ var (
 	ErrPartialCapability = errors.New("repository capability is only partially supported")
 )
 
-// UnsupportedCapabilityError provides capability-aware user guidance.
-type UnsupportedCapabilityError struct {
+// CapabilitySupportError provides capability-aware user guidance.
+type CapabilitySupportError struct {
 	Provider    Provider
 	Capability  Capability
 	Level       SupportLevel
 	Constraints []string
 }
 
-func (e *UnsupportedCapabilityError) Error() string {
+func (e *CapabilitySupportError) Error() string {
 	return fmt.Sprintf("provider %s capability %s is %s: %s", e.Provider, e.Capability, e.Level, strings.Join(e.Constraints, "; "))
 }
 
-func (e *UnsupportedCapabilityError) Unwrap() error {
+func (e *CapabilitySupportError) Unwrap() error {
 	if e.Level == SupportPartial {
 		return ErrPartialCapability
 	}
@@ -111,7 +111,7 @@ func (contract Contract) Require(capability Capability) error {
 	if detail.Level == SupportSupported {
 		return nil
 	}
-	return &UnsupportedCapabilityError{
+	return &CapabilitySupportError{
 		Provider: contract.Provider, Capability: capability,
 		Level: detail.Level, Constraints: append([]string(nil), detail.Constraints...),
 	}
