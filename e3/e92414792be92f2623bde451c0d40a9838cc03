@@ -1,0 +1,1 @@
+Conductor review for resumable-transfers_20260714: fixed stalled-reader infinite-loop risk and missing folder source-identity validation. Full local validation passed on 2026-07-14.
