@@ -1,0 +1,1 @@
+Track multi-provider-release-integration_20260715, phase Release closeout review. Full tests, race, vet, lint, vulnerability, compatibility, registry, docs, actionlint, and release gates passed; total coverage 72.1%.
