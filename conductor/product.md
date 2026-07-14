@@ -14,6 +14,7 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
 ## Product Goals
 
 - Provide a clean `osf` CLI with predictable commands, useful help text, and safe defaults.
+- Provide opt-in, redacted operational events for troubleshooting without polluting command output or collecting telemetry.
 - Treat the OSF API v2 documentation as the technical dictionary for object shapes, attributes, relationships, pagination, and allowed values.
 - Treat the OSF Dictionary as the conceptual glossary for user-facing language such as projects, components, registrations, preprints, forks, embargoes, contributors, wiki, and files.
 - Preserve metadata fidelity using the OSF Metadata Profile where project metadata maps to persistent identifiers, FAIR metadata, DataCite-oriented concepts, or discovery metatags.
@@ -28,6 +29,7 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
 - List OSF Storage files and folders for a node.
 - Download a single file or a folder tree with clear conflict handling.
 - Emit JSON output for automation and table output for humans.
+- Emit versioned structured operational events to an operator-selected local destination when explicitly enabled.
 
 ## Later Scope
 

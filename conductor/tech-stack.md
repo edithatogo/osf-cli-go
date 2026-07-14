@@ -36,6 +36,8 @@
 - Default output: concise tables for humans.
 - `--json` output: stable JSON with clear schemas for automation.
 - Error output: short actionable messages by default, with future verbose/debug mode for HTTP detail.
+- Structured observability: the standard-library `internal/observability` package emits opt-in `osf.event.v1` JSONL events with operation/request IDs, redaction, level filtering, and classified errors.
+- Event destinations are local-only and owner-readable; stdout is never used for structured events.
 
 ## Testing
 

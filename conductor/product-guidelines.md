@@ -15,5 +15,6 @@
 ## Safety Defaults
 
 - Never print tokens or private project details in logs, errors, or docs examples.
+- Opt-in event logs must redact credentials and local paths, remain separate from machine-readable command output, and document operator-controlled retention.
 - Read-only commands may default to concise output. Destructive or write commands must require explicit user intent when added.
 - Downloads must fail rather than overwrite unless the user supplies an explicit conflict policy.
