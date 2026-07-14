@@ -120,6 +120,7 @@ jobs:
       - name: Validate disposable OSF project
         env:
           OSF_LIVE_VALIDATION: "1"
+          OSF_VALIDATE_WRITES: "1"
           OSF_TOKEN: ${{ secrets.OSF_VALIDATION_TOKEN }}
           OSF_VALIDATE_PROJECT: ${{ secrets.OSF_VALIDATE_PROJECT }}
         run: go run ./tools/livevalidation -live -evidence osf-production-evidence.md

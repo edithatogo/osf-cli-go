@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -11,27 +13,48 @@ import (
 	"time"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 const (
-	defaultEvidencePath = "conductor/tracks/live-osf-release-validation_20260714/live-validation-evidence.md"
-	osfCommandPath      = "./cmd/osf"
+	defaultEvidencePath      = "docs/live-osf-validation-evidence.md"
+	osfCommandPath           = "./cmd/osf"
+	cancellationProbeTimeout = time.Nanosecond
 )
 
 type validationEnv struct {
-	liveEnabled bool
-	token       string
-	username    string
-	password    string
-	projectRef  string
-	downloadRef string
+	liveEnabled   bool
+	token         string
+	username      string
+	password      string
+	projectRef    string
+	downloadRef   string
+	writesEnabled bool
+	fixturePath   string
+	fixtureName   string
+	downloadPath  string
 }
 
 type validationStep struct {
 	Name       string
 	Command    string
+	Args       []string
 	Executable bool
+	Mode       stepMode
 }
+
+type stepMode int
+
+const (
+	stepNormal stepMode = iota
+	stepExpectedFailure
+	stepCancellation
+	stepMCP
+	stepCleanup
+)
+
+type osfStepRunner func(context.Context, time.Duration, validationEnv, validationStep) (string, error)
+type mcpStepRunner func(context.Context, time.Duration, validationEnv) (string, error)
 
 type validationResult struct {
 	Step    validationStep
@@ -62,14 +85,13 @@ func main() {
 	flag.Parse()
 
 	env := loadValidationEnv(auth.EnvSource{})
-	report, err := runValidation(context.Background(), env, liveMode, timeout)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "livevalidation: %v\n", err)
-		os.Exit(1)
-	}
-
+	report, runErr := runValidation(context.Background(), env, liveMode, timeout)
 	if err := writeEvidence(evidencePath, report); err != nil {
 		fmt.Fprintf(os.Stderr, "livevalidation: write evidence: %v\n", err)
+		os.Exit(1)
+	}
+	if runErr != nil {
+		fmt.Fprintf(os.Stderr, "livevalidation: %v\n", runErr)
 		os.Exit(1)
 	}
 
@@ -89,6 +111,10 @@ func main() {
 }
 
 func runValidation(ctx context.Context, env validationEnv, liveMode bool, timeout time.Duration) (validationReport, error) {
+	return runValidationWithRunners(ctx, env, liveMode, timeout, runOSFStep, runMCPCommand)
+}
+
+func runValidationWithRunners(ctx context.Context, env validationEnv, liveMode bool, timeout time.Duration, osfRunner osfStepRunner, mcpRunner mcpStepRunner) (validationReport, error) {
 	report := validationReport{
 		GeneratedAt: time.Now().UTC(),
 		Env:         env,
@@ -115,34 +141,103 @@ func runValidation(ctx context.Context, env validationEnv, liveMode bool, timeou
 		report.Steps = plannedSteps(env)
 		return report, nil
 	}
+	fixture, err := os.CreateTemp("", "osf-cli-go-livevalidation-*.txt")
+	if err != nil {
+		return report, fmt.Errorf("create validation fixture: %w", err)
+	}
+	fixturePath := fixture.Name()
+	if _, err := fixture.WriteString("OSF CLI Go disposable live-validation fixture\n"); err != nil {
+		_ = fixture.Close()
+		_ = os.Remove(fixturePath)
+		return report, fmt.Errorf("write validation fixture: %w", err)
+	}
+	if err := fixture.Close(); err != nil {
+		_ = os.Remove(fixturePath)
+		return report, fmt.Errorf("close validation fixture: %w", err)
+	}
+	defer func() { _ = os.Remove(fixturePath) }()
+	env.fixturePath = fixturePath
+	env.fixtureName = filepath.Base(fixturePath)
+	if env.downloadRef != "" {
+		downloadPath, err := os.MkdirTemp("", "osf-cli-go-livevalidation-download-*")
+		if err != nil {
+			return report, fmt.Errorf("create validation download directory: %w", err)
+		}
+		defer func() { _ = os.RemoveAll(downloadPath) }()
+		env.downloadPath = downloadPath
+	}
+	report.Env = env
 
 	report.Mode = "live"
 	steps := executableSteps(env)
 	results := make([]validationResult, 0, len(steps))
 	var stepErr error
+	uploadPassed := false
 	for _, step := range steps {
 		result := validationResult{Step: step}
 		if !step.Executable {
 			result.Status = "pending"
-			result.Output = "command not yet available in this repository"
+			result.Output = pendingReason(step)
 			results = append(results, result)
 			continue
 		}
 
+		if step.Mode == stepExpectedFailure && !uploadPassed {
+			result.Status = "skipped"
+			result.Output = "conflict check skipped because the initial upload failed"
+			results = append(results, result)
+			continue
+		}
 		start := time.Now()
-		output, runErr := runOSFCommand(ctx, timeout, env, step.Command)
+		runContext := ctx
+		runTimeout := timeout
+		if step.Mode == stepCleanup {
+			runContext = context.WithoutCancel(ctx)
+		}
+		if step.Mode == stepCancellation {
+			runTimeout = cancellationProbeTimeout
+		}
+		var output string
+		var runErr error
+		if step.Mode == stepMCP {
+			output, runErr = mcpRunner(runContext, runTimeout, env)
+		} else {
+			output, runErr = osfRunner(runContext, runTimeout, env, step)
+		}
 		result.Elapsed = time.Since(start)
-		if runErr != nil {
+		switch {
+		case step.Mode == stepExpectedFailure && isExpectedConflict(output, runErr):
+			result.Status = "passed"
+			result.Output = "existing-file conflict rejected as expected"
+		case step.Mode == stepExpectedFailure && runErr != nil:
+			result.Status = "failed"
+			result.Output = "upload failed without a recognized existing-file conflict"
+			stepErr = combineErrors(stepErr, fmt.Errorf("%s: %w", step.Name, runErr))
+		case step.Mode == stepExpectedFailure:
 			result.Status = "failed"
 			result.Output = output
+			runErr = errors.New("expected existing-file conflict was accepted")
 			stepErr = combineErrors(stepErr, fmt.Errorf("%s: %w", step.Name, runErr))
-		} else {
+		case step.Mode == stepCancellation && (errors.Is(runErr, context.DeadlineExceeded) || errors.Is(runErr, context.Canceled)):
 			result.Status = "passed"
-			result.Output = output
+			result.Output = "command stopped at the cancellation deadline"
+		case runErr != nil:
+			result.Status = "failed"
+			result.Output = "command failed; inspect the local validation error"
+			stepErr = combineErrors(stepErr, fmt.Errorf("%s: %w", step.Name, runErr))
+		default:
+			result.Status = "passed"
+			result.Output = "command completed successfully"
+		}
+		if step.Name == "files upload" && result.Status == "passed" {
+			uploadPassed = true
 		}
 		results = append(results, result)
 	}
 	report.Steps = results
+	if hasIncomplete(results) {
+		stepErr = combineErrors(stepErr, errors.New("incomplete live validation: pending, skipped, or failed scenarios remain"))
+	}
 	if stepErr != nil {
 		return report, stepErr
 	}
@@ -157,12 +252,13 @@ func loadValidationEnv(source auth.Source) validationEnv {
 	downloadRef, _ := source.Lookup("OSF_VALIDATE_DOWNLOAD")
 
 	return validationEnv{
-		liveEnabled: truthyLookup(source, "OSF_LIVE_VALIDATION"),
-		token:       strings.TrimSpace(token),
-		username:    strings.TrimSpace(username),
-		password:    strings.TrimSpace(password),
-		projectRef:  strings.TrimSpace(projectRef),
-		downloadRef: strings.TrimSpace(downloadRef),
+		liveEnabled:   truthyLookup(source, "OSF_LIVE_VALIDATION"),
+		writesEnabled: truthyLookup(source, "OSF_VALIDATE_WRITES"),
+		token:         strings.TrimSpace(token),
+		username:      strings.TrimSpace(username),
+		password:      strings.TrimSpace(password),
+		projectRef:    strings.TrimSpace(projectRef),
+		downloadRef:   strings.TrimSpace(downloadRef),
 	}
 }
 
@@ -203,7 +299,7 @@ func plannedSteps(env validationEnv) []validationResult {
 			result.Output = "not executed in dry-run mode"
 		} else {
 			result.Status = "pending"
-			result.Output = "command not yet available in this repository"
+			result.Output = pendingReason(step)
 		}
 		results = append(results, result)
 	}
@@ -221,43 +317,79 @@ func executableSteps(env validationEnv) []validationStep {
 		downloadRef = env.downloadRef
 	}
 
-	downloadCommand := fmt.Sprintf("files download --file %s <temp-dir>", downloadRef)
+	downloadArgs := []string{"files", "download", "--file", downloadRef, "<temp-dir>"}
 	if env.downloadRef != "" {
-		downloadCommand = fmt.Sprintf("files download --file %s %s", downloadRef, filepath.Join(os.TempDir(), "osf-cli-go-livevalidation-download"))
+		destination := env.downloadPath
+		if destination == "" {
+			destination = "<generated-temp-dir>"
+		}
+		downloadArgs = []string{"files", "download", "--file", downloadRef, destination}
+	}
+	fixturePath := env.fixturePath
+	fixtureName := env.fixtureName
+	if fixturePath == "" {
+		fixturePath = "<generated-fixture>"
+		fixtureName = "<generated-fixture-name>"
 	}
 
 	return []validationStep{
-		{Name: "auth whoami", Command: "auth whoami", Executable: true},
-		{Name: "projects list", Command: "projects list", Executable: true},
-		{Name: "projects get", Command: "projects get " + project, Executable: true},
-		{Name: "components list", Command: "components list " + project, Executable: true},
-		{Name: "files list", Command: "files list " + project, Executable: true},
-		{Name: "files addons", Command: "files addons " + project, Executable: true},
-		{Name: "export", Command: "export " + project + " --json", Executable: true},
-		{Name: "search", Command: "search open --limit 5 --json", Executable: true},
-		{Name: "preprints list", Command: "preprints list --limit 5 --json", Executable: true},
-		{Name: "files download", Command: downloadCommand, Executable: env.downloadRef != ""},
+		newValidationStep("auth whoami", stepNormal, true, "auth", "whoami"),
+		newValidationStep("projects list", stepNormal, true, "projects", "list"),
+		newValidationStep("projects get", stepNormal, true, "projects", "get", project),
+		newValidationStep("components list", stepNormal, true, "components", "list", project),
+		newValidationStep("files list", stepNormal, true, "files", "list", project),
+		newValidationStep("files addons", stepNormal, true, "files", "addons", project),
+		newValidationStep("export", stepNormal, true, "export", project, "--json"),
+		newValidationStep("search", stepNormal, true, "search", "open", "--limit", "5", "--json"),
+		newValidationStep("preprints list", stepNormal, true, "preprints", "list", "--limit", "5", "--json"),
+		newValidationStep("files upload", stepNormal, env.writesEnabled, "files", "upload", "--node", project, fixturePath, "--conflict", "overwrite"),
+		newValidationStep("files upload conflict", stepExpectedFailure, env.writesEnabled, "files", "upload", "--node", project, fixturePath, "--conflict", "fail"),
+		newValidationStep("cancellation", stepCancellation, true, "projects", "list", "--json"),
+		{Name: "MCP project get", Command: "osf_project_get", Executable: true, Mode: stepMCP},
+		newValidationStep("files cleanup", stepCleanup, env.writesEnabled, "files", "rm", "--node", project, fixtureName, "--yes"),
+		newValidationStep("files download", stepNormal, env.downloadRef != "", downloadArgs...),
 	}
 }
 
-func runOSFCommand(parent context.Context, timeout time.Duration, env validationEnv, command string) (string, error) {
+func newValidationStep(name string, mode stepMode, executable bool, args ...string) validationStep {
+	return validationStep{Name: name, Command: strings.Join(args, " "), Args: args, Executable: executable, Mode: mode}
+}
+
+func pendingReason(step validationStep) string {
+	switch step.Name {
+	case "files upload", "files upload conflict", "files cleanup":
+		return "set OSF_VALIDATE_WRITES=1 to opt in to disposable writes"
+	case "files download":
+		return "set OSF_VALIDATE_DOWNLOAD to a disposable fixture file reference"
+	default:
+		return "scenario is not enabled"
+	}
+}
+
+func isExpectedConflict(output string, err error) bool {
+	if err == nil {
+		return false
+	}
+	message := strings.ToLower(output + " " + err.Error())
+	for _, marker := range []string{"already exists", "conflict", "status 409", "status code 409"} {
+		if strings.Contains(message, marker) {
+			return true
+		}
+	}
+	return false
+}
+
+func runOSFStep(parent context.Context, timeout time.Duration, env validationEnv, step validationStep) (string, error) {
 	ctx, cancel := context.WithTimeout(parent, timeout)
 	defer cancel()
 
-	args := strings.Fields(command)
-	if len(args) == 0 {
+	if len(step.Args) == 0 {
 		return "", fmt.Errorf("empty command")
 	}
 
-	cmdArgs := append([]string{"run", osfCommandPath}, args...)
+	cmdArgs := append([]string{"run", osfCommandPath}, step.Args...)
 	cmd := exec.CommandContext(ctx, "go", cmdArgs...)
-	cmd.Env = append(os.Environ(), auth.TokenEnv+"="+env.token, auth.UsernameEnv+"="+env.username, auth.PasswordEnv+"="+env.password)
-	if env.projectRef != "" {
-		cmd.Env = append(cmd.Env, "OSF_VALIDATE_PROJECT="+env.projectRef)
-	}
-	if env.downloadRef != "" {
-		cmd.Env = append(cmd.Env, "OSF_VALIDATE_DOWNLOAD="+env.downloadRef)
-	}
+	cmd.Env = commandEnvironment(env)
 
 	out, err := cmd.CombinedOutput()
 	output := auth.Redact(string(out), env.token, env.username, env.password, env.projectRef, env.downloadRef)
@@ -270,9 +402,57 @@ func runOSFCommand(parent context.Context, timeout time.Duration, env validation
 	return output, nil
 }
 
+func runMCPCommand(parent context.Context, timeout time.Duration, env validationEnv) (string, error) {
+	ctx, cancel := context.WithTimeout(parent, timeout)
+	defer cancel()
+	command := exec.CommandContext(ctx, "go", "run", "./cmd/osf-mcp")
+	command.Env = commandEnvironment(env)
+	client := mcp.NewClient(&mcp.Implementation{Name: "osf-cli-go-livevalidation", Version: "1.0.0"}, nil)
+	session, err := client.Connect(ctx, &mcp.CommandTransport{Command: command}, nil)
+	if err != nil {
+		return "", auth.RedactError(err, env.token, env.username, env.password, env.projectRef)
+	}
+	defer func() { _ = session.Close() }()
+	arguments, err := json.Marshal(map[string]string{"id": env.projectRef})
+	if err != nil {
+		return "", err
+	}
+	result, err := session.CallTool(ctx, &mcp.CallToolParams{Name: "osf_project_get", Arguments: json.RawMessage(arguments)})
+	if err != nil {
+		return "", auth.RedactError(err, env.token, env.username, env.password, env.projectRef)
+	}
+	if result.IsError {
+		return "", errors.New("MCP osf_project_get returned an error result")
+	}
+	if result.StructuredContent == nil && len(result.Content) == 0 {
+		return "", errors.New("MCP osf_project_get returned no content")
+	}
+	return "MCP osf_project_get returned structured content", nil
+}
+
+func commandEnvironment(env validationEnv) []string {
+	values := append(os.Environ(), auth.TokenEnv+"="+env.token, auth.UsernameEnv+"="+env.username, auth.PasswordEnv+"="+env.password)
+	if env.projectRef != "" {
+		values = append(values, "OSF_VALIDATE_PROJECT="+env.projectRef)
+	}
+	if env.downloadRef != "" {
+		values = append(values, "OSF_VALIDATE_DOWNLOAD="+env.downloadRef)
+	}
+	return values
+}
+
 func hasFailures(results []validationResult) bool {
 	for _, result := range results {
 		if result.Status == "failed" {
+			return true
+		}
+	}
+	return false
+}
+
+func hasIncomplete(results []validationResult) bool {
+	for _, result := range results {
+		if result.Status != "passed" {
 			return true
 		}
 	}
@@ -304,6 +484,7 @@ func writeEvidence(path string, report validationReport) error {
 	fmt.Fprintf(&builder, "  - %s: %s\n", auth.PasswordEnv, presence(report.Env.password))
 	fmt.Fprintf(&builder, "  - OSF_VALIDATE_PROJECT: %s\n", presence(report.Env.projectRef))
 	fmt.Fprintf(&builder, "  - OSF_LIVE_VALIDATION: %t\n", report.Env.liveEnabled)
+	fmt.Fprintf(&builder, "  - OSF_VALIDATE_WRITES: %t\n", report.Env.writesEnabled)
 	builder.WriteString("- Planned coverage:\n")
 	for _, step := range plannedSteps(report.Env) {
 		fmt.Fprintf(&builder, "  - %s: %s\n", step.Step.Name, step.Status)

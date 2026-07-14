@@ -104,6 +104,7 @@ func run() error {
 		"docs/operations-runbook.md",
 		"docs/support-policy.md",
 		"docs/live-validation-matrix.md",
+		"docs/live-osf-validation-evidence.md",
 		"docs/release-candidate-evidence.md",
 		"docs/v1-launch-roadmap.md",
 		"docs/v1-launch-review.md",

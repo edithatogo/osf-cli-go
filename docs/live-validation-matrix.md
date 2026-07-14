@@ -26,6 +26,7 @@ the validation. Then opt in explicitly:
 
 ```sh
 OSF_LIVE_VALIDATION=1 \
+OSF_VALIDATE_WRITES=1 \
 OSF_TOKEN="$OSF_TOKEN" \
 OSF_VALIDATE_PROJECT="<disposable-project-id-or-url>" \
 go run ./tools/livevalidation -live
@@ -33,7 +34,9 @@ go run ./tools/livevalidation -live
 
 Set `OSF_VALIDATE_DOWNLOAD` to a known disposable fixture file reference to
 enable the download row. The tool writes sanitized evidence to the current
-release-validation track by default and never writes credential values.
+`docs/live-osf-validation-evidence.md` report by default and never writes
+credential values. Omit `OSF_VALIDATE_WRITES=1` to keep upload, conflict, and
+cleanup scenarios pending even when live read validation is enabled.
 
 Zenodo and cross-provider jobs are invoked only through the manual
 `.github/workflows/provider-validation.yml` workflow. All inputs default to

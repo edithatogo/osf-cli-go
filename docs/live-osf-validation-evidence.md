@@ -1,0 +1,58 @@
+# Live OSF Validation Evidence
+
+- Generated: 2026-07-14T18:47:04Z
+- Mode: dry-run
+- Environment:
+  - OSF_TOKEN: missing
+  - OSF_USERNAME: missing
+  - OSF_PASSWORD: missing
+  - OSF_VALIDATE_PROJECT: missing
+  - OSF_LIVE_VALIDATION: false
+  - OSF_VALIDATE_WRITES: false
+- Planned coverage:
+  - auth whoami: planned
+  - projects list: planned
+  - projects get: planned
+  - components list: planned
+  - files list: planned
+  - files addons: planned
+  - export: planned
+  - search: planned
+  - preprints list: planned
+  - files upload: pending
+  - files upload conflict: pending
+  - cancellation: planned
+  - MCP project get: planned
+  - files cleanup: pending
+  - files download: pending
+- Results:
+  - auth whoami: planned
+    - Output: not executed in dry-run mode
+  - projects list: planned
+    - Output: not executed in dry-run mode
+  - projects get: planned
+    - Output: not executed in dry-run mode
+  - components list: planned
+    - Output: not executed in dry-run mode
+  - files list: planned
+    - Output: not executed in dry-run mode
+  - files addons: planned
+    - Output: not executed in dry-run mode
+  - export: planned
+    - Output: not executed in dry-run mode
+  - search: planned
+    - Output: not executed in dry-run mode
+  - preprints list: planned
+    - Output: not executed in dry-run mode
+  - files upload: pending
+    - Output: set OSF_VALIDATE_WRITES=1 to opt in to disposable writes
+  - files upload conflict: pending
+    - Output: set OSF_VALIDATE_WRITES=1 to opt in to disposable writes
+  - cancellation: planned
+    - Output: not executed in dry-run mode
+  - MCP project get: planned
+    - Output: not executed in dry-run mode
+  - files cleanup: pending
+    - Output: set OSF_VALIDATE_WRITES=1 to opt in to disposable writes
+  - files download: pending
+    - Output: set OSF_VALIDATE_DOWNLOAD to a disposable fixture file reference

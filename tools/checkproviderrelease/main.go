@@ -154,6 +154,7 @@ func validateOptInWorkflow(root, name string) error {
 	}
 	for _, required := range []string{
 		"ZENODO_SANDBOX_VALIDATION", "ZENODO_PUBLICATION_VALIDATION", "CROSS_PROVIDER_SANDBOX_VALIDATION", "OSF_LIVE_VALIDATION",
+		"OSF_VALIDATE_WRITES",
 		"ZENODO_SANDBOX_TOKEN", "ZENODO_SANDBOX_PUBLICATION_TOKEN", "OSF_VALIDATION_TOKEN", "OSF_VALIDATE_PROJECT",
 	} {
 		if !strings.Contains(content, required) {
