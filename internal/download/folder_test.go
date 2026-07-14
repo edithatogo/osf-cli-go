@@ -33,6 +33,17 @@ func TestNewFolderDownloadPlanRejectsNoReaderOrOpener(t *testing.T) {
 	}
 }
 
+func TestNewFolderDownloadPlanRequiresIdentityForRangeOpener(t *testing.T) {
+	_, err := NewFolderDownloadPlan(t.TempDir(), ConflictOverwrite, []FolderDownloadFile{
+		{RemotePath: "file.txt", OpenRange: func(int64) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader("content")), nil
+		}},
+	})
+	if err == nil || !strings.Contains(err.Error(), "source identity") {
+		t.Fatalf("error=%v, want source identity validation", err)
+	}
+}
+
 func TestNewFolderDownloadPlanRejectsEmptyDestRoot(t *testing.T) {
 	_, err := NewFolderDownloadPlan("", ConflictFail, []FolderDownloadFile{
 		{RemotePath: "file.txt", Reader: strings.NewReader("x")},

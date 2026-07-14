@@ -154,9 +154,11 @@ func ResumeStreamAtomically(open StreamOpener, opts ResumeOptions) (result Resum
 	defer func() { _ = src.Close() }()
 
 	buf := make([]byte, 32*1024)
+	emptyReads := 0
 	for {
 		n, readErr := src.Read(buf)
 		if n > 0 {
+			emptyReads = 0
 			written, writeErr := partial.Write(buf[:n])
 			checkpoint.Completed += int64(written)
 			if writeErr != nil {
@@ -176,6 +178,10 @@ func ResumeStreamAtomically(open StreamOpener, opts ResumeOptions) (result Resum
 				break
 			}
 			return result, fmt.Errorf("read resume source: %w", readErr)
+		}
+		emptyReads++
+		if emptyReads >= 100 {
+			return result, io.ErrNoProgress
 		}
 	}
 	if err := partial.Sync(); err != nil {

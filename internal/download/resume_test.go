@@ -181,6 +181,19 @@ func TestResumeStreamAtomicallyPropagatesSourceAndPathErrors(t *testing.T) {
 	}
 }
 
+func TestResumeStreamAtomicallyRejectsStalledReaders(t *testing.T) {
+	dst := filepath.Join(t.TempDir(), "result.txt")
+	result, err := ResumeStreamAtomically(func(int64) (io.ReadCloser, error) {
+		return io.NopCloser(zeroReader{}), nil
+	}, ResumeOptions{Destination: dst, Source: "source", Policy: ConflictOverwrite})
+	if !errors.Is(err, io.ErrNoProgress) || result.Completed {
+		t.Fatalf("result=%+v err=%v, want no-progress failure", result, err)
+	}
+	if _, statErr := os.Stat(resumeCheckpointPath(dst)); statErr != nil {
+		t.Fatalf("checkpoint stat=%v, want retained checkpoint", statErr)
+	}
+}
+
 func stringsReaderOpener(value string) StreamOpener {
 	return func(int64) (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(value)), nil }
 }
@@ -232,6 +245,10 @@ type interruptedReader struct {
 	limit int
 	read  int
 }
+
+type zeroReader struct{}
+
+func (zeroReader) Read([]byte) (int, error) { return 0, nil }
 
 func (r *interruptedReader) Read(p []byte) (int, error) {
 	if r.read >= r.limit {

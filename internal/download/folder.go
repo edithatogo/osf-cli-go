@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"strings"
 )
 
 // FolderDownloadStatus describes the outcome for a folder download entry.
@@ -84,6 +85,9 @@ func NewFolderDownloadPlan(destRoot string, policy ConflictPolicy, files []Folde
 	for _, file := range files {
 		if file.Reader == nil && file.Open == nil && file.OpenRange == nil {
 			return nil, fmt.Errorf("folder file %q requires a reader or opener", file.RemotePath)
+		}
+		if file.OpenRange != nil && strings.TrimSpace(file.SourceIdentity) == "" {
+			return nil, fmt.Errorf("folder file %q requires a source identity for resumable downloads", file.RemotePath)
 		}
 
 		remotePath, err := NormalizeRemotePath(file.RemotePath)
