@@ -1,0 +1,1 @@
+Conductor review remediation: refreshed the 2026-07-14 research-plugins source snapshot from 258 to 259 stars. Revalidated feature matrix, registry, release, MCP quality, anti-stub, race tests, vet, and diff checks; all passed.
