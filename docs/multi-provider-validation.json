@@ -20,7 +20,7 @@
       "level": "offline-tested",
       "validatedAt": "2026-07-15",
       "evidence": [
-        {"path": "docs/compatibility-policy.md", "sha256": "sha256:9ec4abfb5de84b5b6b7054f91019349f832fc97782246360d0f7ccf563f7c98b"}
+        {"path": "docs/compatibility-policy.md", "sha256": "sha256:42fb35523f583f563c5ca56685303fb63dbebe6a038ca3eaf486537f1d2572c9"}
       ]
     },
     {
@@ -49,6 +49,7 @@
       "capability": "draft.files.transfer",
       "level": "sandbox-validated",
       "validatedAt": "2026-07-15",
+      "resourceDisposition": "deleted",
       "evidence": [
         {"path": "docs/zenodo-sandbox-validation-evidence.md", "sha256": "sha256:60b3181b8fc09eaffea5135e27603e08d442cb3e686ed6251baa011674255082"}
       ]
@@ -59,6 +60,8 @@
       "capability": "deposit.publication.lifecycle",
       "level": "sandbox-validated",
       "validatedAt": "2026-07-15",
+      "resourceDisposition": "published-retained",
+      "resourceRecord": "https://sandbox.zenodo.org/records/565256",
       "evidence": [
         {"path": "docs/zenodo-publication-validation-evidence.md", "sha256": "sha256:21340a7634a9bc3e04c651ae7b585a68a9885b1da1bc8c5652f5b94e6049988e"}
       ]
@@ -69,8 +72,31 @@
       "capability": "osf.zenodo.copy.saga",
       "level": "sandbox-validated",
       "validatedAt": "2026-07-15",
+      "resourceDisposition": "deleted",
       "evidence": [
         {"path": "docs/cross-provider-sandbox-validation-evidence.md", "sha256": "sha256:1b7542e8dd903222aa030580a7bf7c5fb75586b9ba1c4344e0e97dd65b06c8f9"}
+      ]
+    },
+    {
+      "id": "multi-provider-release-governance",
+      "provider": "cross-provider",
+      "capability": "release.governance.v1",
+      "level": "offline-tested",
+      "validatedAt": "2026-07-15",
+      "evidence": [
+        {"path": "docs/provider-release-operations.md", "sha256": "sha256:5ae6391c0dd6b0a3b39d92d76ce5c528d1a2b6d446429efbeedc6c832b180bf8"},
+        {"path": "docs/adr-001-multi-provider-release-contract.md", "sha256": "sha256:74e4fcacb374266881779895acb6c77b54c50ed52d3094d752e502f9d0487313"}
+      ]
+    },
+    {
+      "id": "registry-readonly-surface",
+      "provider": "zenodo",
+      "capability": "registry.readonly.surface",
+      "level": "offline-tested",
+      "validatedAt": "2026-07-15",
+      "evidence": [
+        {"path": "server.json", "sha256": "sha256:3e1c406908aec5f2ba1f716431db7a6211565faa4d8b8df1577a4f0b71a042c3"},
+        {"path": "internal/mcpserver/testdata/compatibility/mcp-tools.json", "sha256": "sha256:add329e4be13e58f2c14f84fb0fa8dbbc748fa051a4c2f7796d25d1d33d08f52"}
       ]
     }
   ]

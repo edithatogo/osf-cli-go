@@ -3,17 +3,17 @@
 Live checks are opt-in and require explicit credentials or a disposable test
 project. They must never run as ordinary unit tests or in pull requests.
 
-| Area | Required scenario | Evidence | Status |
-|---|---|---|---|
-| Authentication | `whoami` with a disposable token | Redacted command/result and account-independent status | opt-in |
-| Public read | Get a known public node without a token | Node metadata and HTTP status | opt-in |
-| Private read | List owned projects and contributors | Redacted IDs and result counts | opt-in |
-| Files | List, download, and verify a fixture file/tree | Checksums and manifest | opt-in |
-| Safe writes | Upload or create a folder in a disposable project | Project-scoped evidence and cleanup | opt-in |
-| Destructive writes | Delete only a disposable fixture after explicit confirmation | Confirmation and cleanup evidence | opt-in |
-| Search | Search OSF and list preprints | Query, pagination, and result-shape evidence | opt-in |
-| Registrations | Create a draft only, never publish | Draft identifier and cleanup decision | opt-in |
-| Failure behavior | Invalid token, rate limit, missing node, and network timeout | Redacted typed errors | fixture + opt-in |
+| Provider | Area | Required scenario | Evidence level | Current status |
+|---|---|---|---|---|
+| OSF | Authentication and private reads | `whoami`, projects, and contributors with a disposable token | production-validated only with a public receipt; otherwise redacted run evidence | opt-in, not currently production-validated |
+| OSF | Public reads and search | Get a public node, search projects, and list preprints | redacted request shape, counts, and HTTP status | opt-in |
+| OSF | Files and safe writes | List, download, verify, upload, and clean a fixture | checksums, manifest, project scope, and cleanup | opt-in |
+| OSF | Destructive writes and registrations | Delete only a disposable fixture; create but never publish a draft registration | explicit confirmation and cleanup evidence | opt-in |
+| Zenodo | Public REST and OAI-PMH reads | Search/get records and perform bounded harvests | offline-tested contract plus optional public response evidence | offline-tested |
+| Zenodo | Draft file transfer | Create, upload, verify/resume, and delete an unpublished sandbox draft | sandbox-validated digest and `deleted` disposition | sandbox-validated |
+| Zenodo | Publication lifecycle | Reserve, confirm, publish, create a new version, and discard its draft | sandbox-validated retained record plus discarded draft | sandbox-validated |
+| Cross-provider | OSF-qualified to Zenodo draft copy | Map metadata, copy files, verify provenance, replay, and compensate | sandbox-validated sidecar, checksums, and `deleted` disposition | sandbox-validated |
+| All | Failure behavior | Invalid token, rate limit, missing resource, timeout, and ambiguous mutation response | typed redacted errors; fixtures plus explicit live evidence | fixture + opt-in |
 
 The release checklist must identify which rows were run for a release candidate
 and which remain unrun because credentials, permissions, or a disposable OSF
@@ -34,3 +34,8 @@ go run ./tools/livevalidation -live
 Set `OSF_VALIDATE_DOWNLOAD` to a known disposable fixture file reference to
 enable the download row. The tool writes sanitized evidence to the current
 release-validation track by default and never writes credential values.
+
+Zenodo and cross-provider jobs are invoked only through the manual
+`.github/workflows/provider-validation.yml` workflow. All inputs default to
+false, use protected environments, and follow the cleanup contract in
+`docs/provider-release-operations.md`.

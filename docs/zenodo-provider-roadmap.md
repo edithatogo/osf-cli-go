@@ -2,7 +2,8 @@
 
 This roadmap tracks the staged provider-neutral repository layer for OSF and
 Zenodo. The provider contract, public REST reads, and public OAI-PMH harvesting
-are offline-tested; write and cross-provider workflows remain gated.
+are offline-tested; internal write and cross-provider workflows are
+sandbox-validated and remain unavailable as public CLI or MCP writes.
 
 ## API mapping
 
@@ -26,7 +27,7 @@ are offline-tested; write and cross-provider workflows remain gated.
 | 3 | [#104 REST client](https://github.com/edithatogo/osf-cli-go/issues/104), `conductor/archive/zenodo-readonly-client_20260715/`; [#107 OAI-PMH](https://github.com/edithatogo/osf-cli-go/issues/107), `conductor/archive/zenodo-oai-pmh_20260715/` | Independent read adapters pass offline contract, fuzz, limit, and redaction tests |
 | 4 | [#105 CLI](https://github.com/edithatogo/osf-cli-go/issues/105), `conductor/archive/provider-scoped-cli_20260715/`; [#106 MCP](https://github.com/edithatogo/osf-cli-go/issues/106), `conductor/archive/provider-scoped-mcp_20260715/` | Provider-scoped read UX is compatible and no deferred writes are advertised |
 | 5 | [#108 transfers](https://github.com/edithatogo/osf-cli-go/issues/108), `conductor/archive/zenodo-sandbox-transfers_20260715/`; [#109 publication](https://github.com/edithatogo/osf-cli-go/issues/109), `conductor/archive/zenodo-publication-state_20260715/` | Disposable sandbox evidence proves integrity, cleanup, and irreversible-state safety |
-| 6 | [#110 cross-provider copy](https://github.com/edithatogo/osf-cli-go/issues/110), `conductor/tracks/cross-provider-provenance-transfer_20260715/` | Dry-run, provenance, idempotency, compensation, and failure recovery pass |
+| 6 | [#110 cross-provider copy](https://github.com/edithatogo/osf-cli-go/issues/110), `conductor/archive/cross-provider-provenance-transfer_20260715/` | Dry-run, provenance, idempotency, compensation, and failure recovery pass |
 | 7 | [#111 release integration](https://github.com/edithatogo/osf-cli-go/issues/111), `conductor/tracks/multi-provider-release-integration_20260715/` | CI, release evidence, observability, docs, matrix, and registry claims agree |
 
 ## Architecture guardrails

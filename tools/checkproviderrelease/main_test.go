@@ -21,9 +21,68 @@ func TestRunValidatesDigestBoundLevels(t *testing.T) {
 	digest := sha256.Sum256(payload)
 	document := manifest{SchemaVersion: 1, GeneratedAt: "2026-07-15T00:00:00Z", Claims: []claim{{
 		ID: "zenodo-transfer", Provider: "zenodo", Capability: "files.transfer", Level: "sandbox-validated", ValidatedAt: "2026-07-15",
-		Evidence: []evidence{{Path: "evidence.md", SHA256: "sha256:" + hex.EncodeToString(digest[:])}},
+		ResourceDisposition: "deleted",
+		Evidence:            []evidence{{Path: "evidence.md", SHA256: "sha256:" + hex.EncodeToString(digest[:])}},
 	}}}
 	document.OptInWorkflow = writeWorkflow(t, root)
+	writeManifest(t, root, document)
+	if err := run(root, "manifest.json", time.Date(2026, 7, 15, 1, 0, 0, 0, time.UTC)); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRunRequiresSandboxResourceDisposition(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	payload := []byte("Zenodo Sandbox publication evidence")
+	if err := os.WriteFile(filepath.Join(root, "evidence.md"), payload, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	digest := sha256.Sum256(payload)
+	base := claim{
+		ID: "zenodo-publication", Provider: "zenodo", Capability: "publication", Level: "sandbox-validated", ValidatedAt: "2026-07-15",
+		Evidence: []evidence{{Path: "evidence.md", SHA256: hex.EncodeToString(digest[:])}},
+	}
+	for name, mutate := range map[string]func(*claim){
+		"missing disposition": func(*claim) {},
+		"retained without record": func(value *claim) {
+			value.ResourceDisposition = "published-retained"
+		},
+		"retained production record": func(value *claim) {
+			value.ResourceDisposition = "published-retained"
+			value.ResourceRecord = "https://zenodo.org/records/123"
+		},
+		"deleted with record": func(value *claim) {
+			value.ResourceDisposition = "deleted"
+			value.ResourceRecord = "https://sandbox.zenodo.org/records/123"
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			candidate := base
+			mutate(&candidate)
+			document := manifest{SchemaVersion: 1, GeneratedAt: "2026-07-15T00:00:00Z", OptInWorkflow: writeWorkflow(t, root), Claims: []claim{candidate}}
+			writeManifest(t, root, document)
+			if err := run(root, "manifest.json", time.Date(2026, 7, 15, 1, 0, 0, 0, time.UTC)); err == nil {
+				t.Fatal("run returned nil error")
+			}
+		})
+	}
+}
+
+func TestRunAcceptsRetainedSandboxPublication(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	payload := []byte("Zenodo Sandbox publication evidence")
+	if err := os.WriteFile(filepath.Join(root, "evidence.md"), payload, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	digest := sha256.Sum256(payload)
+	document := manifest{SchemaVersion: 1, GeneratedAt: "2026-07-15T00:00:00Z", OptInWorkflow: writeWorkflow(t, root), Claims: []claim{{
+		ID: "zenodo-publication", Provider: "zenodo", Capability: "publication", Level: "sandbox-validated", ValidatedAt: "2026-07-15",
+		ResourceDisposition: "published-retained", ResourceRecord: "https://sandbox.zenodo.org/records/123",
+		Evidence: []evidence{{Path: "evidence.md", SHA256: hex.EncodeToString(digest[:])}},
+	}}}
 	writeManifest(t, root, document)
 	if err := run(root, "manifest.json", time.Date(2026, 7, 15, 1, 0, 0, 0, time.UTC)); err != nil {
 		t.Fatal(err)

@@ -5,6 +5,12 @@ claim is dated and bound to repository evidence by SHA-256. Ordinary CI runs
 `go run ./tools/checkproviderrelease`; stale evidence, digest drift, duplicate
 capabilities, unknown levels, and unsupported production claims fail the build.
 
+Every sandbox claim also records its resource disposition. `deleted` requires
+that no resource URL remain. `published-retained` is reserved for irreversible
+publication and requires a public `https://sandbox.zenodo.org/...` record. This
+prevents a successful API call from masking an orphaned or intentionally
+retained resource.
+
 ## Levels
 
 | Level | Meaning | Required boundary |
@@ -30,3 +36,10 @@ The offline report job always renders `provider-validation-report.md` from the
 validated manifest. Selected live jobs upload only their sanitized Markdown
 evidence. Credentials remain environment-only and are never included in the
 report or artifacts.
+
+Run
+`go run ./tools/checkproviderrelease -report docs/multi-provider-validation-report.md`
+to render the dated report deterministically. Tagged binary releases publish
+that report beside the binaries, and the container SBOM/provenance workflow is
+gated on the same claim manifest. The current manifest makes no
+production-validated claim.

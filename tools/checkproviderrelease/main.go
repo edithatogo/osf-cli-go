@@ -26,13 +26,15 @@ type manifest struct {
 }
 
 type claim struct {
-	ID               string     `json:"id"`
-	Provider         string     `json:"provider"`
-	Capability       string     `json:"capability"`
-	Level            string     `json:"level"`
-	ValidatedAt      string     `json:"validatedAt"`
-	Evidence         []evidence `json:"evidence"`
-	ProductionRecord string     `json:"productionRecord,omitempty"`
+	ID                  string     `json:"id"`
+	Provider            string     `json:"provider"`
+	Capability          string     `json:"capability"`
+	Level               string     `json:"level"`
+	ValidatedAt         string     `json:"validatedAt"`
+	Evidence            []evidence `json:"evidence"`
+	ProductionRecord    string     `json:"productionRecord,omitempty"`
+	ResourceDisposition string     `json:"resourceDisposition,omitempty"`
+	ResourceRecord      string     `json:"resourceRecord,omitempty"`
 }
 
 type evidence struct {
@@ -120,6 +122,9 @@ func run(root, manifestPath string, now time.Time) error {
 		} else if claim.ProductionRecord != "" {
 			return fmt.Errorf("claim %s cannot attach a production record to level %s", claim.ID, claim.Level)
 		}
+		if err := validateResourceDisposition(claim); err != nil {
+			return fmt.Errorf("claim %s: %w", claim.ID, err)
+		}
 		for _, item := range claim.Evidence {
 			if err := validateEvidence(root, claim, item); err != nil {
 				return fmt.Errorf("claim %s: %w", claim.ID, err)
@@ -178,13 +183,20 @@ func writeReport(root, manifestPath, reportPath string) error {
 	var builder strings.Builder
 	builder.WriteString("# Multi-provider validation report\n\n")
 	fmt.Fprintf(&builder, "- Schema: %d\n- Generated: %s\n- Opt-in workflow: `%s`\n- Production-validated claims: %d\n\n", document.SchemaVersion, document.GeneratedAt, document.OptInWorkflow, countLevel(document.Claims, "production-validated"))
-	builder.WriteString("| Provider | Capability | Level | Validated | Evidence |\n|---|---|---|---|---|\n")
+	builder.WriteString("| Provider | Capability | Level | Validated | Resource disposition | Evidence |\n|---|---|---|---|---|---|\n")
 	for _, claim := range document.Claims {
 		paths := make([]string, 0, len(claim.Evidence))
 		for _, item := range claim.Evidence {
 			paths = append(paths, "`"+item.Path+"` ("+shortDigest(item.SHA256)+")")
 		}
-		fmt.Fprintf(&builder, "| %s | %s | %s | %s | %s |\n", claim.Provider, claim.Capability, claim.Level, claim.ValidatedAt, strings.Join(paths, "; "))
+		disposition := claim.ResourceDisposition
+		if disposition == "" {
+			disposition = "not-applicable"
+		}
+		if claim.ResourceRecord != "" {
+			disposition += " (" + claim.ResourceRecord + ")"
+		}
+		fmt.Fprintf(&builder, "| %s | %s | %s | %s | %s | %s |\n", claim.Provider, claim.Capability, claim.Level, claim.ValidatedAt, disposition, strings.Join(paths, "; "))
 	}
 	filename, err := confinedPath(root, reportPath)
 	if err != nil {
@@ -254,6 +266,29 @@ func validateProductionRecord(raw string) error {
 	host := strings.ToLower(parsed.Hostname())
 	if strings.Contains(host, "sandbox") || host == "localhost" || host == "127.0.0.1" {
 		return errors.New("productionRecord cannot target a sandbox or loopback host")
+	}
+	return nil
+}
+
+func validateResourceDisposition(value claim) error {
+	if value.Level != "sandbox-validated" {
+		if value.ResourceDisposition != "" || value.ResourceRecord != "" {
+			return errors.New("resource disposition is only valid for sandbox claims")
+		}
+		return nil
+	}
+	switch value.ResourceDisposition {
+	case "deleted":
+		if value.ResourceRecord != "" {
+			return errors.New("deleted sandbox resources cannot retain a resource record")
+		}
+	case "published-retained":
+		parsed, err := url.Parse(value.ResourceRecord)
+		if err != nil || parsed.Scheme != "https" || parsed.Hostname() != "sandbox.zenodo.org" || parsed.User != nil {
+			return errors.New("retained sandbox publications require a public sandbox.zenodo.org resource record")
+		}
+	default:
+		return errors.New("sandbox claims require resourceDisposition deleted or published-retained")
 	}
 	return nil
 }

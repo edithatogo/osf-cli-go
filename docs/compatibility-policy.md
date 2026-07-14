@@ -56,6 +56,12 @@ discovery. The same additive baseline includes `repository_capabilities_get`,
 pre-existing CLI commands, MCP tools, inputs, output fields, and limits are
 unchanged.
 
+Authenticated Zenodo transfer/publication packages and the cross-provider copy
+saga are internal validation machinery. They are not frozen public CLI, API, or
+MCP promises and are not advertised by registry metadata. Promoting a write
+surface requires additive fixtures, explicit confirmation and rollback rules,
+threat-model review, and migration guidance before release.
+
 The OSF API source remains a pinned remote manifest in
 `docs/osf-api-schema-source.json`. The runtime client is typed and maintained
 locally; no generated or vendored replacement schema is accepted until the

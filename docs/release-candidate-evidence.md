@@ -24,9 +24,11 @@ waivers.
 - [x] Homebrew installation is verified through the project tap at
   `edithatogo/osf`; `brew test edithatogo/osf/osf-cli-go` and
   `osf --version` pass for v0.3.2.
-- [ ] Compatibility and support policies are reviewed and linked from release
-  notes.
-- [ ] High-risk live-validation matrix rows are run against disposable OSF data.
+- [x] Compatibility, provider operations, architecture decision, and support
+  policies are locally reviewed and release-gated.
+- [~] Zenodo transfer, publication, and cross-provider sandbox rows have dated
+  evidence; high-risk OSF production rows remain unrun without a disposable
+  project and scoped credential.
 - [ ] Security review has no unresolved release-blocking findings.
 
 ## External gates
@@ -42,6 +44,17 @@ waivers.
 
 Each unchecked item requires dated evidence or a written waiver in the release
 review before a `v1.0.0` tag is created.
+
+## Multi-provider evidence
+
+The digest-bound claim manifest and reproducible report distinguish offline,
+sandbox, and production validation. The current manifest records three sandbox
+executions, including deletion of unpublished transfer/copy drafts and the
+explicitly retained irreversible publication at
+`https://sandbox.zenodo.org/records/565256`. It makes zero production-validated
+provider claims. Tagged binary and container workflows run the claim checker;
+the binary release includes `multi-provider-validation-report.md`, and the
+container SBOM/provenance is generated from the same gated source revision.
 
 ## Provenance review for #98
 

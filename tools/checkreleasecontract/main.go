@@ -110,6 +110,9 @@ func run() error {
 		"docs/mcp-quality-report.json",
 		"docs/multi-provider-validation.json",
 		"docs/multi-provider-validation.md",
+		"docs/multi-provider-validation-report.md",
+		"docs/provider-release-operations.md",
+		"docs/adr-001-multi-provider-release-contract.md",
 		".github/workflows/provider-validation.yml",
 	}
 	for _, path := range required {
@@ -250,7 +253,27 @@ func run() error {
 			return err
 		}
 	}
+	if err := requireWorkflowContent(".github/workflows/release-artifacts.yml", []string{"checkproviderrelease", "multi-provider-validation-report.md", "provider-release-evidence"}); err != nil {
+		return err
+	}
+	if err := requireWorkflowContent(".github/workflows/release-security.yml", []string{"checkproviderrelease", "sbom: true", "provenance: mode=max"}); err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func requireWorkflowContent(path string, required []string) error {
+	payload, err := os.ReadFile(filepath.Clean(path))
+	if err != nil {
+		return fmt.Errorf("read release workflow %s: %w", path, err)
+	}
+	content := string(payload)
+	for _, marker := range required {
+		if !strings.Contains(content, marker) {
+			return fmt.Errorf("release workflow %s is missing %q", path, marker)
+		}
+	}
 	return nil
 }
 
