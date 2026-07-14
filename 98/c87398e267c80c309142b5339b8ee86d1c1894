@@ -1,0 +1,5 @@
+Conductor review: Zenodo OAI-PMH harvesting contract
+
+Review result: clean after bounded concurrency, namespace validation, required metadata, and token-expiry fixes.
+Validation: go test ./internal/zenodooai; go vet ./internal/zenodooai; checkstubs.
+Coverage: 90.8% statements.
