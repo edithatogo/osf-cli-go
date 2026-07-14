@@ -51,6 +51,7 @@ type zenodoRecordOutput struct {
 }
 
 type zenodoFileOutput struct {
+	QualifiedID       string            `json:"qualifiedId,omitempty"`
 	RecordQualifiedID string            `json:"recordQualifiedId"`
 	ID                string            `json:"id,omitempty"`
 	Key               string            `json:"key"`
@@ -80,6 +81,9 @@ func newZenodoRecordsSearchCommand(client zenodoRESTClient) *cobra.Command {
 		query := ""
 		if len(args) == 1 {
 			query = strings.TrimSpace(args[0])
+		}
+		if len(query) > 2048 {
+			return errors.New("search query must be 2048 bytes or fewer")
 		}
 		records, err := client.SearchRecords(cmd.Context(), query, limit)
 		if err != nil {
@@ -148,7 +152,14 @@ func newZenodoFilesCommand(client zenodoRESTClient) *cobra.Command {
 		}
 		rows := make([]zenodoFileOutput, 0, len(files))
 		for _, file := range files {
-			rows = append(rows, zenodoFileOutput{RecordQualifiedID: qualified, ID: file.ID, Key: file.Key, Size: file.Size, Checksum: file.Checksum, DownloadURL: file.ContentURL(), Links: file.Links})
+			fileQualified := ""
+			if strings.TrimSpace(file.ID) != "" {
+				fileQualified, err = (repository.QualifiedID{Provider: repository.ProviderZenodo, Kind: repository.KindFile, NativeID: file.ID}).Key()
+				if err != nil {
+					return err
+				}
+			}
+			rows = append(rows, zenodoFileOutput{QualifiedID: fileQualified, RecordQualifiedID: qualified, ID: file.ID, Key: file.Key, Size: file.Size, Checksum: file.Checksum, DownloadURL: file.ContentURL(), Links: file.Links})
 		}
 		if mode == outputModeJSON {
 			return output.WriteJSON(cmd.OutOrStdout(), rows)
@@ -208,7 +219,7 @@ func parseZenodoRecordID(raw string) (string, error) {
 		value = id.NativeID
 	} else if parsed, err := url.Parse(value); err == nil && parsed.Scheme != "" {
 		host := strings.ToLower(parsed.Hostname())
-		if parsed.Scheme != "https" || parsed.RawQuery != "" || parsed.Fragment != "" || (host != "zenodo.org" && host != "sandbox.zenodo.org") {
+		if parsed.Scheme != "https" || parsed.User != nil || parsed.Port() != "" || parsed.RawQuery != "" || parsed.Fragment != "" || (host != "zenodo.org" && host != "sandbox.zenodo.org") {
 			return "", errors.New("zenodo record URL must use https://zenodo.org or https://sandbox.zenodo.org")
 		}
 		parts := strings.Split(strings.Trim(parsed.Path, "/"), "/")

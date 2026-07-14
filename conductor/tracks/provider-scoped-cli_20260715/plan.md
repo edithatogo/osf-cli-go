@@ -8,6 +8,6 @@
 
 ## Phase 2: Read-only commands
 
-- [~] Task: Implement Zenodo discovery, inspection, and file-listing commands.
-- [ ] Task: Document and test unsupported capability guidance and cross-platform examples.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Read-only commands' (Protocol in workflow.md)
+- [x] Task: Implement Zenodo discovery, inspection, and file-listing commands.
+- [x] Task: Document and test unsupported capability guidance and cross-platform examples.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Read-only commands' (Protocol in workflow.md)

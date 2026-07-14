@@ -83,7 +83,7 @@ func TestZenodoRecordSearchGetAndFilesCLI(t *testing.T) {
 	}
 
 	output, err = executeZenodoRESTCommand(t, fake, "zenodo", "files", "list", "zenodo:record:1001", "--json")
-	if err != nil || fake.id != "1001" || !strings.Contains(output, `"recordQualifiedId":"zenodo:record:1001"`) || !strings.Contains(output, `"downloadUrl"`) {
+	if err != nil || fake.id != "1001" || !strings.Contains(output, `"qualifiedId":"zenodo:file:file-1"`) || !strings.Contains(output, `"recordQualifiedId":"zenodo:record:1001"`) || !strings.Contains(output, `"downloadUrl"`) {
 		t.Fatalf("output=%q id=%q err=%v", output, fake.id, err)
 	}
 }
@@ -110,13 +110,16 @@ func TestZenodoRecordIDAndCLIValidation(t *testing.T) {
 			t.Fatalf("parse(%q)=%q,%v want %q", input, got, err, want)
 		}
 	}
-	for _, input := range []string{"", "abc", "zenodo:record:abc", "osf:project:abc", "https://example.com/records/1", "https://zenodo.org/deposits/1", "https://zenodo.org/records/1?q=x", "bad/id", "bad id"} {
+	for _, input := range []string{"", "abc", "zenodo:record:abc", "osf:project:abc", "https://example.com/records/1", "https://user@zenodo.org/records/1", "https://zenodo.org:444/records/1", "https://zenodo.org/deposits/1", "https://zenodo.org/records/1?q=x", "bad/id", "bad id"} {
 		if _, err := parseZenodoRecordID(input); err == nil {
 			t.Fatalf("parse(%q) succeeded", input)
 		}
 	}
 	if _, err := executeZenodoRESTCommand(t, &fakeZenodoREST{}, "zenodo", "records", "search", "--limit", "0"); err == nil {
 		t.Fatal("zero limit accepted")
+	}
+	if _, err := executeZenodoRESTCommand(t, &fakeZenodoREST{}, "zenodo", "records", "search", strings.Repeat("x", 2049)); err == nil {
+		t.Fatal("oversized query accepted")
 	}
 	fake := &fakeZenodoREST{err: errors.New("backend unavailable")}
 	if _, err := executeZenodoRESTCommand(t, fake, "zenodo", "records", "get", "1001"); err == nil {
