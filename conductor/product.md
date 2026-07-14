@@ -30,6 +30,8 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
 - Download a single file or a folder tree with clear conflict handling.
 - Emit JSON output for automation and table output for humans.
 - Emit versioned structured operational events to an operator-selected local destination when explicitly enabled.
+- Harvest public Zenodo OAI-PMH metadata with native XML and provenance while
+  keeping protocol continuation separate from REST discovery.
 
 ## Later Scope
 
@@ -38,8 +40,8 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
 - Manage tags, metadata fields, contributors, and licenses where OSF API permissions allow.
 - Export project snapshots including metadata, contributor lists, file inventories, wiki content, component hierarchy, and activity logs.
 - Support reproducible manifests for backup and audit workflows.
-- Add provider-scoped Zenodo discovery and carefully gated transfer/publication
-  workflows after the provider contract and sandbox evidence are complete.
+- Add provider-scoped Zenodo REST discovery and carefully gated
+  transfer/publication workflows after sandbox evidence is complete.
 - Add shell completions and packaged releases for Windows, macOS, and Linux.
 
 ## Reference Tools And Lessons
