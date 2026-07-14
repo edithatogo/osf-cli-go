@@ -5,7 +5,7 @@
 - Go 1.26.x, matching the local toolchain currently available in this workspace.
 - Cobra is the approved CLI router for nested commands, help output, command-specific flags, and future completions.
 - Keep dependencies deliberate and documented. Do not add a dependency unless it supports the CLI contract, OSF API integration, testing, release automation, or security/quality gates.
-- Public module path is currently local: `osf-cli-go`. Replace this with the canonical repository module path before the first public release.
+- Public module path: `github.com/edithatogo/osf-cli-go`.
 
 ## CLI Architecture
 
@@ -47,6 +47,8 @@
 ## Authentication
 
 - Primary auth input: OSF personal access token from `OSF_TOKEN`.
+- Zenodo write validation uses a distinct, scoped `ZENODO_TOKEN`; sandbox,
+  publication, and production jobs use separate GitHub environment secrets.
 - Future config support may use an OS-specific credential store, but project-local config must never contain secrets.
 - Commands that can operate on public content should not require authentication.
 
@@ -55,7 +57,9 @@
 - Default output: concise tables for humans.
 - `--json` output: stable JSON with clear schemas for automation.
 - Error output: short actionable messages by default, with future verbose/debug mode for HTTP detail.
-- Structured observability: the standard-library `internal/observability` package emits opt-in `osf.event.v1` JSONL events with operation/request IDs, redaction, level filtering, and classified errors.
+- Structured observability: the standard-library `internal/observability`
+  package emits opt-in `osf.event.v1` JSONL events with normalized provider,
+  operation/request IDs, redaction, level filtering, and classified errors.
 - Event destinations are local-only and owner-readable; stdout is never used for structured events.
 
 ## Testing
@@ -92,6 +96,12 @@
 - Zenodo API contract: `go run ./tools/checkzenodoapi` offline in normal CI;
   `-online` only in the scheduled/manual credential-free drift workflow.
 - Release packaging: later use GoReleaser or a similarly conventional Go release pipeline once command behavior stabilizes.
+- Provider release contract: `go run ./tools/checkproviderrelease`; validates
+  dated SHA-256 evidence, validation levels, sandbox resource disposition, and
+  production receipts, and renders the tagged release report.
+- Live provider workflow: manual-only GitHub Actions jobs using distinct
+  `provider-sandbox`, `provider-sandbox-publication`, and `provider-production`
+  environments with repository-side wait protections.
 - Dependency updates: Renovate for Go modules and GitHub Actions, without automerge initially.
 
 ## Constraints

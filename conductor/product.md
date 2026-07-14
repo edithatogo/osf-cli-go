@@ -2,7 +2,11 @@
 
 ## Initial Concept
 
-Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps researchers, research software engineers, and evidence/package maintainers inspect, download, upload, synchronize, and export OSF project content from the terminal.
+Build a fast, scriptable Go CLI for Open Science Framework (OSF) workflows and
+provider-scoped public Zenodo discovery. Help researchers, research software
+engineers, and evidence/package maintainers inspect, transfer, validate, and
+export research repository content without erasing provider-specific identity,
+metadata, or publication safety.
 
 ## Users
 
@@ -15,6 +19,7 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
 
 - Provide a clean `osf` CLI with predictable commands, useful help text, and safe defaults.
 - Provide opt-in, redacted operational events for troubleshooting without polluting command output or collecting telemetry.
+- Keep provider claims digest-bound and explicit about offline, sandbox, or production validation.
 - Treat the OSF API v2 documentation as the technical dictionary for object shapes, attributes, relationships, pagination, and allowed values.
 - Treat the OSF Dictionary as the conceptual glossary for user-facing language such as projects, components, registrations, preprints, forks, embargoes, contributors, wiki, and files.
 - Preserve metadata fidelity using the OSF Metadata Profile where project metadata maps to persistent identifiers, FAIR metadata, DataCite-oriented concepts, or discovery metatags.
@@ -46,8 +51,8 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
 - Support reproducible manifests for backup and audit workflows.
 - Maintain live-validated, sandbox-only Zenodo draft transfer primitives and
   publication workflows through reviewed irreversible state machines. Keep
-  production publication and stable CLI/MCP writes disabled until release-wide
-  provider integration is complete.
+  production publication and stable CLI/MCP writes disabled until a separate
+  public-write compatibility and safety review approves them.
 - Maintain explicit, provenance-preserving OSF-to-Zenodo and Zenodo-to-OSF
   mapping contracts with deterministic checkpoints, truthful partial results,
   and draft-only compensation. Keep unsupported rollback paths fail-closed.
@@ -71,6 +76,7 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
 - Hide OSF permission failures behind optimistic behavior.
 - Store passwords. Prefer personal access tokens and environment variables.
 - Invent metadata terms that diverge from OSF API v2 or OSF help documentation.
+- Silently mirror, publish, or equate OSF and Zenodo resources.
 
 ## Product Principles
 
