@@ -77,7 +77,7 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [x] [zenodo-readonly-client](archive/zenodo-readonly-client_20260715/spec.md) — Implement an offline-tested read-only Zenodo REST client; subissue #104.
 - [ ] [provider-scoped-cli](tracks/provider-scoped-cli_20260715/spec.md) — Add explicit provider-scoped CLI discovery workflows; subissue #105.
 - [ ] [provider-scoped-mcp](tracks/provider-scoped-mcp_20260715/spec.md) — Expose capability-aware provider-scoped MCP read tools; subissue #106.
-- [x] [zenodo-oai-pmh](tracks/zenodo-oai-pmh_20260715/spec.md) — Implement Zenodo OAI-PMH harvesting as a separate adapter; subissue #107.
+- [x] [zenodo-oai-pmh](archive/zenodo-oai-pmh_20260715/spec.md) — Implement Zenodo OAI-PMH harvesting as a separate adapter; subissue #107.
 - [ ] [zenodo-sandbox-transfers](tracks/zenodo-sandbox-transfers_20260715/spec.md) — Validate safe resumable Zenodo transfers in the sandbox; subissue #108.
 - [ ] [zenodo-publication-state](tracks/zenodo-publication-state_20260715/spec.md) — Model DOI and publication workflows as an irreversible state machine; subissue #109.
 - [ ] [cross-provider-provenance-transfer](tracks/cross-provider-provenance-transfer_20260715/spec.md) — Design explicit cross-provider copy with provenance and recovery; subissue #110.

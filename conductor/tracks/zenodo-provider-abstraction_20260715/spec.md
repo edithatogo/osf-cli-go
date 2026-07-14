@@ -60,7 +60,7 @@ scopes, rate limits, and OAI-PMH discovery.
 | 3 | [Zenodo read-only REST client](../../archive/zenodo-readonly-client_20260715/spec.md) | [#104](https://github.com/edithatogo/osf-cli-go/issues/104) |
 | 4 | [Provider-scoped CLI](../provider-scoped-cli_20260715/spec.md) | [#105](https://github.com/edithatogo/osf-cli-go/issues/105) |
 | 4 | [Provider-scoped MCP](../provider-scoped-mcp_20260715/spec.md) | [#106](https://github.com/edithatogo/osf-cli-go/issues/106) |
-| 3 | [Zenodo OAI-PMH](../zenodo-oai-pmh_20260715/spec.md) | [#107](https://github.com/edithatogo/osf-cli-go/issues/107) |
+| 3 | [Zenodo OAI-PMH](../../archive/zenodo-oai-pmh_20260715/spec.md) | [#107](https://github.com/edithatogo/osf-cli-go/issues/107) |
 | 5 | [Zenodo sandbox transfers](../zenodo-sandbox-transfers_20260715/spec.md) | [#108](https://github.com/edithatogo/osf-cli-go/issues/108) |
 | 5 | [Zenodo publication state](../zenodo-publication-state_20260715/spec.md) | [#109](https://github.com/edithatogo/osf-cli-go/issues/109) |
 | 6 | [Cross-provider provenance transfer](../cross-provider-provenance-transfer_20260715/spec.md) | [#110](https://github.com/edithatogo/osf-cli-go/issues/110) |
