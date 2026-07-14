@@ -116,6 +116,96 @@ func TestResumeStreamAtomicallyRestartsWhenRangeUnsupported(t *testing.T) {
 	}
 }
 
+func TestResumeStreamAtomicallyValidatesInputsAndConflicts(t *testing.T) {
+	dst := filepath.Join(t.TempDir(), "result.txt")
+	open := func(int64) (io.ReadCloser, error) { return io.NopCloser(strings.NewReader("x")), nil }
+	for name, opts := range map[string]ResumeOptions{
+		"missing opener":      {Destination: dst, Source: "source", Policy: ConflictOverwrite},
+		"missing destination": {Source: "source", Policy: ConflictOverwrite},
+		"missing source":      {Destination: dst, Policy: ConflictOverwrite},
+		"invalid policy":      {Destination: dst, Source: "source", Policy: ConflictPolicy("unknown")},
+	} {
+		var opener StreamOpener = open
+		if name == "missing opener" {
+			opener = nil
+		}
+		if _, err := ResumeStreamAtomically(opener, opts); err == nil {
+			t.Fatalf("%s returned nil error", name)
+		}
+	}
+	if err := os.WriteFile(dst, []byte("existing"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	result, err := ResumeStreamAtomically(open, ResumeOptions{Destination: dst, Source: "source", Policy: ConflictSkip})
+	if err != nil || !result.Completed || result.CheckpointPath != "" {
+		t.Fatalf("skip result=%+v err=%v", result, err)
+	}
+	if _, err := ResumeStreamAtomically(open, ResumeOptions{Destination: dst, Source: "source", Policy: ConflictFail}); !errors.Is(err, errDestinationExists) {
+		t.Fatalf("fail conflict error=%v, want destination exists", err)
+	}
+}
+
+func TestResumeStreamAtomicallyValidatesSizeAndMD5(t *testing.T) {
+	dst := filepath.Join(t.TempDir(), "result.txt")
+	wrongSize := int64(4)
+	result, err := ResumeStreamAtomically(func(int64) (io.ReadCloser, error) {
+		return io.NopCloser(strings.NewReader("abc")), nil
+	}, ResumeOptions{Destination: dst, Source: "source", ExpectedSize: &wrongSize, Policy: ConflictOverwrite})
+	if err == nil || result.Completed {
+		t.Fatalf("size result=%+v err=%v, want mismatch", result, err)
+	}
+	correctMD5 := "md5:900150983cd24fb0d6963f7d28e17f72"
+	result, err = ResumeStreamAtomically(func(int64) (io.ReadCloser, error) {
+		return io.NopCloser(strings.NewReader("abc")), nil
+	}, ResumeOptions{Destination: dst, Source: "source-2", ExpectedChecksum: correctMD5, Policy: ConflictOverwrite})
+	if err != nil || !result.Completed || result.Checksum != correctMD5 {
+		t.Fatalf("md5 result=%+v err=%v", result, err)
+	}
+}
+
+func TestResumeStreamAtomicallyPropagatesSourceAndPathErrors(t *testing.T) {
+	dst := filepath.Join(t.TempDir(), "result.txt")
+	_, err := ResumeStreamAtomically(func(int64) (io.ReadCloser, error) {
+		return nil, errors.New("source unavailable")
+	}, ResumeOptions{Destination: dst, Source: "source", Policy: ConflictOverwrite})
+	if err == nil || !strings.Contains(err.Error(), "source unavailable") {
+		t.Fatalf("source error=%v", err)
+	}
+	parent := filepath.Join(t.TempDir(), "parent")
+	if err := os.WriteFile(parent, []byte("file"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, err = ResumeStreamAtomically(stringsReaderOpener("x"), ResumeOptions{Destination: filepath.Join(parent, "result.txt"), Source: "source", Policy: ConflictOverwrite})
+	if err == nil {
+		t.Fatal("path error returned nil")
+	}
+}
+
+func stringsReaderOpener(value string) StreamOpener {
+	return func(int64) (io.ReadCloser, error) { return io.NopCloser(strings.NewReader(value)), nil }
+}
+
+func TestResumeCheckpointHelpersHandleFilesystemErrors(t *testing.T) {
+	checkpoint := resumeCheckpoint{Version: resumeCheckpointVersion, Source: "source", Destination: "destination"}
+	if err := writeResumeCheckpoint(filepath.Join(t.TempDir(), "missing", "checkpoint.json"), checkpoint); err == nil {
+		t.Fatal("missing checkpoint directory returned nil error")
+	}
+	parent := filepath.Join(t.TempDir(), "parent")
+	if err := os.WriteFile(parent, []byte("file"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeResumeCheckpoint(filepath.Join(parent, "checkpoint.json"), checkpoint); err == nil {
+		t.Fatal("file checkpoint parent returned nil error")
+	}
+	valid := filepath.Join(t.TempDir(), "checkpoint.json")
+	if err := writeResumeCheckpoint(valid, checkpoint); err != nil {
+		t.Fatalf("writeResumeCheckpoint(valid): %v", err)
+	}
+	if _, err := os.ReadFile(valid); err != nil {
+		t.Fatalf("checkpoint read: %v", err)
+	}
+}
+
 func FuzzLoadResumeCheckpointRejectsMalformedData(f *testing.F) {
 	f.Add("{")
 	f.Add("null")

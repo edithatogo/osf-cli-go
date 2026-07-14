@@ -89,3 +89,104 @@ func TestResumeFileUploadAcceptsProgressAcrossMultipleChunks(t *testing.T) {
 		t.Fatalf("result=%+v err=%v calls=%d, want completed in two chunks", result, err, calls)
 	}
 }
+
+func TestResumeFileUploadValidatesSourceAndAcknowledgements(t *testing.T) {
+	ctx := context.Background()
+	if _, err := ResumeFileUpload(ctx, UploadOptions{}, func(context.Context, int64, int64, io.Reader) (int64, bool, error) {
+		return 0, false, nil
+	}); err == nil {
+		t.Fatal("missing upload options returned nil error")
+	}
+	dir := t.TempDir()
+	if _, err := ResumeFileUpload(ctx, UploadOptions{SourcePath: dir, SourceIdentity: "source"}, func(context.Context, int64, int64, io.Reader) (int64, bool, error) {
+		return 0, false, nil
+	}); err == nil {
+		t.Fatal("directory upload source returned nil error")
+	}
+	source := filepath.Join(dir, "source.txt")
+	if err := os.WriteFile(source, []byte("abc"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for name, session := range map[string]UploadSession{
+		"invalid offset": func(context.Context, int64, int64, io.Reader) (int64, bool, error) {
+			return -1, false, nil
+		},
+		"early completion": func(context.Context, int64, int64, io.Reader) (int64, bool, error) {
+			return 1, true, nil
+		},
+		"provider failure": func(context.Context, int64, int64, io.Reader) (int64, bool, error) {
+			return 1, false, errors.New("provider failed")
+		},
+	} {
+		checkpoint := filepath.Join(dir, name+".json")
+		result, err := ResumeFileUpload(ctx, UploadOptions{SourcePath: source, SourceIdentity: name, CheckpointPath: checkpoint}, session)
+		if err == nil || result.Completed {
+			t.Fatalf("%s result=%+v err=%v, want failure", name, result, err)
+		}
+		if _, statErr := os.Stat(checkpoint); statErr != nil {
+			t.Fatalf("%s checkpoint stat=%v, want retained checkpoint", name, statErr)
+		}
+	}
+}
+
+func TestResumeFileUploadInvalidatesStaleCheckpoint(t *testing.T) {
+	dir := t.TempDir()
+	source := filepath.Join(dir, "source.txt")
+	checkpoint := filepath.Join(dir, "upload.resume.json")
+	if err := os.WriteFile(source, []byte("abc"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(checkpoint, []byte(`{"version":1,"sourcePathFingerprint":"stale"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	result, err := ResumeFileUpload(context.Background(), UploadOptions{SourcePath: source, SourceIdentity: "source", CheckpointPath: checkpoint}, func(_ context.Context, offset, total int64, content io.Reader) (int64, bool, error) {
+		body, readErr := io.ReadAll(content)
+		return offset + int64(len(body)), total == int64(len(body)), readErr
+	})
+	if err != nil || !result.Completed || result.Resumed {
+		t.Fatalf("result=%+v err=%v, want fresh completion", result, err)
+	}
+}
+
+func TestResumeFileUploadValidatesSessionAndCheckpointPaths(t *testing.T) {
+	dir := t.TempDir()
+	source := filepath.Join(dir, "source.txt")
+	if err := os.WriteFile(source, []byte("abc"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ResumeFileUpload(context.Background(), UploadOptions{SourcePath: source, SourceIdentity: "source"}, nil); err == nil {
+		t.Fatal("nil upload session returned nil error")
+	}
+	if _, err := ResumeFileUpload(context.Background(), UploadOptions{SourcePath: filepath.Join(dir, "missing"), SourceIdentity: "source"}, func(context.Context, int64, int64, io.Reader) (int64, bool, error) {
+		return 0, false, nil
+	}); err == nil {
+		t.Fatal("missing upload source returned nil error")
+	}
+	checkpointDir := filepath.Join(dir, "checkpoint-dir")
+	if err := os.Mkdir(checkpointDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ResumeFileUpload(context.Background(), UploadOptions{SourcePath: source, SourceIdentity: "source", CheckpointPath: checkpointDir}, func(context.Context, int64, int64, io.Reader) (int64, bool, error) {
+		return 3, true, nil
+	}); err == nil {
+		t.Fatal("directory checkpoint path returned nil error")
+	}
+}
+
+func TestUploadCheckpointHelpersHandleFilesystemErrors(t *testing.T) {
+	checkpoint := uploadCheckpoint{Version: 1, SourcePathFingerprint: "source", SourceIdentityFingerprint: "identity", Total: 3}
+	parent := filepath.Join(t.TempDir(), "parent")
+	if err := os.WriteFile(parent, []byte("file"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeUploadCheckpoint(filepath.Join(parent, "checkpoint.json"), checkpoint); err == nil {
+		t.Fatal("file upload checkpoint parent returned nil error")
+	}
+	valid := filepath.Join(t.TempDir(), "checkpoint.json")
+	if err := writeUploadCheckpoint(valid, checkpoint); err != nil {
+		t.Fatalf("writeUploadCheckpoint(valid): %v", err)
+	}
+	if _, err := os.ReadFile(valid); err != nil {
+		t.Fatalf("upload checkpoint read: %v", err)
+	}
+}
