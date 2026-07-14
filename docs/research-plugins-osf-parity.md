@@ -13,7 +13,7 @@ This comparison uses the public [wentorai/research-plugins repository](https://g
 | Distribution | OpenClaw plugin plus Agent Skills installation | Versioned CLI binaries, MCPB, OCI image, and coding-agent packages |
 | Scope | 433 skills, 34 tools, 18 scholarly database modules, and 40+ agent-framework integrations | OSF API client, safe file operations, deterministic research validation, and MCP tools |
 | OSF-specific surface | `search_osf_preprints` in the OSF Preprints module; broader OA/full-text tools use other scholarly providers | OSF preprint list/search, OSF search, metadata export, and explicit file download |
-| Current source signals | Public repository snapshot shows 258 stars, 42 forks, and latest release v1.4.8 dated 2026-06-19 | Active CI, offline tests, race/vet/security/release gates, and release artifacts |
+| Current source signals | Public repository snapshot shows 259 stars, 42 forks, and latest release v1.4.8 dated 2026-06-19 | Active CI, offline tests, race/vet/security/release gates, and release artifacts |
 
 ## Capability comparison
 
