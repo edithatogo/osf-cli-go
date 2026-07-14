@@ -1,0 +1,1 @@
+Conductor review: Zenodo read-operations phase passed. Coverage reached 90.8%; added boundary and network-retry tests, CI fuzzing, and explicit support docs. Fixed staticcheck error strings. Full repository harness passed.
