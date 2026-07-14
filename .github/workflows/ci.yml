@@ -34,6 +34,7 @@ jobs:
           go test ./internal/zenodoapi -run=FuzzResolvePagination -fuzz=FuzzResolvePagination -fuzztime=3s
           go test ./internal/zenodoapi -run=FuzzDecodeSearchPage -fuzz=FuzzDecodeSearchPage -fuzztime=3s
           go test ./internal/zenodoapi -run=FuzzDecodeFiles -fuzz=FuzzDecodeFiles -fuzztime=3s
+          go test ./internal/zenodooai -run=FuzzDecodeEnvelope -fuzz=FuzzDecodeEnvelope -fuzztime=3s
       - name: Vet
         run: go vet ./...
       - name: Anti-stub scan

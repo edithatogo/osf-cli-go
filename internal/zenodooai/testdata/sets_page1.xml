@@ -1,0 +1,1 @@
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/"><responseDate>2026-07-15T01:02:03Z</responseDate><ListSets><set><setSpec>user-demo</setSpec><setName>Demo community</setName><setDescription><description xmlns="urn:test">Synthetic set</description></setDescription></set><resumptionToken expirationDate="2026-07-15T01:04:03Z">sets-token</resumptionToken></ListSets></OAI-PMH>

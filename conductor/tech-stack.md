@@ -19,7 +19,9 @@
 - Provider-qualified identity, metadata, lifecycle, and capability contracts:
   `internal/repository`; this package does not define a generic network client.
 - Read-only Zenodo published-record REST adapter: `internal/zenodoapi`; writes,
-  depositions, publication, and OAI-PMH remain outside this package.
+  depositions, and publication remain outside this package.
+- Public Zenodo OAI-PMH adapter: `internal/zenodooai`; XML metadata, sets,
+  schemas, protocol errors, and opaque continuation remain separate from REST.
 - Future reusable core packages should begin under `internal/`. Promote public packages only after the CLI behavior stabilizes and an MCP server track proves the package boundary.
 
 ## API Direction
@@ -54,6 +56,8 @@
   `internal/repository/conformancetest` suite before CLI or MCP exposure.
 - Zenodo REST tests use dated synthetic fixtures, bounded `httptest` transports,
   race tests, and dedicated parser/pagination fuzz targets without live network.
+- Zenodo OAI-PMH tests use synthetic XML fixtures, deterministic expiry clocks,
+  strict parsing, and a dedicated parser fuzz target without live harvesting.
 
 ## Tooling
 
