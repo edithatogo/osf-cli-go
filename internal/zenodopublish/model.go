@@ -110,7 +110,7 @@ type transition struct {
 
 var transitions = map[State]map[Action]transition{
 	StateDraft: {
-		ActionReserveDOI: {to: StateDOIReserved, scopes: []Scope{ScopeDepositWrite}},
+		ActionReserveDOI: {to: StateDOIReserved},
 		ActionPublish:    {to: StatePublished, scopes: []Scope{ScopeDepositWrite, ScopeDepositActions}, irreversible: true},
 		ActionDiscard:    {to: StateDiscarded, scopes: []Scope{ScopeDepositWrite}, destructive: true},
 	},
@@ -149,7 +149,7 @@ func BuildPlan(request Request, now time.Time) (Plan, error) {
 			return Plan{}, fmt.Errorf("%w: %s", ErrScopeRequired, required)
 		}
 	}
-	if request.Action == ActionPublish || request.Action == ActionReserveDOI {
+	if request.Action == ActionPublish {
 		if err := request.Metadata.validate(now); err != nil {
 			return Plan{}, err
 		}

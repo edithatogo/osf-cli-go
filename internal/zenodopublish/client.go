@@ -189,14 +189,21 @@ func (client *Client) execute(ctx context.Context, result Result) (Result, error
 	plan := result.Plan
 	switch plan.Action {
 	case ActionReserveDOI:
-		response, err := client.updateMetadata(ctx, plan, true)
+		endpoint, err := client.resolve("deposit/depositions/" + url.PathEscape(plan.RecordID))
+		if err != nil {
+			return Result{}, err
+		}
+		response, err := client.get(ctx, endpoint)
 		if err != nil {
 			return Result{}, err
 		}
 		result.DOI = response.Metadata.PrereserveDOI.DOI
+		if result.DOI == "" {
+			return Result{}, errors.New("zenodo sandbox draft has no automatically reserved DOI")
+		}
 		return result, nil
 	case ActionPublish:
-		if _, err := client.updateMetadata(ctx, plan, false); err != nil {
+		if _, err := client.updateMetadata(ctx, plan); err != nil {
 			return Result{}, fmt.Errorf("apply validated Zenodo metadata before publication: %w", err)
 		}
 		response, err := client.action(ctx, plan.RecordID, "publish")
@@ -261,7 +268,7 @@ type metadataPayload struct {
 	AccessConditions string    `json:"access_conditions,omitempty"`
 }
 
-func (client *Client) updateMetadata(ctx context.Context, plan Plan, reserveDOI bool) (depositionResponse, error) {
+func (client *Client) updateMetadata(ctx context.Context, plan Plan) (depositionResponse, error) {
 	metadata := metadataPayload{
 		Title: plan.Metadata.Title, Description: plan.Metadata.Description, UploadType: plan.Metadata.UploadType,
 		Creators: append([]Creator(nil), plan.Metadata.Creators...), AccessRight: plan.Metadata.Access,
@@ -271,9 +278,8 @@ func (client *Client) updateMetadata(ctx context.Context, plan Plan, reserveDOI 
 		metadata.EmbargoDate = plan.Metadata.EmbargoDate.Format("2006-01-02")
 	}
 	payload := struct {
-		Metadata      metadataPayload `json:"metadata"`
-		PrereserveDOI bool            `json:"prereserve_doi,omitempty"`
-	}{Metadata: metadata, PrereserveDOI: reserveDOI}
+		Metadata metadataPayload `json:"metadata"`
+	}{Metadata: metadata}
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return depositionResponse{}, fmt.Errorf("encode Zenodo publication metadata: %w", err)

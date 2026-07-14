@@ -9,7 +9,7 @@ created.
 
 | Current state | Action | Result | Scope | Confirmation |
 |---|---|---|---|---|
-| `draft` | reserve DOI | `doi_reserved` | `deposit:write` | explicit authorization |
+| `draft` | verify automatic DOI reservation | `doi_reserved` | authenticated read | explicit authorization |
 | `draft` | publish | `published` | `deposit:write`, `deposit:actions` | exact challenge; irreversible |
 | `draft` | discard | `discarded` | `deposit:write` | exact challenge; destructive |
 | `doi_reserved` | publish | `published` | `deposit:write`, `deposit:actions` | exact challenge; irreversible |
@@ -24,8 +24,8 @@ new-version draft leaves the preceding published version available.
 
 ## Publication metadata
 
-DOI reservation and publication require a non-empty title, description, upload
-type, and at least one named creator. Access policy is validated as follows:
+Publication requires a non-empty title, description, upload type, and at least
+one named creator. Access policy is validated as follows:
 
 - `open` requires a license and rejects embargo or access-condition fields.
 - `embargoed` requires a license and a future embargo date.
@@ -50,3 +50,14 @@ irreversible/destructive flags. It omits metadata, token values, and scope
 inventories, and redacts token-shaped values from errors. No publication write
 is exposed through the stable CLI or MCP surfaces while this lifecycle remains
 an internal sandbox validation contract.
+
+The current sandbox automatically reserves a DOI when a deposition is created
+and returns it in `metadata.prereserve_doi`. The reservation transition verifies
+that value through an authenticated read. It deliberately does not send the
+legacy top-level `prereserve_doi` field, which the 2026-07-15 sandbox rejects.
+
+The opt-in harness is `go run ./tools/zenodopublicationvalidation -live` with
+`ZENODO_PUBLICATION_VALIDATION=1`, the sandbox base URL, and a dedicated token.
+It writes redacted evidence to `docs/zenodo-publication-validation-evidence.md`.
+The 2026-07-15 proof used only `deposit:write` and `deposit:actions`, excluded
+`user:email`, and revoked the one-use token after public-record verification.

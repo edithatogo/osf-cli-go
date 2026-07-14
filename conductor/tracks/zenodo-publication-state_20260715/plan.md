@@ -8,6 +8,6 @@
 
 ## Phase 2: Publication workflows
 
-- [~] Task: Implement DOI reservation, publish, version, and discard behind explicit gates.
-- [ ] Task: Validate the lifecycle in the sandbox and document irreversible boundaries.
+- [x] Task: Implement DOI reservation, publish, version, and discard behind explicit gates. (aa85fd1)
+- [~] Task: Validate the lifecycle in the sandbox and document irreversible boundaries.
 - [ ] Task: Conductor - Automated Review and Checkpoint 'Publication workflows' (Protocol in workflow.md)

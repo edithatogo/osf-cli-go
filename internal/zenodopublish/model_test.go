@@ -18,7 +18,7 @@ func TestPlanAcceptsEverySupportedTransition(t *testing.T) {
 		to     State
 		scopes []Scope
 	}{
-		{name: "reserve DOI", state: StateDraft, action: ActionReserveDOI, to: StateDOIReserved, scopes: []Scope{ScopeDepositWrite}},
+		{name: "reserve DOI", state: StateDraft, action: ActionReserveDOI, to: StateDOIReserved},
 		{name: "publish draft", state: StateDraft, action: ActionPublish, to: StatePublished, scopes: []Scope{ScopeDepositWrite, ScopeDepositActions}},
 		{name: "publish reserved DOI", state: StateDOIReserved, action: ActionPublish, to: StatePublished, scopes: []Scope{ScopeDepositWrite, ScopeDepositActions}},
 		{name: "new version", state: StatePublished, action: ActionNewVersion, to: StateVersionDraft, scopes: []Scope{ScopeDepositActions}},

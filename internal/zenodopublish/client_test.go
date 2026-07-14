@@ -161,11 +161,7 @@ func TestExecuteReserveDOINewVersionAndDiscard(t *testing.T) {
 	var server *httptest.Server
 	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
-		case r.Method == http.MethodPut && r.URL.Path == "/api/deposit/depositions/123":
-			body, _ := io.ReadAll(r.Body)
-			if !strings.Contains(string(body), `"prereserve_doi":true`) {
-				t.Errorf("reserve payload = %s", body)
-			}
+		case r.Method == http.MethodGet && r.URL.Path == "/api/deposit/depositions/123":
 			_, _ = io.WriteString(w, `{"id":123,"metadata":{"prereserve_doi":{"doi":"10.5072/zenodo.123","recid":123}}}`)
 		case r.Method == http.MethodPost && r.URL.Path == "/api/deposit/depositions/123/actions/newversion":
 			_, _ = fmt.Fprintf(w, `{"id":123,"links":{"latest_draft":%q}}`, server.URL+"/api/deposit/depositions/124")
@@ -182,7 +178,7 @@ func TestExecuteReserveDOINewVersionAndDiscard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reserved, err := client.Execute(t.Context(), Request{RecordID: "123", State: StateDraft, Action: ActionReserveDOI, Authorized: true, Metadata: validMetadata()}, time.Now())
+	reserved, err := client.Execute(t.Context(), Request{RecordID: "123", State: StateDraft, Action: ActionReserveDOI, Authorized: true}, time.Now())
 	if err != nil || reserved.DOI != "10.5072/zenodo.123" || reserved.Plan.To != StateDOIReserved {
 		t.Fatalf("reserve = %+v err=%v", reserved, err)
 	}
@@ -222,7 +218,7 @@ func TestExecuteRedactsErrorsAndRejectsCrossOriginVersionLink(t *testing.T) {
 	if !errors.Is(err, ErrCrossOrigin) {
 		t.Fatalf("cross-origin error = %v", err)
 	}
-	request := Request{RecordID: "123", State: StateDraft, Action: ActionReserveDOI, Authorized: true, Metadata: validMetadata()}
+	request := Request{RecordID: "123", State: StateDraft, Action: ActionReserveDOI, Authorized: true}
 	_, err = client.Execute(context.Background(), request, time.Now())
 	if err == nil || strings.Contains(err.Error(), token) || !strings.Contains(err.Error(), "REDACTED") {
 		t.Fatalf("redacted error = %v", err)
@@ -244,7 +240,7 @@ func TestExecuteBoundsResponses(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	request := Request{RecordID: "123", State: StateDraft, Action: ActionReserveDOI, Authorized: true, Metadata: validMetadata()}
+	request := Request{RecordID: "123", State: StateDraft, Action: ActionReserveDOI, Authorized: true}
 	if _, err := client.Execute(t.Context(), request, time.Now()); !errors.Is(err, ErrResponseTooLarge) {
 		t.Fatalf("response error = %v", err)
 	}
