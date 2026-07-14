@@ -1,0 +1,4 @@
+Conductor review: Zenodo OAI-PMH adapter and surfaces
+
+Review result: clean after additive compatibility fixture updates, generated matrix sync, optional continuation output, and staticcheck remediation.
+Validation: full tests and race; vet; golangci-lint; govulncheck; contract checks; strict MkDocs.
