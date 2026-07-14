@@ -8,6 +8,6 @@
 
 ## Phase 2: Zenodo read tools
 
-- [~] Task: Implement reviewed Zenodo search, record, and file tools.
-- [ ] Task: Validate redaction, observability, docs, and registry claim accuracy.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Zenodo read tools' (Protocol in workflow.md)
+- [x] Task: Implement reviewed Zenodo search, record, and file tools.
+- [x] Task: Validate redaction, observability, docs, and registry claim accuracy.
+- [x] Task: Conductor - Automated Review and Checkpoint 'Zenodo read tools' (Protocol in workflow.md)
