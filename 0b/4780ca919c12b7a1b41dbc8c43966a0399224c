@@ -1,0 +1,1 @@
+Conductor review: no blocking findings after fixes. Added recognized-conflict validation and neutral evidence output. Gates: go test, race, vet, golangci-lint, govulncheck, anti-stub, review, registry, feature-matrix, provider-release, release-contract, actionlint, and diff checks passed.
