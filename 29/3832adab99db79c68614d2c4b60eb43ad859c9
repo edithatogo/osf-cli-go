@@ -1,0 +1,4 @@
+Conductor review: provider-scoped Zenodo read commands
+
+Review result: clean after canonical URL authority checks, qualified file IDs, and query bounds.
+Validation: full tests and race; vet; golangci-lint; govulncheck; all contracts; strict MkDocs.
