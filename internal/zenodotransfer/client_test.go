@@ -131,6 +131,52 @@ func TestDraftTransferRetriesVerifiesAndCleansUp(t *testing.T) {
 	}
 }
 
+func TestDeleteFileIsExplicitAndIdempotent(t *testing.T) {
+	t.Parallel()
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete || r.URL.Path != "/api/deposit/depositions/123/files/file-1" {
+			t.Errorf("request = %s %s", r.Method, r.URL.Path)
+		}
+		if calls.Add(1) == 1 {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer server.Close()
+	client, err := New(server.URL+"/api/", "secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := client.DeleteFile(t.Context(), "123", "file-1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := client.DeleteFile(t.Context(), "123", "file-1"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGetDraftValidatesIdentityAndBucket(t *testing.T) {
+	t.Parallel()
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/api/deposit/depositions/123" {
+			t.Errorf("request = %s %s", r.Method, r.URL.Path)
+		}
+		_, _ = fmt.Fprintf(w, `{"id":123,"links":{"bucket":%q}}`, server.URL+"/api/files/bucket-1")
+	}))
+	defer server.Close()
+	client, err := New(server.URL+"/api/", "secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	draft, err := client.GetDraft(t.Context(), "123")
+	if err != nil || draft.ID != "123" || draft.BucketURL != server.URL+"/api/files/bucket-1" {
+		t.Fatalf("draft = %+v err=%v", draft, err)
+	}
+}
+
 func TestUploadConflictPoliciesAndLimits(t *testing.T) {
 	t.Parallel()
 	var puts atomic.Int32

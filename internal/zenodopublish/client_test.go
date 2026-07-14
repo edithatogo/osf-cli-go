@@ -122,7 +122,8 @@ func TestExecutePublishAppliesMetadataThenPublishes(t *testing.T) {
 				t.Fatal(err)
 			}
 			metadata, _ := payload["metadata"].(map[string]any)
-			if metadata["title"] != "Reproducible example" || metadata["access_right"] != "open" || metadata["license"] != "cc-by-4.0" {
+			keywords, _ := metadata["keywords"].([]any)
+			if metadata["title"] != "Reproducible example" || metadata["access_right"] != "open" || metadata["license"] != "cc-by-4.0" || len(keywords) != 1 || keywords[0] != "reproducible" {
 				t.Errorf("metadata payload = %#v", metadata)
 			}
 			_, _ = io.WriteString(w, `{"id":123,"state":"unsubmitted"}`)
@@ -272,5 +273,32 @@ func TestExecuteBoundsResponses(t *testing.T) {
 	request := Request{RecordID: "123", State: StateDraft, Action: ActionReserveDOI, Authorized: true}
 	if _, err := client.Execute(t.Context(), request, time.Now()); !errors.Is(err, ErrResponseTooLarge) {
 		t.Fatalf("response error = %v", err)
+	}
+}
+
+func TestApplyDraftMetadataRequiresWriteScopeAndNeverPublishes(t *testing.T) {
+	t.Parallel()
+	var methods []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		methods = append(methods, r.Method+" "+r.URL.Path)
+		_, _ = io.WriteString(w, `{"id":123}`)
+	}))
+	defer server.Close()
+	client, err := New(server.URL+"/api/", "secret", []Scope{ScopeDepositActions})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := client.ApplyDraftMetadata(t.Context(), "123", validMetadata(), time.Now()); !errors.Is(err, ErrScopeRequired) {
+		t.Fatalf("scope error = %v", err)
+	}
+	client, err = New(server.URL+"/api/", "secret", []Scope{ScopeDepositWrite})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := client.ApplyDraftMetadata(t.Context(), "123", validMetadata(), time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if len(methods) != 1 || methods[0] != "PUT /api/deposit/depositions/123" {
+		t.Fatalf("methods = %+v", methods)
 	}
 }

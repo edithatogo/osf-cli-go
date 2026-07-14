@@ -175,6 +175,26 @@ func (client *Client) Execute(ctx context.Context, request Request, now time.Tim
 	return result, nil
 }
 
+// ApplyDraftMetadata validates and updates an unpublished sandbox deposition.
+// It performs no publication action and requires the client's deposit:write scope.
+func (client *Client) ApplyDraftMetadata(ctx context.Context, recordID string, metadata Metadata, now time.Time) error {
+	if !hasScope(client.scopes, ScopeDepositWrite) {
+		return fmt.Errorf("%w: %s", ErrScopeRequired, ScopeDepositWrite)
+	}
+	if err := metadata.validate(now); err != nil {
+		return err
+	}
+	plan := Plan{RecordID: strings.TrimSpace(recordID), Metadata: metadata.clone()}
+	if plan.RecordID == "" {
+		return fmt.Errorf("%w: record id is required", ErrInvalidTransition)
+	}
+	_, err := client.updateMetadata(ctx, plan)
+	if err != nil {
+		return safeError(err, client.token)
+	}
+	return nil
+}
+
 type redactedError struct {
 	cause   error
 	message string
@@ -283,6 +303,7 @@ type metadataPayload struct {
 	Description      string    `json:"description"`
 	UploadType       string    `json:"upload_type"`
 	Creators         []Creator `json:"creators"`
+	Keywords         []string  `json:"keywords,omitempty"`
 	AccessRight      Access    `json:"access_right"`
 	License          string    `json:"license,omitempty"`
 	EmbargoDate      string    `json:"embargo_date,omitempty"`
@@ -293,7 +314,8 @@ func (client *Client) updateMetadata(ctx context.Context, plan Plan) (deposition
 	metadata := metadataPayload{
 		Title: plan.Metadata.Title, Description: plan.Metadata.Description, UploadType: plan.Metadata.UploadType,
 		Creators: append([]Creator(nil), plan.Metadata.Creators...), AccessRight: plan.Metadata.Access,
-		License: plan.Metadata.License, AccessConditions: plan.Metadata.AccessConditions,
+		Keywords: append([]string(nil), plan.Metadata.Keywords...), License: plan.Metadata.License,
+		AccessConditions: plan.Metadata.AccessConditions,
 	}
 	if plan.Metadata.EmbargoDate != nil {
 		metadata.EmbargoDate = plan.Metadata.EmbargoDate.Format("2006-01-02")

@@ -177,6 +177,6 @@ func TestPlanOwnsValidatedMetadata(t *testing.T) {
 func validMetadata() Metadata {
 	return Metadata{
 		Title: "Reproducible example", Description: "Sandbox lifecycle validation", UploadType: "dataset",
-		Creators: []Creator{{Name: "Example, Researcher"}}, Access: AccessOpen, License: "cc-by-4.0",
+		Creators: []Creator{{Name: "Example, Researcher"}}, Keywords: []string{"reproducible"}, Access: AccessOpen, License: "cc-by-4.0",
 	}
 }

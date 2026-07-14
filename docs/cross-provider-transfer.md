@@ -62,6 +62,12 @@ references, and a newly created draft is discarded last. Once publication has
 completed, compensation is rejected because the provider boundary is
 irreversible.
 
+The concrete Zenodo Sandbox destination currently executes new-draft copies
+with `fail` or checksum-verified `skip_identical` conflicts. It rejects existing-
+draft metadata changes and `replace_draft` before mutation because those paths
+require durable provider rollback snapshots; the generic mapping and checkpoint
+contracts retain those policies for adapters that can supply such snapshots.
+
 ## Safe execution
 
 The executor consumes provider adapters rather than inferring provider behavior.

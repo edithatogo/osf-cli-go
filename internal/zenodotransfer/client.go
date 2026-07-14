@@ -236,6 +236,39 @@ func (client *Client) CreateDraft(ctx context.Context) (Draft, error) {
 	return Draft{ID: id, BucketURL: payload.Links.Bucket}, nil
 }
 
+// GetDraft resolves an existing unpublished deposition and validates its bucket.
+func (client *Client) GetDraft(ctx context.Context, id string) (Draft, error) {
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return Draft{}, errors.New("zenodo draft id is required")
+	}
+	endpoint, err := client.resolve("deposit/depositions/" + url.PathEscape(id))
+	if err != nil {
+		return Draft{}, err
+	}
+	body, _, err := client.do(ctx, http.MethodGet, endpoint, nil, 0, true)
+	if err != nil {
+		return Draft{}, err
+	}
+	var payload struct {
+		ID    json.RawMessage `json:"id"`
+		Links struct {
+			Bucket string `json:"bucket"`
+		} `json:"links"`
+	}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return Draft{}, fmt.Errorf("decode Zenodo draft: %w", err)
+	}
+	resolvedID := rawID(payload.ID)
+	if resolvedID == "" || resolvedID != id || strings.TrimSpace(payload.Links.Bucket) == "" {
+		return Draft{}, errors.New("decode Zenodo draft: id or bucket link is missing or mismatched")
+	}
+	if _, err := client.approveLink(payload.Links.Bucket); err != nil {
+		return Draft{}, fmt.Errorf("validate Zenodo draft bucket: %w", err)
+	}
+	return Draft{ID: resolvedID, BucketURL: payload.Links.Bucket}, nil
+}
+
 // DeleteDraft removes an unpublished disposable sandbox deposition.
 func (client *Client) DeleteDraft(ctx context.Context, id string) error {
 	id = strings.TrimSpace(id)
@@ -243,6 +276,23 @@ func (client *Client) DeleteDraft(ctx context.Context, id string) error {
 		return errors.New("zenodo draft id is required for cleanup")
 	}
 	endpoint, err := client.resolve("deposit/depositions/" + url.PathEscape(id))
+	if err != nil {
+		return err
+	}
+	_, _, err = client.do(ctx, http.MethodDelete, endpoint, nil, 0, true)
+	if isStatus(err, http.StatusNotFound) {
+		return nil
+	}
+	return err
+}
+
+// DeleteFile removes one file from an unpublished sandbox deposition.
+func (client *Client) DeleteFile(ctx context.Context, draftID, fileID string) error {
+	draftID, fileID = strings.TrimSpace(draftID), strings.TrimSpace(fileID)
+	if draftID == "" || fileID == "" {
+		return errors.New("zenodo draft and file ids are required for file deletion")
+	}
+	endpoint, err := client.resolve("deposit/depositions/" + url.PathEscape(draftID) + "/files/" + url.PathEscape(fileID))
 	if err != nil {
 		return err
 	}

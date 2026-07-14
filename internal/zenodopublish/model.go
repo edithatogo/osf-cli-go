@@ -68,6 +68,7 @@ type Metadata struct {
 	Description      string     `json:"description"`
 	UploadType       string     `json:"uploadType"`
 	Creators         []Creator  `json:"creators"`
+	Keywords         []string   `json:"keywords,omitempty"`
 	Access           Access     `json:"access"`
 	License          string     `json:"license,omitempty"`
 	EmbargoDate      *time.Time `json:"embargoDate,omitempty"`
@@ -167,6 +168,7 @@ func BuildPlan(request Request, now time.Time) (Plan, error) {
 func (metadata Metadata) clone() Metadata {
 	result := metadata
 	result.Creators = append([]Creator(nil), metadata.Creators...)
+	result.Keywords = append([]string(nil), metadata.Keywords...)
 	if metadata.EmbargoDate != nil {
 		embargoDate := *metadata.EmbargoDate
 		result.EmbargoDate = &embargoDate
@@ -227,6 +229,9 @@ func (metadata Metadata) validate(now time.Time) error {
 	}
 	return nil
 }
+
+// ValidateMetadata checks publication metadata without planning a lifecycle action.
+func ValidateMetadata(metadata Metadata, now time.Time) error { return metadata.validate(now) }
 
 // AuditEvent is a deliberately small, redacted lifecycle evidence record.
 type AuditEvent struct {
