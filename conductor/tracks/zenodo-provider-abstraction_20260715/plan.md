@@ -3,7 +3,7 @@
 ## Phase 1: Evidence and contract
 
 - [x] Task: Complete [Zenodo API provenance #102](../../archive/zenodo-api-provenance_20260715/plan.md).
-- [ ] Task: Complete [repository provider contract #103](../repository-provider-contract_20260715/plan.md).
+- [x] Task: Complete [repository provider contract #103](../../archive/repository-provider-contract_20260715/plan.md).
 - [ ] Task: Conductor - Automated Review and Checkpoint 'Evidence and contract' (Protocol in workflow.md)
 
 ## Phase 2: Independent read adapters
