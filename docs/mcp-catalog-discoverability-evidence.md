@@ -1,6 +1,6 @@
 # MCP Catalog Discoverability Evidence
 
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-14
 
 ## Authoritative references
 
@@ -10,6 +10,8 @@ Last reviewed: 2026-07-11
 - [MCP.Directory submission](https://mcp.directory/submit)
 - [MCPize documentation](https://docs.mcpize.com/)
 - [Awesome MCP Servers submission notice](https://github.com/wong2/awesome-mcp-servers)
+- [MCP registry about page](https://modelcontextprotocol.io/registry/about)
+- [Microsoft Marketplace Ingestion MCP](https://learn.microsoft.com/en-us/partner-center/marketplace-offers/ingestion-mcp)
 
 ## Prepared submission
 
@@ -33,9 +35,18 @@ contract, and the three optional OSF credential variables as secrets.
 | PulseMCP | Official registry ingest or manual contact | Official registry metadata published | Access/submission gate remains unresolved |
 | MCPize | GitHub App/account deployment | Docker and public repository assets ready | Account/deployment not claimed |
 
-The project distinguishes prepared, submitted, under review, published, and
-blocked states. No catalog is described as published without dated provider
-evidence.
+The project distinguishes prepared, submitted, under review, published,
+blocked, watch, and deprioritized states. No catalog is described as published
+without dated provider evidence. Microsoft Commercial Marketplace is recorded
+as an out-of-scope commercial-offer workflow, not as an open MCP directory.
+
+## Deprioritized surfaces
+
+- MCP Market has no verified official submission contract in this review.
+- MCP Central is recorded as a directory endpoint to watch, not as a verified
+  submission target.
+- `mcp-reg.com` is a self-hosted registry template and does not provide a
+  relevant public listing route for this repository.
 
 ## Local validation
 

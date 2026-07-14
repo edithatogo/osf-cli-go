@@ -33,18 +33,18 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [x] [glama-quality-claim-adoption](archive/glama-quality-claim-adoption_20260706/spec.md) — Claim or improve Glama listing quality for the OSF MCP server.
 - [x] [codex-marketplace-adoption](archive/codex-marketplace-adoption_20260706/spec.md) — Submit and optimize the OSF Codex plugin for Codex Marketplace adoption.
 
-- [ ] [osfclient-cli-parity](tracks/osfclient-cli-parity_20260711/spec.md) — Benchmark osfclient CLI workflows and close usability gaps; source osfclient/osfclient; issue #9.
+- [x] [osfclient-cli-parity](tracks/osfclient-cli-parity_20260711/spec.md) — Benchmark osfclient CLI workflows and close usability gaps; source osfclient/osfclient; issue #9.
 
-- [ ] [osfr-entity-parity](tracks/osfr-entity-parity_20260711/spec.md) — Benchmark osfr entity coverage and conflict semantics; source ropensci/osfr; issue #10.
+- [x] [osfr-entity-parity](tracks/osfr-entity-parity_20260711/spec.md) — Benchmark osfr entity coverage and conflict semantics; source ropensci/osfr; issue #10.
 
-- [ ] [pyosf-sync-parity](tracks/pyosf-sync-parity_20260711/spec.md) — Benchmark pyosf synchronization and project workflows; source psychopy/pyosf; issue #11.
+- [x] [pyosf-sync-parity](tracks/pyosf-sync-parity_20260711/spec.md) — Benchmark pyosf synchronization and project workflows; source psychopy/pyosf; issue #11.
 
-- [ ] [osf-sync-parity](tracks/osf-sync-parity_20260711/spec.md) — Benchmark OSF Sync desktop synchronization semantics; source CenterForOpenScience/osf-sync; issue #13.
+- [x] [osf-sync-parity](tracks/osf-sync-parity_20260711/spec.md) — Benchmark OSF Sync desktop synchronization semantics; source CenterForOpenScience/osf-sync; issue #13.
 
-- [ ] [research-plugins-osf-parity](tracks/research-plugins-osf-parity_20260711/spec.md) — Add research-agent OSF discovery and full-text workflow parity; source wentorai/research-plugins; issue #16.
+- [x] [research-plugins-osf-parity](tracks/research-plugins-osf-parity_20260711/spec.md) — Add research-agent OSF discovery and full-text workflow parity; source wentorai/research-plugins; issue #16.
 
 
-- [ ] [presqt-osf-parity](tracks/presqt-osf-parity_20260711/spec.md) — Benchmark PresQT preservation and metadata-transfer workflows; source Lucy-Family-Institute/presqt; issue #19.
+- [x] [presqt-osf-parity](tracks/presqt-osf-parity_20260711/spec.md) — Benchmark PresQT preservation and metadata-transfer workflows; source Lucy-Family-Institute/presqt; issue #19.
 
 
 
@@ -59,8 +59,8 @@ The per-track `plan.md` files are the source of truth for completion state.
 
 - [x] [software-preprint-readiness](tracks/software-preprint-readiness_20260711/spec.md) — Prepare and assess an OSF CLI Go software preprint; issue #27.
 
-- [ ] [paperclip-research-retrieval-parity](tracks/paperclip-research-retrieval-parity_20260713/spec.md) — Benchmark Paperclip research retrieval parity; issue #45.
-- [ ] [cline-mcp-marketplace-adoption](tracks/cline-mcp-marketplace-adoption_20260713/spec.md) — Submit OSF MCP server to the official Cline MCP Marketplace; issue #47.
-- [ ] [lobehub-mcp-marketplace-adoption](tracks/lobehub-mcp-marketplace-adoption_20260713/spec.md) — Submit OSF MCP server to LobeHub Marketplace; issue #48.
-- [ ] [additional-mcp-registry-sweep](tracks/additional-mcp-registry-sweep_20260713/spec.md) — Evaluate additional MCP registries and agent marketplaces; issue #49.
+- [x] [paperclip-research-retrieval-parity](tracks/paperclip-research-retrieval-parity_20260713/spec.md) — Benchmark Paperclip research retrieval parity; issue #45.
+- [~] [cline-mcp-marketplace-adoption](tracks/cline-mcp-marketplace-adoption_20260713/spec.md) — Submit OSF MCP server to the official Cline MCP Marketplace; issue #47.
+- [x] [lobehub-mcp-marketplace-adoption](tracks/lobehub-mcp-marketplace-adoption_20260713/spec.md) — Submit OSF MCP server to LobeHub Marketplace; issue #48.
+- [x] [additional-mcp-registry-sweep](tracks/additional-mcp-registry-sweep_20260713/spec.md) — Evaluate additional MCP registries and agent marketplaces; issue #49.
 - [x] [mcp-quality-evaluation-harness](tracks/mcp-quality-evaluation-harness_20260713/spec.md) — Build repeatable MCP quality and compatibility evaluation; issue #54.
