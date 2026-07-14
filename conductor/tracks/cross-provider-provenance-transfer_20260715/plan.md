@@ -8,6 +8,6 @@
 
 ## Phase 2: Safe execution
 
-- [~] Task: Implement copy without implicit mirroring or publication.
-- [ ] Task: Add failure injection, replay, integrity, and sandbox end-to-end tests.
-- [ ] Task: Conductor - Automated Review and Checkpoint 'Safe execution' (Protocol in workflow.md)
+- [x] Task: Implement copy without implicit mirroring or publication. (2f879bd)
+- [x] Task: Add failure injection, replay, integrity, and sandbox end-to-end tests. (bdfd121)
+- [x] Task: Conductor - Automated Review and Checkpoint 'Safe execution' (Protocol in workflow.md) (5df75ab)
