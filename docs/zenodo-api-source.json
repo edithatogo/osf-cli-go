@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "reviewedDate": "2026-07-15",
+  "versionPolicy": "documentation-date",
+  "versionDecision": "Zenodo does not publish a semantic version for the documented REST surface. Support is pinned to this reviewed capability snapshot; structural upstream changes require review and a new digest.",
+  "sources": [
+    {
+      "id": "developers",
+      "kind": "api-documentation",
+      "url": "https://developers.zenodo.org/",
+      "retrievedDate": "2026-07-15",
+      "requiredMarkers": [
+        "/api/deposit/depositions",
+        "/api/records",
+        "deposit:write",
+        "deposit:actions",
+        "50GB total",
+        "100 files",
+        "https://zenodo.org/oai2d",
+        "resumption tokens",
+        "X-RateLimit-Remaining"
+      ]
+    },
+    {
+      "id": "sandbox",
+      "kind": "sandbox-guidance",
+      "url": "https://help.zenodo.org/docs/get-started/",
+      "retrievedDate": "2026-07-15",
+      "requiredMarkers": [
+        "sandbox environment",
+        "https://sandbox.zenodo.org"
+      ]
+    },
+    {
+      "id": "terms",
+      "kind": "terms-of-use",
+      "url": "https://about.zenodo.org/terms/",
+      "retrievedDate": "2026-07-15",
+      "requiredMarkers": [
+        "Terms of Use v1.3",
+        "CC0 waiver",
+        "subject to change"
+      ]
+    },
+    {
+      "id": "policies",
+      "kind": "repository-policy",
+      "url": "https://about.zenodo.org/policies/",
+      "retrievedDate": "2026-07-15",
+      "requiredMarkers": [
+        "General Policies v1.0",
+        "50GB",
+        "closed, open, or embargoed access"
+      ]
+    }
+  ],
+  "snapshot": {
+    "apiGeneration": "documented-depositions-rest",
+    "productionBaseUrl": "https://zenodo.org/api/",
+    "sandboxBaseUrl": "https://sandbox.zenodo.org/api/",
+    "oaiPmhBaseUrl": "https://zenodo.org/oai2d",
+    "authentication": {
+      "preferredTransport": "authorization-bearer-header",
+      "publicRecordsRequireToken": false,
+      "depositionsRequireToken": true,
+      "scopes": [
+        "deposit:actions",
+        "deposit:write"
+      ]
+    },
+    "limits": {
+      "guestRequestsPerMinute": 60,
+      "guestRequestsPerHour": 2000,
+      "authenticatedRequestsPerMinute": 100,
+      "authenticatedRequestsPerHour": 5000,
+      "searchRequestsPerMinute": 30,
+      "oaiRequestsPerMinute": 30,
+      "oaiPageSize": 50,
+      "oaiResumptionTokenSeconds": 120,
+      "recordFileLimit": 100,
+      "recordBytesLimit": 53687091200
+    },
+    "capabilities": [
+      {"id": "deposition-create", "protocol": "rest", "method": "POST", "path": "/api/deposit/depositions", "access": "authenticated", "scope": "deposit:write", "lifecycle": "draft", "risk": "write", "source": "developers"},
+      {"id": "deposition-delete", "protocol": "rest", "method": "DELETE", "path": "/api/deposit/depositions/:id", "access": "authenticated", "scope": "deposit:write", "lifecycle": "draft-only", "risk": "destructive", "source": "developers"},
+      {"id": "deposition-list", "protocol": "rest", "method": "GET", "path": "/api/deposit/depositions", "access": "authenticated", "scope": "", "lifecycle": "any-owned", "risk": "read", "source": "developers"},
+      {"id": "deposition-new-version", "protocol": "rest", "method": "POST", "path": "/api/deposit/depositions/:id/actions/newversion", "access": "authenticated", "scope": "deposit:actions", "lifecycle": "published-latest-version", "risk": "write", "source": "developers"},
+      {"id": "deposition-publish", "protocol": "rest", "method": "POST", "path": "/api/deposit/depositions/:id/actions/publish", "access": "authenticated", "scope": "deposit:actions", "lifecycle": "draft", "risk": "irreversible", "source": "developers"},
+      {"id": "deposition-retrieve", "protocol": "rest", "method": "GET", "path": "/api/deposit/depositions/:id", "access": "authenticated", "scope": "", "lifecycle": "any-owned", "risk": "read", "source": "developers"},
+      {"id": "deposition-update", "protocol": "rest", "method": "PUT", "path": "/api/deposit/depositions/:id", "access": "authenticated", "scope": "deposit:write", "lifecycle": "draft", "risk": "write", "source": "developers"},
+      {"id": "file-delete", "protocol": "rest", "method": "DELETE", "path": "/api/deposit/depositions/:id/files/:file_id", "access": "authenticated", "scope": "deposit:write", "lifecycle": "draft-only", "risk": "destructive", "source": "developers"},
+      {"id": "file-download", "protocol": "rest", "method": "GET", "path": "record-file-link", "access": "record-policy", "scope": "", "lifecycle": "published", "risk": "read", "source": "developers"},
+      {"id": "file-list", "protocol": "rest", "method": "GET", "path": "/api/deposit/depositions/:id/files", "access": "authenticated", "scope": "", "lifecycle": "draft", "risk": "read", "source": "developers"},
+      {"id": "file-upload-bucket", "protocol": "rest", "method": "PUT", "path": "deposition.links.bucket/:filename", "access": "authenticated", "scope": "deposit:write", "lifecycle": "draft", "risk": "write", "source": "developers"},
+      {"id": "oai-harvest", "protocol": "oai-pmh", "method": "GET", "path": "/oai2d", "access": "public", "scope": "", "lifecycle": "published", "risk": "read", "source": "developers"},
+      {"id": "record-retrieve", "protocol": "rest", "method": "GET", "path": "/api/records/:id", "access": "public", "scope": "", "lifecycle": "published", "risk": "read", "source": "developers"},
+      {"id": "record-search", "protocol": "rest", "method": "GET", "path": "/api/records", "access": "public", "scope": "", "lifecycle": "published", "risk": "read", "source": "developers"}
+    ]
+  },
+  "snapshotSha256": "63b69973467d5a3d98c4fbea102dc4ede688703b99750f3361f4f3eb630aa3b8"
+}
