@@ -34,6 +34,8 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
   keeping protocol continuation separate from REST discovery.
 - Search and inspect public Zenodo records and file inventories through
   provider-scoped, qualified-identity CLI commands.
+- Expose the same public Zenodo reads and provider capability negotiation to
+  agents through stable, read-only MCP tools.
 
 ## Later Scope
 
