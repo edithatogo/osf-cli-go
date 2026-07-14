@@ -22,6 +22,9 @@
   depositions, and publication remain outside this package.
 - Public Zenodo OAI-PMH adapter: `internal/zenodooai`; XML metadata, sets,
   schemas, protocol errors, and opaque continuation remain separate from REST.
+- Authenticated Zenodo draft transfer adapter: `internal/zenodotransfer`;
+  writes are sandbox-only, whole-file uploads never claim partial resume, and
+  verified byte-range downloads reuse `internal/download` checkpoints.
 - Provider-scoped Zenodo CLI commands consume the concrete REST and OAI-PMH
   clients; write-shaped commands consult `repository.ZenodoContract` only.
 - Provider-scoped MCP tools consume the same concrete clients and shared
