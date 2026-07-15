@@ -38,6 +38,81 @@ func TestClientEmitsRedactedRequestEvent(t *testing.T) {
 	}
 }
 
+func TestResolveDOIWithHTTPClientValidatesAndHandlesFallback(t *testing.T) {
+	if _, err := resolveDOIWithHTTPClient(context.Background(), "not-a-doi", nil); err == nil {
+		t.Fatal("invalid DOI returned nil error")
+	}
+	if _, err := resolveDOIWithHTTPClient(context.Background(), "https://example.org/10.1234/test", nil); err == nil {
+		t.Fatal("non-doi.org URL returned nil error")
+	}
+
+	tests := []struct {
+		name       string
+		transport  roundTripFunc
+		wantMethod []string
+		wantErr    string
+	}{
+		{name: "head success", transport: func(req *http.Request) (*http.Response, error) {
+			return doiResponse(req, http.StatusOK, "https://osf.io/project-1/"), nil
+		}, wantMethod: []string{http.MethodHead}},
+		{name: "get fallback", transport: func(req *http.Request) (*http.Response, error) {
+			status := http.StatusMethodNotAllowed
+			if req.Method == http.MethodGet {
+				status = http.StatusOK
+			}
+			return doiResponse(req, status, "https://osf.io/project-1/"), nil
+		}, wantMethod: []string{http.MethodHead, http.MethodGet}},
+		{name: "non osf destination", transport: func(req *http.Request) (*http.Response, error) {
+			return doiResponse(req, http.StatusOK, "https://example.org/elsewhere"), nil
+		}, wantErr: "non-OSF host"},
+		{name: "http failure", transport: func(req *http.Request) (*http.Response, error) {
+			return doiResponse(req, http.StatusInternalServerError, "https://osf.io/project-1/"), nil
+		}, wantErr: "returned HTTP 500"},
+		{name: "transport failure", transport: func(*http.Request) (*http.Response, error) {
+			return nil, errors.New("network down")
+		}, wantErr: "network down"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var methods []string
+			client := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				methods = append(methods, req.Method)
+				return test.transport(req)
+			})}
+			got, err := resolveDOIWithHTTPClient(context.Background(), "10.1234/test", client)
+			if test.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), test.wantErr) {
+					t.Fatalf("error = %v, want %q", err, test.wantErr)
+				}
+				return
+			}
+			if err != nil || got.ResolvedURL != "https://osf.io/project-1/" {
+				t.Fatalf("resolution=%+v err=%v", got, err)
+			}
+			if !slicesEqual(methods, test.wantMethod) {
+				t.Fatalf("methods=%v want %v", methods, test.wantMethod)
+			}
+		})
+	}
+}
+
+func doiResponse(req *http.Request, status int, location string) *http.Response {
+	parsed, _ := url.Parse(location)
+	return &http.Response{StatusCode: status, Body: io.NopCloser(strings.NewReader("")), Request: &http.Request{Method: req.Method, URL: parsed}}
+}
+
+func slicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func FuzzResolveReference(f *testing.F) {
 	for _, seed := range []string{"/v2/nodes/project-123/", "?page=2", "https://example.org/resource", "\x00"} {
 		f.Add(seed)
