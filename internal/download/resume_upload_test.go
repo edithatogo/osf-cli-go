@@ -175,6 +175,43 @@ func TestResumeFileUploadValidatesSessionAndCheckpointPaths(t *testing.T) {
 	}
 }
 
+func TestResumeFileUploadInvalidatesMalformedCheckpointAndAcceptsNilContext(t *testing.T) {
+	dir := t.TempDir()
+	source := filepath.Join(dir, "source.txt")
+	checkpoint := filepath.Join(dir, "upload.resume.json")
+	if err := os.WriteFile(source, []byte("abc"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(checkpoint, []byte("{"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	result, err := ResumeFileUpload(nil, UploadOptions{SourcePath: source, SourceIdentity: "source", CheckpointPath: checkpoint}, func(_ context.Context, offset, total int64, content io.Reader) (int64, bool, error) {
+		body, readErr := io.ReadAll(content)
+		return offset + int64(len(body)), total == int64(len(body)), readErr
+	})
+	if err != nil || !result.Completed || result.Resumed {
+		t.Fatalf("result=%+v err=%v", result, err)
+	}
+}
+
+func TestResumeFileUploadClassifiesCancellation(t *testing.T) {
+	dir := t.TempDir()
+	source := filepath.Join(dir, "source.txt")
+	if err := os.WriteFile(source, []byte("abc"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var events strings.Builder
+	ctx := observability.WithEmitter(context.Background(), observability.NewJSONEmitter(&events, observability.LevelInfo))
+	ctx, cancel := context.WithCancel(ctx)
+	cancel()
+	_, err := ResumeFileUpload(ctx, UploadOptions{SourcePath: source, SourceIdentity: "source"}, func(context.Context, int64, int64, io.Reader) (int64, bool, error) {
+		return 0, false, context.Canceled
+	})
+	if !errors.Is(err, context.Canceled) || !strings.Contains(events.String(), `"outcome":"canceled"`) {
+		t.Fatalf("err=%v events=%q", err, events.String())
+	}
+}
+
 func TestResumeFileUploadEmitsTransferEvent(t *testing.T) {
 	dir := t.TempDir()
 	source := filepath.Join(dir, "source.txt")

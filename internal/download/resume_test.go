@@ -166,6 +166,49 @@ func TestResumeStreamAtomicallyValidatesSizeAndMD5(t *testing.T) {
 	}
 }
 
+func TestResumeStreamAtomicallyOverwritesExistingDestination(t *testing.T) {
+	dir := t.TempDir()
+	dst := filepath.Join(dir, "result.txt")
+	if err := os.WriteFile(dst, []byte("old"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	result, err := ResumeStreamAtomically(stringsReaderOpener("new"), ResumeOptions{
+		Destination: dst,
+		Source:      "source-overwrite",
+		Policy:      ConflictOverwrite,
+	})
+	if err != nil || !result.Completed {
+		t.Fatalf("result=%+v err=%v", result, err)
+	}
+	got, err := os.ReadFile(dst)
+	if err != nil || string(got) != "new" {
+		t.Fatalf("destination=%q err=%v", got, err)
+	}
+}
+
+func TestResumeStreamAtomicallyPreservesReadFailure(t *testing.T) {
+	dst := filepath.Join(t.TempDir(), "result.txt")
+	result, err := ResumeStreamAtomically(func(int64) (io.ReadCloser, error) {
+		return io.NopCloser(&errorReader{data: "partial", err: errors.New("remote read failed")}), nil
+	}, ResumeOptions{Destination: dst, Source: "source-read-error", Policy: ConflictOverwrite})
+	if err == nil || !strings.Contains(err.Error(), "remote read failed") || result.Completed {
+		t.Fatalf("result=%+v err=%v", result, err)
+	}
+}
+
+func TestResumeStreamAtomicallyClassifiesCancellation(t *testing.T) {
+	var events strings.Builder
+	ctx := observability.WithEmitter(context.Background(), observability.NewJSONEmitter(&events, observability.LevelInfo))
+	ctx, cancel := context.WithCancel(ctx)
+	cancel()
+	_, err := ResumeStreamAtomically(func(int64) (io.ReadCloser, error) {
+		return nil, context.Canceled
+	}, ResumeOptions{Destination: filepath.Join(t.TempDir(), "result.txt"), Source: "source-cancel", Policy: ConflictOverwrite, Context: ctx})
+	if !errors.Is(err, context.Canceled) || !strings.Contains(events.String(), `"outcome":"canceled"`) {
+		t.Fatalf("err=%v events=%q", err, events.String())
+	}
+}
+
 func TestResumeStreamAtomicallyPropagatesSourceAndPathErrors(t *testing.T) {
 	dst := filepath.Join(t.TempDir(), "result.txt")
 	_, err := ResumeStreamAtomically(func(int64) (io.ReadCloser, error) {
@@ -317,7 +360,21 @@ type interruptedReader struct {
 
 type zeroReader struct{}
 
+type errorReader struct {
+	data string
+	err  error
+	done bool
+}
+
 func (zeroReader) Read([]byte) (int, error) { return 0, nil }
+
+func (r *errorReader) Read(p []byte) (int, error) {
+	if r.done {
+		return 0, r.err
+	}
+	r.done = true
+	return copy(p, r.data), nil
+}
 
 func (r *interruptedReader) Read(p []byte) (int, error) {
 	if r.read >= r.limit {
