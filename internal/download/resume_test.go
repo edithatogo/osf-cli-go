@@ -235,6 +235,59 @@ func TestResumeCheckpointHelpersHandleFilesystemErrors(t *testing.T) {
 	}
 }
 
+func TestResumeHelperContracts(t *testing.T) {
+	t.Parallel()
+	if got := transferEventLevel(observability.OutcomeOK); got != observability.LevelInfo {
+		t.Fatalf("success event level = %q", got)
+	}
+	if got := transferEventLevel(observability.OutcomeError); got != observability.LevelError {
+		t.Fatalf("error event level = %q", got)
+	}
+	if got, _ := checksumHash("md5:abc"); got == nil {
+		t.Fatal("md5 checksum hash is nil")
+	}
+	for _, test := range []struct {
+		input, want string
+	}{
+		{"", ""},
+		{"ABC", "sha256:abc"},
+		{"MD5:ABC", "md5:abc"},
+	} {
+		if got := expectedChecksumValue(test.input); got != test.want {
+			t.Fatalf("expectedChecksumValue(%q) = %q, want %q", test.input, got, test.want)
+		}
+	}
+	if !equalInt64Ptr(nil, nil) || equalInt64Ptr(nil, new(int64)) || !equalInt64Ptr(newInt64(2), newInt64(2)) || equalInt64Ptr(newInt64(2), newInt64(3)) {
+		t.Fatal("equalInt64Ptr contract mismatch")
+	}
+	if sourceFingerprint("source") == sourceFingerprint("other") || !strings.HasPrefix(sourceFingerprint("source"), "sha256:") {
+		t.Fatal("source fingerprint contract mismatch")
+	}
+	if got := resumePartialPath("file"); got != "file.part" || resumeCheckpointPath("file") != "file.resume.json" {
+		t.Fatalf("checkpoint paths = %q/%q", got, resumeCheckpointPath("file"))
+	}
+
+	dir := t.TempDir()
+	checkpointPath := filepath.Join(dir, "missing", "checkpoint.json")
+	if _, _, err := loadResumeCheckpoint(checkpointPath, filepath.Join(dir, "partial"), ResumeOptions{Destination: filepath.Join(dir, "file"), Source: "source"}); err != nil {
+		t.Fatalf("missing checkpoint = %v", err)
+	}
+	if _, _, err := loadResumeCheckpoint(dir, filepath.Join(dir, "partial"), ResumeOptions{Destination: filepath.Join(dir, "file"), Source: "source"}); err == nil {
+		t.Fatal("directory checkpoint returned nil error")
+	}
+	if err := writeResumeCheckpoint(filepath.Join(dir, "missing", "checkpoint.json"), resumeCheckpoint{Version: resumeCheckpointVersion}); err == nil {
+		t.Fatal("checkpoint write to missing directory returned nil")
+	}
+	if exists, err := pathExists(filepath.Join(dir, "missing")); err != nil || exists {
+		t.Fatalf("missing path exists=%v err=%v", exists, err)
+	}
+	if _, err := checksumFile(filepath.Join(dir, "missing"), ""); err == nil {
+		t.Fatal("checksumFile on missing path returned nil")
+	}
+}
+
+func newInt64(value int64) *int64 { return &value }
+
 func FuzzLoadResumeCheckpointRejectsMalformedData(f *testing.F) {
 	f.Add("{")
 	f.Add("null")

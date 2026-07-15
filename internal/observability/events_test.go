@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -172,4 +174,65 @@ func TestObservabilityContractsCoverContextClassificationAndEndpointClasses(t *t
 		t.Fatal("level policy mismatch")
 	}
 	NopEmitter{}.Emit(Event{})
+}
+
+func TestObservabilityEdgeContracts(t *testing.T) {
+	var output strings.Builder
+	emitter := NewJSONEmitter(nil, "")
+	Emit(context.Background(), nil, Event{})
+	Emit(context.Background(), emitter, Event{Provider: "cross-provider", Fields: map[string]any{
+		"api_key": "secret", "source": "/tmp/source", "error": fmt.Errorf("bad /tmp/detail"),
+		"fields": []any{"/tmp/item", map[string]any{"credential": "secret"}}, "count": 2,
+	}})
+	if emitter == nil {
+		t.Fatal("nil writer emitter was not constructed")
+	}
+
+	for _, err := range []error{
+		net.UnknownNetworkError("test"),
+		errors.New("unauthorized request"),
+		errors.New("forbidden request"),
+		errors.New("resource not found"),
+		errors.New("decode json response"),
+		errors.New("required value"),
+		errors.New("other failure"),
+	} {
+		if ClassifyError(err) == "" {
+			t.Fatalf("ClassifyError(%v) returned empty class", err)
+		}
+	}
+	for _, raw := range []string{"http://[::1", "https://files.osf.io:443/x", "https://api.osf.io/x", "relative"} {
+		if EndpointClass(raw) == "" {
+			t.Fatalf("EndpointClass(%q) returned empty class", raw)
+		}
+	}
+	for _, level := range []string{"debug", "info", "warn", "error", "unknown"} {
+		if normalizeLevel(level) == "" {
+			t.Fatalf("normalizeLevel(%q) returned empty level", level)
+		}
+	}
+	if got := normalizeProvider("  OSF "); got != "osf" || normalizeProvider("other") != "unknown" {
+		t.Fatalf("provider normalization = %q", got)
+	}
+	if got := redactValue([]any{"/tmp/path", map[string]any{"secret": "value"}}); got == nil {
+		t.Fatal("redactValue returned nil")
+	}
+	if got := redactMessage("C:\\Users\\person\\token.txt"); strings.Contains(got, "person") {
+		t.Fatalf("redacted Windows path = %q", got)
+	}
+
+	t.Setenv("OSF_EVENT_LOG", "")
+	if _, closer, err := OpenFromEnv(&output); err != nil {
+		t.Fatal(err)
+	} else if closer == nil {
+		t.Fatal("disabled event log returned nil closer")
+	}
+	t.Setenv("OSF_EVENT_LOG", "stderr")
+	em, closer, err := OpenFromEnv(&output)
+	if err != nil || em == nil || closer == nil {
+		t.Fatalf("stderr event log = %v %T %T", err, em, closer)
+	}
+	if err := closer.Close(); err != nil {
+		t.Fatal(err)
+	}
 }
