@@ -120,6 +120,43 @@ func TestMCPOSFReadMethodsSuccessPaths(t *testing.T) {
 	}
 }
 
+func TestMCPInputBoundaryContracts(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		got  func() (int, error)
+		want int
+		err  bool
+	}{
+		{"limit negative", func() (int, error) { return boundedLimit(-1) }, 0, true},
+		{"limit maximum", func() (int, error) { return boundedLimit(100) }, 100, false},
+		{"limit too high", func() (int, error) { return boundedLimit(101) }, 0, true},
+		{"search default", func() (int, error) { return boundedSearchLimit(0) }, 10, false},
+		{"search minimum", func() (int, error) { return boundedSearchLimit(1) }, 1, false},
+		{"search too high", func() (int, error) { return boundedSearchLimit(101) }, 0, true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := test.got()
+			if got != test.want || (err != nil) != test.err {
+				t.Fatalf("got=%d err=%v, want %d error=%v", got, err, test.want, test.err)
+			}
+		})
+	}
+	for _, value := range []string{"2026-07-15", "2026-07-15T12:00:00Z", ""} {
+		if _, err := parseOAIDate(value); err != nil {
+			t.Fatalf("parseOAIDate(%q): %v", value, err)
+		}
+	}
+	if _, err := parseOAIDate("15/07/2026"); err == nil {
+		t.Fatal("invalid OAI date returned nil error")
+	}
+	if _, err := oaiRequest(OAIRecordsInput{ResumptionToken: "token", Set: "set"}); err == nil {
+		t.Fatal("conflicting OAI resumption arguments returned nil error")
+	}
+	if request, err := oaiRequest(OAIRecordsInput{ResumptionToken: "token", MetadataPrefix: "custom"}); err != nil || request.Token.Value != "token" {
+		t.Fatalf("token request=%+v err=%v", request, err)
+	}
+}
+
 func TestServerToolInputSchemasMatchPackagedContract(t *testing.T) {
 	session := connectTestServer(t, &fakeOSFClient{})
 
