@@ -601,11 +601,17 @@ type fakeOSFClient struct {
 	failErr          error
 }
 
-type fakeZenodoOAI struct{ failErr error }
+type fakeZenodoOAI struct {
+	failErr error
+	page    zenodooai.Page
+}
 
 func (fake fakeZenodoOAI) ListRecords(_ context.Context, request zenodooai.Request) (zenodooai.Page, error) {
 	if fake.failErr != nil {
 		return zenodooai.Page{}, fake.failErr
+	}
+	if fake.page.Records != nil || !fake.page.Next.Empty() {
+		return fake.page, nil
 	}
 	return zenodooai.Page{Records: []zenodooai.Record{{Header: zenodooai.Header{Identifier: "oai:zenodo.org:1001", Datestamp: "2026-07-15"}, Provenance: zenodooai.Provenance{MetadataPrefix: request.MetadataPrefix}}}}, nil
 }
