@@ -36,6 +36,39 @@ func TestRunPrintsHelpWithoutArgs(t *testing.T) {
 	}
 }
 
+func TestValidateCommandReportsResearchOutputFindings(t *testing.T) {
+	client := &fakeReadonlyClient{node: osfapi.Node{ID: "project-1", Attributes: osfapi.NodeAttributes{Title: "Study", Description: "Methods", Category: "project"}}, files: []osfapi.StorageFile{{ID: "file-1"}}}
+	var stdout, stderr bytes.Buffer
+	if code := runWithClient([]string{"validate", "project-1", "--profile", "research-output", "--json"}, &stdout, &stderr, client); code != 0 {
+		t.Fatalf("validate returned %d: %s", code, stderr.String())
+	}
+	var report validationReport
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if !report.Valid || report.NodeID != "project-1" || len(report.Findings) != 4 {
+		t.Fatalf("validation report = %+v", report)
+	}
+}
+
+func TestValidateCommandReportsPreregistrationFailureAndTable(t *testing.T) {
+	client := &fakeReadonlyClient{node: osfapi.Node{ID: "project-1", Attributes: osfapi.NodeAttributes{Title: "Study", Category: "project"}}}
+	var stdout, stderr bytes.Buffer
+	if code := runWithClient([]string{"validate", "project-1", "--profile", "preregistration"}, &stdout, &stderr, client); code != 0 {
+		t.Fatalf("validate returned %d: %s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "preregistration.category") || !strings.Contains(stdout.String(), "fail") {
+		t.Fatalf("validation table = %q", stdout.String())
+	}
+}
+
+func TestValidateCommandRejectsUnsupportedProfile(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	if code := runWithClient([]string{"validate", "project-1", "--profile", "unknown"}, &stdout, &stderr, &fakeReadonlyClient{}); code != 1 {
+		t.Fatalf("validate returned %d, want validation error: %s", code, stderr.String())
+	}
+}
+
 func TestRunWritesOptInStructuredEventsOutsideCommandOutput(t *testing.T) {
 	logPath := filepath.Join(t.TempDir(), "events.jsonl")
 	t.Setenv("OSF_EVENT_LOG", logPath)
