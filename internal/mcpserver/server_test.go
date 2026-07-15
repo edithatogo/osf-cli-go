@@ -75,6 +75,51 @@ func TestMCPToolErrorsEmitRedactedEvents(t *testing.T) {
 	}
 }
 
+func TestMCPOSFReadMethodsSuccessPaths(t *testing.T) {
+	server := &Server{client: &fakeOSFClient{}, events: observability.NopEmitter{}}
+	ctx := context.Background()
+	checks := []struct {
+		name string
+		call func() error
+	}{
+		{"whoami", func() error { _, _, err := server.Whoami(ctx, nil, EmptyInput{}); return err }},
+		{"projects", func() error { _, _, err := server.ListProjects(ctx, nil, EmptyInput{}); return err }},
+		{"project", func() error { _, _, err := server.GetProject(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"components", func() error { _, _, err := server.ListComponents(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"files", func() error {
+			_, _, err := server.ListFiles(ctx, nil, FilesInput{ID: "project-1", Path: "data/raw"})
+			return err
+		}},
+		{"contributors", func() error { _, _, err := server.ListContributors(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"versions", func() error { _, _, err := server.ListFileVersions(ctx, nil, FileInput{ID: "file-1"}); return err }},
+		{"addons", func() error { _, _, err := server.ListAddons(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"wikis", func() error { _, _, err := server.ListWikis(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"comments", func() error { _, _, err := server.ListComments(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"logs", func() error { _, _, err := server.ListLogs(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"identifiers", func() error { _, _, err := server.ListIdentifiers(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"search", func() error { _, _, err := server.Search(ctx, nil, SearchInput{Query: "study", Limit: 10}); return err }},
+		{"preprints", func() error {
+			_, _, err := server.ListPreprints(ctx, nil, PreprintsInput{Provider: "osf", Limit: 10})
+			return err
+		}},
+		{"preprint search", func() error {
+			_, _, err := server.SearchPreprints(ctx, nil, PreprintSearchInput{Query: "study", Provider: "osf", Limit: 10})
+			return err
+		}},
+		{"doi", func() error {
+			_, _, err := server.ResolveDOI(ctx, nil, DOIInput{Identifier: "10.1234/study"})
+			return err
+		}},
+	}
+	for _, check := range checks {
+		t.Run(check.name, func(t *testing.T) {
+			if err := check.call(); err != nil {
+				t.Fatalf("success path returned error: %v", err)
+			}
+		})
+	}
+}
+
 func TestServerToolInputSchemasMatchPackagedContract(t *testing.T) {
 	session := connectTestServer(t, &fakeOSFClient{})
 
