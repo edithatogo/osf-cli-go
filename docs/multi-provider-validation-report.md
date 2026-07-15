@@ -15,4 +15,4 @@
 | zenodo | deposit.publication.lifecycle | sandbox-validated | 2026-07-15 | published-retained (https://sandbox.zenodo.org/records/565256) | `docs/zenodo-publication-validation-evidence.md` (sha256:21340a7634a9) |
 | cross-provider | osf.zenodo.copy.saga | sandbox-validated | 2026-07-15 | deleted | `docs/cross-provider-sandbox-validation-evidence.md` (sha256:1b7542e8dd90) |
 | cross-provider | release.governance.v1 | offline-tested | 2026-07-15 | not-applicable | `docs/provider-release-operations.md` (sha256:5ae6391c0dd6); `docs/adr-001-multi-provider-release-contract.md` (sha256:74e4fcacb374); `docs/provider-environment-evidence.md` (sha256:c55023589c71) |
-| zenodo | registry.readonly.surface | offline-tested | 2026-07-15 | not-applicable | `server.json` (sha256:3e1c406908ae); `internal/mcpserver/testdata/compatibility/mcp-tools.json` (sha256:add329e4be13) |
+| zenodo | registry.readonly.surface | offline-tested | 2026-07-15 | not-applicable | `server.json` (sha256:d343ec18e777); `internal/mcpserver/testdata/compatibility/mcp-tools.json` (sha256:add329e4be13) |

@@ -96,7 +96,7 @@
       "level": "offline-tested",
       "validatedAt": "2026-07-15",
       "evidence": [
-        {"path": "server.json", "sha256": "sha256:3e1c406908aec5f2ba1f716431db7a6211565faa4d8b8df1577a4f0b71a042c3"},
+        {"path": "server.json", "sha256": "sha256:d343ec18e777c81f4abac43f2d8b722e0449116a4e0fc62fbd615237f1792852"},
         {"path": "internal/mcpserver/testdata/compatibility/mcp-tools.json", "sha256": "sha256:add329e4be13e58f2c14f84fb0fa8dbbc748fa051a4c2f7796d25d1d33d08f52"}
       ]
     }
