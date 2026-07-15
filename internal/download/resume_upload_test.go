@@ -119,6 +119,9 @@ func TestResumeFileUploadValidatesSourceAndAcknowledgements(t *testing.T) {
 		"provider failure": func(context.Context, int64, int64, io.Reader) (int64, bool, error) {
 			return 1, false, errors.New("provider failed")
 		},
+		"offset beyond total": func(context.Context, int64, int64, io.Reader) (int64, bool, error) {
+			return 4, false, nil
+		},
 	} {
 		checkpoint := filepath.Join(dir, name+".json")
 		result, err := ResumeFileUpload(ctx, UploadOptions{SourcePath: source, SourceIdentity: name, CheckpointPath: checkpoint}, session)
@@ -128,6 +131,37 @@ func TestResumeFileUploadValidatesSourceAndAcknowledgements(t *testing.T) {
 		if _, statErr := os.Stat(checkpoint); statErr != nil {
 			t.Fatalf("%s checkpoint stat=%v, want retained checkpoint", name, statErr)
 		}
+	}
+}
+
+func TestResumeFileUploadHandlesMalformedCheckpointAndFinalizeError(t *testing.T) {
+	dir := t.TempDir()
+	source := filepath.Join(dir, "source.txt")
+	checkpoint := filepath.Join(dir, "upload.resume.json")
+	if err := os.WriteFile(source, []byte("abc"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(checkpoint, []byte("{"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	result, err := ResumeFileUpload(context.Background(), UploadOptions{SourcePath: source, SourceIdentity: "source", CheckpointPath: checkpoint}, func(_ context.Context, offset, total int64, content io.Reader) (int64, bool, error) {
+		body, readErr := io.ReadAll(content)
+		return offset + int64(len(body)), total == int64(len(body)), readErr
+	})
+	if err != nil || !result.Completed {
+		t.Fatalf("malformed checkpoint result=%+v err=%v", result, err)
+	}
+
+	checkpoint = filepath.Join(dir, "finalize-dir")
+	if err := os.Mkdir(checkpoint, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	_, err = ResumeFileUpload(context.Background(), UploadOptions{SourcePath: source, SourceIdentity: "source", CheckpointPath: checkpoint}, func(_ context.Context, offset, total int64, content io.Reader) (int64, bool, error) {
+		body, readErr := io.ReadAll(content)
+		return offset + int64(len(body)), total == int64(len(body)), readErr
+	})
+	if err == nil || !strings.Contains(err.Error(), "read upload checkpoint") {
+		t.Fatalf("checkpoint directory error=%v, want checkpoint read error", err)
 	}
 }
 

@@ -186,6 +186,21 @@ func TestResumeStreamAtomicallyOverwritesExistingDestination(t *testing.T) {
 	}
 }
 
+func TestResumeStreamAtomicallyRejectsUnremovableDestination(t *testing.T) {
+	dir := t.TempDir()
+	dst := filepath.Join(dir, "result.txt")
+	if err := os.Mkdir(dst, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dst, "keep"), []byte("keep"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := ResumeStreamAtomically(stringsReaderOpener("new"), ResumeOptions{Destination: dst, Source: "source", Policy: ConflictOverwrite})
+	if err == nil || !strings.Contains(err.Error(), "remove existing destination") {
+		t.Fatalf("error=%v, want destination removal error", err)
+	}
+}
+
 func TestResumeStreamAtomicallyPreservesReadFailure(t *testing.T) {
 	dst := filepath.Join(t.TempDir(), "result.txt")
 	result, err := ResumeStreamAtomically(func(int64) (io.ReadCloser, error) {
@@ -224,6 +239,29 @@ func TestResumeStreamAtomicallyPropagatesSourceAndPathErrors(t *testing.T) {
 	_, err = ResumeStreamAtomically(stringsReaderOpener("x"), ResumeOptions{Destination: filepath.Join(parent, "result.txt"), Source: "source", Policy: ConflictOverwrite})
 	if err == nil {
 		t.Fatal("path error returned nil")
+	}
+}
+
+func TestResumeStreamAtomicallyHandlesMalformedCheckpointAndPartialPath(t *testing.T) {
+	dir := t.TempDir()
+	dst := filepath.Join(dir, "result.txt")
+	if err := os.WriteFile(resumeCheckpointPath(dst), []byte("{"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	result, err := ResumeStreamAtomically(stringsReaderOpener("fresh"), ResumeOptions{Destination: dst, Source: "source", Policy: ConflictOverwrite})
+	if err != nil || !result.Completed {
+		t.Fatalf("malformed checkpoint result=%+v err=%v", result, err)
+	}
+
+	dst = filepath.Join(dir, "directory-part.txt")
+	if err := os.Mkdir(resumePartialPath(dst), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(resumePartialPath(dst), "keep"), []byte("keep"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ResumeStreamAtomically(stringsReaderOpener("content"), ResumeOptions{Destination: dst, Source: "source", Policy: ConflictOverwrite}); err == nil || !strings.Contains(err.Error(), "open resume partial") {
+		t.Fatalf("partial directory error=%v, want open partial error", err)
 	}
 }
 
