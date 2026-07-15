@@ -38,6 +38,104 @@ func TestClientEmitsRedactedRequestEvent(t *testing.T) {
 	}
 }
 
+func TestClientEmitsErrorAndCancellationRequestEvents(t *testing.T) {
+	var events strings.Builder
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = io.WriteString(w, `{"errors":[{"title":"failed"}]}`)
+	}))
+	defer srv.Close()
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()), WithObserver(observability.NewJSONEmitter(&events, observability.LevelInfo)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = client.GetNode(context.Background(), "failed")
+	if !strings.Contains(events.String(), `"outcome":"error"`) {
+		t.Fatalf("error event=%q", events.String())
+	}
+
+	cancelled := context.Background()
+	cancelled, cancel := context.WithCancel(cancelled)
+	cancel()
+	client, err = New(srv.URL, WithHTTPClient(&http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+		return nil, context.Canceled
+	})}), WithObserver(observability.NewJSONEmitter(&events, observability.LevelInfo)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = client.GetNode(cancelled, "cancelled")
+	if !strings.Contains(events.String(), `"outcome":"canceled"`) {
+		t.Fatalf("cancellation event=%q", events.String())
+	}
+}
+
+func TestWaterButlerUploadURLAndRangeValidation(t *testing.T) {
+	for _, test := range []struct {
+		name, conflict, want, err string
+	}{
+		{"fail", "", "conflict=fail", ""},
+		{"explicit fail", "fail", "conflict=fail", ""},
+		{"overwrite", "overwrite", "conflict=overwrite", ""},
+		{"bad conflict", "merge", "", "unsupported upload conflict"},
+		{"path traversal", "", "", "single path segment"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			name := "report.csv"
+			if test.name == "path traversal" {
+				name = "../report.csv"
+			}
+			got, err := waterButlerUploadURL("https://files.osf.io/provider", name, test.conflict)
+			if test.err != "" {
+				if err == nil || !strings.Contains(err.Error(), test.err) {
+					t.Fatalf("error=%v, want %q", err, test.err)
+				}
+				return
+			}
+			if err != nil || !strings.Contains(got, test.want) || !strings.Contains(got, "kind=file") {
+				t.Fatalf("url=%q err=%v", got, err)
+			}
+		})
+	}
+	client, err := New("https://api.osf.io/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.OpenDownloadRange(context.Background(), "https://files.osf.io/file", -1); err == nil {
+		t.Fatal("negative range offset returned nil error")
+	}
+}
+
+func TestUploadOverwriteUsesExistingWaterButlerTarget(t *testing.T) {
+	var uploaded string
+	var srv *httptest.Server
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			_, _ = io.WriteString(w, `{"data":[{"attributes":{"name":"report.csv"},"links":{"upload":"`+srv.URL+`/target"}}]}`)
+		case http.MethodPut:
+			if r.URL.Path != "/target" {
+				t.Fatalf("upload path=%q", r.URL.Path)
+			}
+			body, _ := io.ReadAll(r.Body)
+			uploaded = string(body)
+			w.WriteHeader(http.StatusCreated)
+		default:
+			t.Fatalf("method=%s", r.Method)
+		}
+	}))
+	defer srv.Close()
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := client.UploadFile(context.Background(), srv.URL+"/provider", "report.csv", strings.NewReader("contents"), "overwrite"); err != nil {
+		t.Fatal(err)
+	}
+	if uploaded != "contents" {
+		t.Fatalf("uploaded=%q, want contents", uploaded)
+	}
+}
+
 func TestResolveDOIWithHTTPClientValidatesAndHandlesFallback(t *testing.T) {
 	if _, err := resolveDOIWithHTTPClient(context.Background(), "not-a-doi", nil); err == nil {
 		t.Fatal("invalid DOI returned nil error")
