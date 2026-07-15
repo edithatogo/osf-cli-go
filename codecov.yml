@@ -17,6 +17,8 @@ flags:
     paths:
       - "**/*.go"
 ignore:
+  # Test source is the producer of coverage, not release code under review.
+  - "**/*_test.go"
   - "tools/**"
   # Zenodo and cross-provider flows have separate provider-specific harnesses;
   # keep them out of the OSF release patch gate while retaining their tests.
