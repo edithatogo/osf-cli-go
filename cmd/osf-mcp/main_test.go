@@ -26,3 +26,26 @@ func TestRunRejectsInvalidEventLog(t *testing.T) {
 		t.Fatal("run succeeded with invalid event log destination")
 	}
 }
+
+func TestRunServesAndStopsInMemoryMCP(t *testing.T) {
+	clientTransport, serverTransport := mcp.NewInMemoryTransports()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	runDone := make(chan error, 1)
+	go func() {
+		runDone <- run(ctx, io.Discard, serverTransport)
+	}()
+
+	client := mcp.NewClient(&mcp.Implementation{Name: "coverage-client", Version: "1.0.0"}, nil)
+	session, err := client.Connect(ctx, clientTransport, nil)
+	if err != nil {
+		t.Fatalf("connect MCP client: %v", err)
+	}
+	if err := session.Close(); err != nil {
+		t.Fatalf("close MCP session: %v", err)
+	}
+	if err := <-runDone; err != nil {
+		t.Fatalf("run returned error: %v", err)
+	}
+}
