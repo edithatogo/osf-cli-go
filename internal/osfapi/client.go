@@ -135,7 +135,7 @@ func (c *Client) GetStorageFile(ctx context.Context, id string) (StorageFile, er
 
 // ResolveDOI resolves an OSF DOI without using the OSF API credentials.
 func (c *Client) ResolveDOI(ctx context.Context, identifier string) (DOIResolution, error) {
-	return ResolveDOI(ctx, identifier)
+	return resolveDOIWithHTTPClient(ctx, identifier, c.httpClient)
 }
 
 // ListFileVersions loads all versions for a file.

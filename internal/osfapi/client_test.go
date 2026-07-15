@@ -194,6 +194,19 @@ func TestResolveDOIWithHTTPClientValidatesAndHandlesFallback(t *testing.T) {
 	}
 }
 
+func TestClientResolveDOIUsesConfiguredHTTPClient(t *testing.T) {
+	client, err := New("https://api.osf.io/v2/", WithHTTPClient(&http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		return doiResponse(req, http.StatusOK, "https://osf.io/project-1/"), nil
+	})}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := client.ResolveDOI(context.Background(), "10.1234/test")
+	if err != nil || got.ResolvedURL != "https://osf.io/project-1/" {
+		t.Fatalf("resolution=%+v err=%v", got, err)
+	}
+}
+
 func doiResponse(req *http.Request, status int, location string) *http.Response {
 	parsed, _ := url.Parse(location)
 	return &http.Response{StatusCode: status, Body: io.NopCloser(strings.NewReader("")), Request: &http.Request{Method: req.Method, URL: parsed}}
