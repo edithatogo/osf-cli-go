@@ -1,0 +1,1 @@
+Coverage hardening: make MCP entrypoint injectable for tests and route DOI resolution through configured HTTP client.
