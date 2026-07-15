@@ -1626,6 +1626,53 @@ func TestProgressWriterTracksBytesAndFinishesForFileOutput(t *testing.T) {
 	}
 }
 
+func TestDefaultReadonlyClientDelegatesAllProviderOperations(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	api, err := osfapi.New(server.URL+"/", osfapi.WithHTTPClient(server.Client()), osfapi.WithBearerToken("test-token"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := &defaultReadonlyClient{api: api, credentials: auth.Credentials{Mode: auth.ModeBearerToken, Token: "test-token"}, bearerToken: true}
+	ctx := context.Background()
+	delegates := []func(){
+		func() { _, _ = client.CurrentUser(ctx) },
+		func() { _, _ = client.ListProjects(ctx) },
+		func() { _, _ = client.GetNode(ctx, "node-1") },
+		func() { _, _ = client.CreateNode(ctx, "title", "project", "description") },
+		func() { _, _ = client.UpdateNode(ctx, "node-1", "title", "description") },
+		func() { _ = client.DeleteNode(ctx, "node-1") },
+		func() { _, _ = client.ListNodeContributors(ctx, "node-1") },
+		func() { _, _ = client.ListNodeChildren(ctx, "node-1") },
+		func() { _, _ = client.ListStorageFiles(ctx, "node-1", "data") },
+		func() { _, _ = client.GetStorageFile(ctx, "file-1") },
+		func() { _, _ = client.OpenDownload(ctx, server.URL+"/download") },
+		func() { _, _ = client.OpenDownloadRange(ctx, server.URL+"/download", 1) },
+		func() { _, _ = client.GetNodeFilesProvider(ctx, "node-1") },
+		func() {
+			_ = client.UploadFile(ctx, server.URL+"/provider", "file.txt", strings.NewReader("data"), "overwrite")
+		},
+		func() { _ = client.CreateFolder(ctx, server.URL+"/provider", "folder") },
+		func() { _ = client.DeleteFile(ctx, server.URL+"/provider", "file.txt") },
+		func() { _, _ = client.ListPreprints(ctx, "osf", 10) },
+		func() { _, _ = client.SearchPreprints(ctx, "study", "osf", 10) },
+		func() { _, _ = client.SearchOSF(ctx, "study", 10) },
+		func() { _, _ = client.ListNodeAddons(ctx, "node-1") },
+		func() { _, _ = client.ListFileVersions(ctx, "file-1") },
+		func() { _, _ = client.ListWikiPages(ctx, "node-1") },
+		func() { _, _ = client.ListNodeComments(ctx, "node-1") },
+		func() { _, _ = client.ListNodeLogs(ctx, "node-1") },
+		func() { _, _ = client.ListNodeIdentifiers(ctx, "node-1") },
+		func() { _, _ = client.CreateRegistration(ctx, "node-1", osfapi.RegistrationRequest{Title: "draft"}) },
+		func() { _, _ = client.ResolveDOI(ctx, "10.1234/study") },
+	}
+	for _, delegate := range delegates {
+		delegate()
+	}
+}
+
 type fakeReadonlyClient struct {
 	currentUser              osfapi.User
 	projects                 []osfapi.Node
