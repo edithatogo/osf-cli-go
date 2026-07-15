@@ -123,6 +123,7 @@ func TestRedactedErrorRemovesLocalPaths(t *testing.T) {
 
 func TestObservabilityContractsCoverContextClassificationAndEndpointClasses(t *testing.T) {
 	t.Parallel()
+	//nolint:staticcheck // nil is an intentional input for the package's nil-safe context contract.
 	if OperationID(nil) != "" || RequestID(nil) != "" || EmitterFromContext(nil) != nil {
 		t.Fatal("nil context returned values")
 	}
