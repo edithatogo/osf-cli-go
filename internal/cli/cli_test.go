@@ -1580,6 +1580,52 @@ func TestFilesDownloadRejectsInvalidFlags(t *testing.T) {
 	}
 }
 
+func TestExportCommandWritesSnapshotAndToleratesOptionalFailures(t *testing.T) {
+	client := &fakeReadonlyClient{
+		node:     osfapi.Node{ID: "project-1", Attributes: osfapi.NodeAttributes{Title: "Study", Category: "project", Description: "Description"}, Links: osfapi.Links{Self: "https://osf.io/project-1/"}},
+		children: []osfapi.Node{{ID: "component-1", Attributes: osfapi.NodeAttributes{Title: "Data", Category: "component"}}},
+		files:    []osfapi.StorageFile{{ID: "file-1", Attributes: osfapi.StorageFileAttributes{Name: "data.csv", Kind: "file", Size: 12}}},
+	}
+	var stdout bytes.Buffer
+	cmd := newExportCommand(client)
+	cmd.Flags().String("output", outputModeTable, "output mode")
+	cmd.Flags().Bool("json", false, "json output")
+	cmd.SetArgs([]string{"https://osf.io/project-1/"})
+	cmd.SetOut(&stdout)
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("export returned error: %v", err)
+	}
+	if !strings.Contains(stdout.String(), "project-1") || !strings.Contains(stdout.String(), "Files") {
+		t.Fatalf("export output = %q", stdout.String())
+	}
+	if client.gotNodeID != "project-1" {
+		t.Fatalf("node id = %q, want project-1", client.gotNodeID)
+	}
+}
+
+func TestProgressWriterTracksBytesAndFinishesForFileOutput(t *testing.T) {
+	tmp := t.TempDir() + "/progress.log"
+	file, err := os.Create(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pw := NewProgressWriter(file)
+	if n, err := pw.Write([]byte("abc")); err != nil || n != 3 {
+		t.Fatalf("Write returned n=%d err=%v", n, err)
+	}
+	pw.Finish()
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+	content, err := os.ReadFile(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), "downloaded 3 bytes - done") {
+		t.Fatalf("progress output = %q", content)
+	}
+}
+
 type fakeReadonlyClient struct {
 	currentUser              osfapi.User
 	projects                 []osfapi.Node

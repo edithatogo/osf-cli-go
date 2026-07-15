@@ -157,6 +157,45 @@ func TestMCPInputBoundaryContracts(t *testing.T) {
 	}
 }
 
+func TestMCPOSFReadMethodsReturnBackendErrors(t *testing.T) {
+	server := &Server{client: &fakeOSFClient{failErr: errors.New("backend unavailable")}, events: observability.NopEmitter{}}
+	ctx := context.Background()
+	calls := []struct {
+		name string
+		call func() error
+	}{
+		{"whoami", func() error { _, _, err := server.Whoami(ctx, nil, EmptyInput{}); return err }},
+		{"projects", func() error { _, _, err := server.ListProjects(ctx, nil, EmptyInput{}); return err }},
+		{"project", func() error { _, _, err := server.GetProject(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"components", func() error { _, _, err := server.ListComponents(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"files", func() error { _, _, err := server.ListFiles(ctx, nil, FilesInput{ID: "project-1"}); return err }},
+		{"contributors", func() error { _, _, err := server.ListContributors(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"versions", func() error { _, _, err := server.ListFileVersions(ctx, nil, FileInput{ID: "file-1"}); return err }},
+		{"addons", func() error { _, _, err := server.ListAddons(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"wikis", func() error { _, _, err := server.ListWikis(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"comments", func() error { _, _, err := server.ListComments(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"logs", func() error { _, _, err := server.ListLogs(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"identifiers", func() error { _, _, err := server.ListIdentifiers(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"search", func() error { _, _, err := server.Search(ctx, nil, SearchInput{Query: "study"}); return err }},
+		{"preprints", func() error { _, _, err := server.ListPreprints(ctx, nil, PreprintsInput{}); return err }},
+		{"preprint search", func() error {
+			_, _, err := server.SearchPreprints(ctx, nil, PreprintSearchInput{Query: "study"})
+			return err
+		}},
+		{"doi", func() error {
+			_, _, err := server.ResolveDOI(ctx, nil, DOIInput{Identifier: "10.1234/study"})
+			return err
+		}},
+	}
+	for _, test := range calls {
+		t.Run(test.name, func(t *testing.T) {
+			if err := test.call(); err == nil {
+				t.Fatal("backend failure returned nil error")
+			}
+		})
+	}
+}
+
 func TestServerToolInputSchemasMatchPackagedContract(t *testing.T) {
 	session := connectTestServer(t, &fakeOSFClient{})
 
