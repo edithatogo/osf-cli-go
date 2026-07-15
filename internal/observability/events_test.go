@@ -236,3 +236,42 @@ func TestObservabilityEdgeContracts(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestObservabilityEmitterLifecycleAndContext(t *testing.T) {
+	var output strings.Builder
+	emitter := NewJSONEmitter(&output, LevelInfo)
+	if err := emitter.Close(); err != nil {
+		t.Fatal(err)
+	}
+	var nilEmitter *JSONEmitter
+	nilEmitter.Emit(Event{})
+	if err := nilEmitter.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := WithEmitter(context.Background(), emitter)
+	if got := EmitterFromContext(ctx); got != emitter {
+		t.Fatalf("EmitterFromContext() = %T, want the configured emitter", got)
+	}
+	if got := EmitterFromContext(context.Background()); got != nil {
+		t.Fatalf("EmitterFromContext(empty) = %T, want nil", got)
+	}
+
+	destination := filepath.Join(t.TempDir(), "nested", "events.jsonl")
+	t.Setenv("OSF_EVENT_LOG", destination)
+	opened, closer, err := OpenFromEnv(io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	Emit(context.Background(), opened, Event{Name: "lifecycle"})
+	if err := closer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(destination)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), "lifecycle") {
+		t.Fatalf("event log = %q", data)
+	}
+}
