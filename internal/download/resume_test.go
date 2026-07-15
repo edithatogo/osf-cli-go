@@ -314,6 +314,16 @@ func TestResumeCheckpointHelpersHandleFilesystemErrors(t *testing.T) {
 	if _, err := os.ReadFile(valid); err != nil {
 		t.Fatalf("checkpoint read: %v", err)
 	}
+	finalizeDir := filepath.Join(t.TempDir(), "existing")
+	if err := os.Mkdir(finalizeDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeResumeCheckpoint(finalizeDir, checkpoint); err == nil {
+		t.Fatal("existing checkpoint directory returned nil error")
+	}
+	if _, err := checksumFile(filepath.Join(t.TempDir(), "missing"), ""); err == nil {
+		t.Fatal("missing checksum source returned nil error")
+	}
 }
 
 func TestResumeHelperContracts(t *testing.T) {

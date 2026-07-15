@@ -281,4 +281,11 @@ func TestUploadCheckpointHelpersHandleFilesystemErrors(t *testing.T) {
 	if _, err := os.ReadFile(valid); err != nil {
 		t.Fatalf("upload checkpoint read: %v", err)
 	}
+	finalizeDir := filepath.Join(t.TempDir(), "existing")
+	if err := os.Mkdir(finalizeDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeUploadCheckpoint(finalizeDir, checkpoint); err == nil {
+		t.Fatal("existing upload checkpoint directory returned nil error")
+	}
 }

@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
+	"github.com/edithatogo/osf-cli-go/internal/download"
 	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
 )
@@ -86,6 +87,25 @@ func TestRunWritesOptInStructuredEventsOutsideCommandOutput(t *testing.T) {
 	}
 	if strings.Contains(stdout.String(), `"schemaVersion"`) {
 		t.Fatalf("structured events polluted stdout: %q", stdout.String())
+	}
+}
+
+func TestOpenDownloadAtUsesRangeAndTranslatesUnsupportedRange(t *testing.T) {
+	client := &fakeReadonlyClient{downloadBodies: map[string]string{"https://files.osf.io/download": "content"}}
+	if body, err := openDownloadAt(context.Background(), client, "https://files.osf.io/download", 0); err != nil {
+		t.Fatalf("zero-offset open: %v", err)
+	} else {
+		_ = body.Close()
+	}
+	if body, err := openDownloadAt(context.Background(), client, "https://files.osf.io/download", 3); err != nil {
+		t.Fatalf("range open: %v", err)
+	} else {
+		_ = body.Close()
+	}
+
+	rangeClient := &fakeReadonlyClient{rangeErr: osfapi.ErrRangeUnsupported}
+	if _, err := openDownloadAt(context.Background(), rangeClient, "https://files.osf.io/download", 3); !errors.Is(err, download.ErrRangeUnsupported) {
+		t.Fatalf("range error=%v, want ErrRangeUnsupported", err)
 	}
 }
 
@@ -1746,6 +1766,7 @@ type fakeReadonlyClient struct {
 	gotUpdateNodeDescription string
 	gotDeleteNodeID          string
 	entityErr                error
+	rangeErr                 error
 }
 
 func (f *fakeReadonlyClient) CurrentUser(context.Context) (osfapi.User, error) {
@@ -1933,6 +1954,9 @@ func (f *fakeReadonlyClient) OpenDownload(_ context.Context, downloadURL string)
 }
 
 func (f *fakeReadonlyClient) OpenDownloadRange(ctx context.Context, downloadURL string, _ int64) (io.ReadCloser, error) {
+	if f.rangeErr != nil {
+		return nil, f.rangeErr
+	}
 	return f.OpenDownload(ctx, downloadURL)
 }
 
