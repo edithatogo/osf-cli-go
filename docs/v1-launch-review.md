@@ -8,7 +8,7 @@ has been released.
 | Stable contracts | Compatibility policy, pinned OSF source manifest, CLI/MCP golden fixtures, migration guide, and CI compatibility gate | ready locally |
 | Reliability | Atomic writes, cancellation, pagination, retries, and race tests; resumable transfer is tracked in [#95](https://github.com/edithatogo/osf-cli-go/issues/95) | partial; follow-up required |
 | Security | Threat model, redaction tests, CodeQL, dependency review, govulncheck, SBOM, provenance, and Cosign workflows | ready locally; final review pending |
-| Live behavior | Opt-in live validation matrix and tool; release-candidate execution is tracked in [#97](https://github.com/edithatogo/osf-cli-go/issues/97) | blocked 2026-07-14: `OSF_TOKEN` or username/password and `OSF_VALIDATE_PROJECT` are not present in the validation environment |
+| Live behavior | Opt-in live validation matrix and tool; dated sanitized evidence in `docs/live-osf-validation-evidence.md` | passed 2026-07-15: authentication, reads, transfers, conflict handling, cancellation, MCP, and cleanup passed against a disposable private OSF project |
 | Quality | Go tests, race tests, vet, lint, anti-stub, review, registry, matrix, release-contract, and vulnerability gates | passed locally |
 | Operations | Support policy and operations runbook; structured observability is tracked in [#96](https://github.com/edithatogo/osf-cli-go/issues/96) | partial; follow-up required |
 | Documentation | Commands, usage, install, troubleshooting, architecture, migration, and support references | ready locally |
@@ -18,7 +18,6 @@ has been released.
 ## Decision
 
 The repository is a stronger 1.0 release candidate, but not yet eligible for a
-`v1.0.0` tag. Live OSF validation remains blocked by the missing disposable
-project and scoped credential in the validation environment; provider review
-and package-manager gates remain external. This review does not waive live
-OSF testing or maintainer/provider acceptance.
+`v1.0.0` tag. Live OSF validation passed with disposable-resource cleanup;
+security review, hosted PR gates, provider review, and package-manager gates
+remain external. This review does not waive maintainer/provider acceptance.

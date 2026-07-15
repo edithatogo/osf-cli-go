@@ -884,6 +884,11 @@ func TestDeleteNode(t *testing.T) {
 	t.Parallel()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"data":[]}`))
+			return
+		}
 		if got := r.Method; got != http.MethodDelete {
 			t.Fatalf("method = %q", got)
 		}
@@ -1130,14 +1135,20 @@ func TestListStorageFilesWithSegments(t *testing.T) {
 func TestUploadFile(t *testing.T) {
 	t.Parallel()
 
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	var srv *httptest.Server
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = fmt.Fprintf(w, `{"data":[{"attributes":{"name":"report.txt"},"links":{"upload":%q}}]}`, srv.URL+"/v1/providers/osfstorage/abc123/report-id?kind=file")
+			return
+		}
 		if got := r.Method; got != http.MethodPut {
 			t.Fatalf("method = %q", got)
 		}
 		if got := r.Header.Get("Authorization"); got != "Bearer token-123" {
 			t.Fatalf("authorization header = %q", got)
 		}
-		if got := r.URL.Path; got != "/v1/providers/osfstorage/abc123/report.txt" {
+		if got := r.URL.Path; got != "/v1/providers/osfstorage/abc123/report-id" {
 			t.Fatalf("path = %q", got)
 		}
 		if got := r.Header.Get("Content-Type"); got != "text/plain; charset=utf-8" {
@@ -1146,7 +1157,7 @@ func TestUploadFile(t *testing.T) {
 		if got := r.URL.Query().Get("kind"); got != "file" {
 			t.Fatalf("kind = %q", got)
 		}
-		if got := r.URL.Query().Get("conflict"); got != "overwrite" {
+		if got := r.URL.Query().Get("conflict"); got != "" {
 			t.Fatalf("conflict = %q", got)
 		}
 		body, _ := io.ReadAll(r.Body)
@@ -1291,6 +1302,11 @@ func TestDeleteFile(t *testing.T) {
 	t.Parallel()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"data":[]}`))
+			return
+		}
 		if got := r.Method; got != http.MethodDelete {
 			t.Fatalf("method = %q", got)
 		}
@@ -1509,6 +1525,32 @@ func TestGetNodeFilesProvider(t *testing.T) {
 		t.Fatalf("GetNodeFilesProvider returned error: %v", err)
 	}
 	if providerURL != "https://files.osf.io/v1/providers/osfstorage/abc123" {
+		t.Fatalf("provider URL = %q", providerURL)
+	}
+}
+
+func TestGetNodeFilesProviderSupportsCurrentOSFShape(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Path; got != "/v2/nodes/project-123/files/" {
+			t.Fatalf("path = %q", got)
+		}
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		_, _ = w.Write([]byte(`{"data":[{"id":"project-123:osfstorage","type":"files","attributes":{"provider":"osfstorage","name":"osfstorage","kind":"folder"},"links":{"upload":"https://files.osf.io/v1/resources/project-123/providers/osfstorage/","new_folder":"https://files.osf.io/v1/resources/project-123/providers/osfstorage/?kind=folder"}}],"links":{}}`))
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL+"/v2/", WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	providerURL, err := client.GetNodeFilesProvider(t.Context(), "project-123")
+	if err != nil {
+		t.Fatalf("GetNodeFilesProvider returned error: %v", err)
+	}
+	if providerURL != "https://files.osf.io/v1/resources/project-123/providers/osfstorage/" {
 		t.Fatalf("provider URL = %q", providerURL)
 	}
 }

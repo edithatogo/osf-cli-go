@@ -22,6 +22,8 @@ type Links struct {
 	Prev     string `json:"prev,omitempty"`
 	Related  string `json:"related,omitempty"`
 	Download string `json:"download,omitempty"`
+	Upload   string `json:"upload,omitempty"`
+	Delete   string `json:"delete,omitempty"`
 }
 
 // APIError preserves OSF status and error detail fields.

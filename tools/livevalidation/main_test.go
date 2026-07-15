@@ -209,6 +209,9 @@ func TestRunValidationExercisesWriteCancellationAndMCP(t *testing.T) {
 			t.Fatalf("commands missing %q: %s", want, joined)
 		}
 	}
+	if !strings.Contains(joined, "downloaded-fixture") {
+		t.Fatalf("download command did not target a file path: %s", joined)
+	}
 }
 
 func TestRunValidationRejectsUnrelatedConflictProbeFailure(t *testing.T) {

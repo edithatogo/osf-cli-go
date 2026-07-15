@@ -290,7 +290,8 @@ func resolveFileSource(ctx context.Context, client readonlyClient, source string
 			return osfapi.StorageFile{}, "", fmt.Errorf("could not find file id in %q", source)
 		}
 
-		if parsed.Host == "files.osf.io" || strings.Contains(parsed.Path, "/download") || strings.Contains(parsed.RawQuery, "download=1") {
+		isOSFFilesHost := parsed.Host == "files.osf.io" || (strings.HasPrefix(parsed.Host, "files.") && strings.HasSuffix(parsed.Host, ".osf.io"))
+		if isOSFFilesHost || strings.Contains(parsed.Path, "/download") || strings.Contains(parsed.RawQuery, "download=1") {
 			return osfapi.StorageFile{}, trimmed, nil
 		}
 

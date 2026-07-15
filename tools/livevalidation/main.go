@@ -159,12 +159,12 @@ func runValidationWithRunners(ctx context.Context, env validationEnv, liveMode b
 	env.fixturePath = fixturePath
 	env.fixtureName = filepath.Base(fixturePath)
 	if env.downloadRef != "" {
-		downloadPath, err := os.MkdirTemp("", "osf-cli-go-livevalidation-download-*")
+		downloadDir, err := os.MkdirTemp("", "osf-cli-go-livevalidation-download-*")
 		if err != nil {
 			return report, fmt.Errorf("create validation download directory: %w", err)
 		}
-		defer func() { _ = os.RemoveAll(downloadPath) }()
-		env.downloadPath = downloadPath
+		defer func() { _ = os.RemoveAll(downloadDir) }()
+		env.downloadPath = filepath.Join(downloadDir, "downloaded-fixture")
 	}
 	report.Env = env
 
@@ -371,7 +371,7 @@ func isExpectedConflict(output string, err error) bool {
 		return false
 	}
 	message := strings.ToLower(output + " " + err.Error())
-	for _, marker := range []string{"already exists", "conflict", "status 409", "status code 409"} {
+	for _, marker := range []string{"already exists", "exists in this location", "conflict", "status 409", "status code 409"} {
 		if strings.Contains(message, marker) {
 			return true
 		}

@@ -452,21 +452,17 @@ func (c *Client) openDownload(ctx context.Context, downloadURL string, offset in
 // The providerURL is typically obtained from GET /v2/nodes/{id}/files/osfstorage/
 // and looks like "https://files.osf.io/v1/providers/osfstorage/..."
 func (c *Client) UploadFile(ctx context.Context, providerURL, fileName string, content io.Reader, conflict string) error {
-	fullURL, err := waterButlerPath(providerURL, fileName, false)
+	name := strings.TrimSpace(fileName)
+	fullURL, err := waterButlerUploadURL(providerURL, name, conflict)
 	if err != nil {
 		return err
 	}
-	if conflict != "" {
-		parsed, _ := url.Parse(fullURL)
-		q := parsed.Query()
-		q.Set("kind", "file")
-		if conflict == "overwrite" {
-			q.Set("conflict", "overwrite")
-		} else {
-			q.Set("conflict", "fail")
+	if conflict == "overwrite" {
+		if existing, found, lookupErr := c.findWaterButlerFile(ctx, providerURL, name); lookupErr != nil {
+			return lookupErr
+		} else if found {
+			fullURL = existing.Links.Upload
 		}
-		parsed.RawQuery = q.Encode()
-		fullURL = parsed.String()
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, fullURL, content)
@@ -489,6 +485,65 @@ func (c *Client) UploadFile(ctx context.Context, providerURL, fileName string, c
 		return fmt.Errorf("upload failed: %s", strings.TrimSpace(string(body)))
 	}
 	return nil
+}
+
+func waterButlerUploadURL(providerURL, fileName, conflict string) (string, error) {
+	name := strings.TrimSpace(fileName)
+	if name == "" || name == "." || name == ".." || strings.ContainsAny(name, `/\\`) {
+		return "", fmt.Errorf("file name %q must be a single path segment", fileName)
+	}
+	parsed, err := url.Parse(providerURL)
+	if err != nil {
+		return "", fmt.Errorf("parse provider URL: %w", err)
+	}
+	query := parsed.Query()
+	query.Set("kind", "file")
+	query.Set("name", name)
+	switch conflict {
+	case "", "fail":
+		query.Set("conflict", "fail")
+	case "overwrite":
+		query.Set("conflict", "overwrite")
+	default:
+		return "", fmt.Errorf("unsupported upload conflict policy %q", conflict)
+	}
+	parsed.RawQuery = query.Encode()
+	return parsed.String(), nil
+}
+
+func (c *Client) findWaterButlerFile(ctx context.Context, providerURL, fileName string) (struct{ Links Links }, bool, error) {
+	empty := struct{ Links Links }{}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, providerURL, nil)
+	if err != nil {
+		return empty, false, err
+	}
+	c.sign(req)
+	resp, err := c.doHTTP(req)
+	if err != nil {
+		return empty, false, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return empty, false, parseAPIError(resp.StatusCode, req.Method, req.URL.RequestURI(), body)
+	}
+	var collection struct {
+		Data []struct {
+			Attributes struct {
+				Name string `json:"name"`
+			} `json:"attributes"`
+			Links Links `json:"links"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&collection); err != nil {
+		return empty, false, fmt.Errorf("decode WaterButler file listing: %w", err)
+	}
+	for _, entry := range collection.Data {
+		if entry.Attributes.Name == fileName && entry.Links.Upload != "" {
+			return struct{ Links Links }{Links: entry.Links}, true, nil
+		}
+	}
+	return empty, false, nil
 }
 
 // CreateFolder creates a folder via WaterButler.
@@ -527,6 +582,11 @@ func (c *Client) DeleteFile(ctx context.Context, providerURL, fileName string) e
 	fullURL, err := waterButlerPath(providerURL, fileName, false)
 	if err != nil {
 		return err
+	}
+	if existing, found, lookupErr := c.findWaterButlerFile(ctx, providerURL, strings.TrimSpace(fileName)); lookupErr != nil {
+		return lookupErr
+	} else if found && existing.Links.Delete != "" {
+		fullURL = existing.Links.Delete
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, fullURL, nil)
@@ -706,6 +766,7 @@ func (c *Client) GetNodeFilesProvider(ctx context.Context, nodeID string) (strin
 		Attributes struct {
 			Name     string `json:"name"`
 			FullName string `json:"full_name"`
+			Provider string `json:"provider"`
 		} `json:"attributes"`
 		Links Links `json:"links"`
 	}]
@@ -713,8 +774,14 @@ func (c *Client) GetNodeFilesProvider(ctx context.Context, nodeID string) (strin
 		return "", err
 	}
 	for _, provider := range doc.Data {
-		if provider.ID == "osfstorage" {
+		if provider.ID != "osfstorage" && provider.Attributes.Provider != "osfstorage" && !strings.HasSuffix(provider.ID, ":osfstorage") {
+			continue
+		}
+		if provider.Links.Self != "" {
 			return provider.Links.Self, nil
+		}
+		if provider.Links.Upload != "" {
+			return provider.Links.Upload, nil
 		}
 	}
 	return "", fmt.Errorf("no osfstorage provider found for node %q", nodeID)
