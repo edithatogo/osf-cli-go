@@ -46,7 +46,7 @@ func TestObservabilityClassifiesAndRedactsErrors(t *testing.T) {
 		{"decode json", "decode"},
 		{"unexpected failure", "internal"},
 	} {
-		var err error = errors.New(test.err)
+		err := error(errors.New(test.err))
 		if test.err == context.Canceled.Error() {
 			err = context.Canceled
 		}
