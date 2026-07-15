@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
 )
 
@@ -1670,6 +1671,30 @@ func TestDefaultReadonlyClientDelegatesAllProviderOperations(t *testing.T) {
 	}
 	for _, delegate := range delegates {
 		delegate()
+	}
+}
+
+func TestDefaultReadonlyClientCredentialModesAndObserver(t *testing.T) {
+	tokenSource := auth.FuncSource(func(name string) (string, bool) {
+		if name == auth.TokenEnv {
+			return "test-token", true
+		}
+		return "", false
+	})
+	client := newDefaultReadonlyClientFromSource(tokenSource).(*defaultReadonlyClient)
+	if client.AuthMode() != auth.ModeBearerToken || !client.bearerToken {
+		t.Fatalf("token client mode=%q bearer=%v", client.AuthMode(), client.bearerToken)
+	}
+	missing := newDefaultReadonlyClientFromSource(auth.FuncSource(func(string) (string, bool) { return "", false })).(*defaultReadonlyClient)
+	if missing.AuthMode() != auth.ModeAnonymous {
+		t.Fatalf("missing credentials mode=%q", missing.AuthMode())
+	}
+	if _, err := missing.CurrentUser(context.Background()); err == nil {
+		t.Fatal("missing credentials returned nil error")
+	}
+	observed := newDefaultReadonlyClientWithObserver(tokenSource, observability.NopEmitter{}).(*defaultReadonlyClient)
+	if observed.AuthMode() != auth.ModeBearerToken {
+		t.Fatalf("observed client mode=%q", observed.AuthMode())
 	}
 }
 
