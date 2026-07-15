@@ -1,9 +1,11 @@
 package download
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"path/filepath"
+	"strings"
 )
 
 // FolderDownloadStatus describes the outcome for a folder download entry.
@@ -23,10 +25,14 @@ const (
 // The file content can be supplied either as a reader or an opener. If the
 // reader also implements io.Closer, it is closed after the write completes.
 type FolderDownloadFile struct {
-	RemotePath string
-	Reader     io.Reader
-	Open       func() (io.ReadCloser, error)
-	KnownBytes *int64
+	RemotePath       string
+	Reader           io.Reader
+	Open             func() (io.ReadCloser, error)
+	OpenRange        func(offset int64) (io.ReadCloser, error)
+	SourceIdentity   string
+	ExpectedChecksum string
+	KnownBytes       *int64
+	Context          context.Context
 }
 
 type plannedFolderDownloadFile struct {
@@ -34,7 +40,11 @@ type plannedFolderDownloadFile struct {
 	localPath  string
 	reader     io.Reader
 	open       func() (io.ReadCloser, error)
+	openRange  func(int64) (io.ReadCloser, error)
+	source     string
+	checksum   string
 	knownBytes *int64
+	context    context.Context
 }
 
 // FolderDownloadRecord is one entry in a folder download manifest.
@@ -42,6 +52,9 @@ type FolderDownloadRecord struct {
 	RemotePath string               `json:"remotePath"`
 	LocalPath  string               `json:"localPath"`
 	Bytes      *int64               `json:"bytes,omitempty"`
+	Resumed    bool                 `json:"resumed,omitempty"`
+	Checksum   string               `json:"checksum,omitempty"`
+	Checkpoint string               `json:"checkpointPath,omitempty"`
 	Status     FolderDownloadStatus `json:"status"`
 	Error      string               `json:"error,omitempty"`
 }
@@ -73,8 +86,11 @@ func NewFolderDownloadPlan(destRoot string, policy ConflictPolicy, files []Folde
 
 	planned := make([]plannedFolderDownloadFile, 0, len(files))
 	for _, file := range files {
-		if file.Reader == nil && file.Open == nil {
+		if file.Reader == nil && file.Open == nil && file.OpenRange == nil {
 			return nil, fmt.Errorf("folder file %q requires a reader or opener", file.RemotePath)
+		}
+		if file.OpenRange != nil && strings.TrimSpace(file.SourceIdentity) == "" {
+			return nil, fmt.Errorf("folder file %q requires a source identity for resumable downloads", file.RemotePath)
 		}
 
 		remotePath, err := NormalizeRemotePath(file.RemotePath)
@@ -96,7 +112,11 @@ func NewFolderDownloadPlan(destRoot string, policy ConflictPolicy, files []Folde
 			localPath:  localPath,
 			reader:     file.Reader,
 			open:       file.Open,
+			openRange:  file.OpenRange,
+			source:     file.SourceIdentity,
+			checksum:   file.ExpectedChecksum,
 			knownBytes: file.KnownBytes,
+			context:    file.Context,
 		})
 	}
 
@@ -125,19 +145,33 @@ func (p *FolderDownloadPlan) Execute() (FolderDownloadManifest, error) {
 			LocalPath:  file.localPath,
 		}
 
-		src, closeFn, err := file.openReader()
-		if err != nil {
-			record.Status = FolderDownloadFailed
-			record.Error = err.Error()
-			manifest.Records = append(manifest.Records, record)
-			return manifest, err
-		}
-
-		counting := &countingReader{reader: src}
-		written, writeErr := WriteStreamAtomically(file.localPath, counting, 0o644, p.policy)
-		if closeFn != nil {
-			if closeErr := closeFn(); writeErr == nil && closeErr != nil {
-				writeErr = fmt.Errorf("close download source: %w", closeErr)
+		var written bool
+		var bytes int64
+		var resumed bool
+		var checksum string
+		var checkpointPath string
+		var writeErr error
+		if file.openRange != nil {
+			resume, resumeErr := ResumeStreamAtomically(file.openRange, ResumeOptions{Destination: file.localPath, Source: file.source, ExpectedSize: file.knownBytes, ExpectedChecksum: file.checksum, Policy: p.policy, Context: file.context})
+			written = resume.Completed
+			bytes = resume.Bytes
+			resumed = resume.Resumed
+			checksum = resume.Checksum
+			checkpointPath = resume.CheckpointPath
+			writeErr = resumeErr
+		} else {
+			src, closeFn, openErr := file.openReader()
+			if openErr != nil {
+				writeErr = openErr
+			} else {
+				counting := &countingReader{reader: src}
+				written, writeErr = WriteStreamAtomically(file.localPath, counting, 0o644, p.policy)
+				bytes = counting.n
+				if closeFn != nil {
+					if closeErr := closeFn(); writeErr == nil && closeErr != nil {
+						writeErr = fmt.Errorf("close download source: %w", closeErr)
+					}
+				}
 			}
 		}
 		if writeErr != nil {
@@ -146,13 +180,18 @@ func (p *FolderDownloadPlan) Execute() (FolderDownloadManifest, error) {
 			if file.knownBytes != nil {
 				record.Bytes = file.knownBytes
 			}
+			record.Resumed = resumed
+			record.Checksum = checksum
+			record.Checkpoint = checkpointPath
 			manifest.Records = append(manifest.Records, record)
 			return manifest, writeErr
 		}
 
 		if written {
 			record.Status = FolderDownloadWritten
-			record.Bytes = int64Ptr(counting.n)
+			record.Bytes = int64Ptr(bytes)
+			record.Resumed = resumed
+			record.Checksum = checksum
 		} else {
 			record.Status = FolderDownloadSkipped
 			record.Bytes = file.knownBytes

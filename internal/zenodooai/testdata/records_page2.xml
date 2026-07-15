@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/">
+  <responseDate>2026-07-15T01:03:00Z</responseDate>
+  <request verb="ListRecords">https://zenodo.org/oai2d</request>
+  <ListRecords>
+    <record>
+      <header status="deleted"><identifier>oai:zenodo.org:1002</identifier><datestamp>2026-07-14</datestamp><setSpec>user-demo</setSpec></header>
+      <about><provenance xmlns="http://www.openarchives.org/OAI/2.0/provenance"><originDescription harvestDate="2026-07-15T01:03:00Z"/></provenance></about>
+    </record>
+    <resumptionToken completeListSize="2" cursor="1"></resumptionToken>
+  </ListRecords>
+</OAI-PMH>

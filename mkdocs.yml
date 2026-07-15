@@ -14,6 +14,15 @@ nav:
   - Commands: commands.md
   - Examples: examples.md
   - Architecture: architecture.md
+  - Zenodo API provenance: zenodo-api-provenance.md
+  - Zenodo provider roadmap: zenodo-provider-roadmap.md
+  - Repository provider contract: repository-provider-contract.md
+  - Zenodo read-only client: zenodo-readonly-client.md
+  - Zenodo provider CLI: zenodo-cli.md
+  - Zenodo OAI-PMH: zenodo-oai-pmh.md
+  - Multi-provider validation: multi-provider-validation.md
+  - Provider release operations: provider-release-operations.md
+  - Multi-provider release ADR: adr-001-multi-provider-release-contract.md
   - Development: development.md
   - Contributing: contributing.md
   - Release checklist: release-checklist.md

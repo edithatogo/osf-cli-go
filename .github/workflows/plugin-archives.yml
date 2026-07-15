@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - "v0.3.1"
+      - "v*"
 
 permissions:
   contents: read
@@ -28,10 +28,11 @@ jobs:
 
       - name: Build plugin archives
         shell: pwsh
-        run: ./scripts/build-plugin-archives.ps1
+        run: ./scripts/build-plugin-archives.ps1 -Version "$($env:GITHUB_REF_NAME.Substring(1))"
 
       - name: Upload plugin archives
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: plugin-archives-${{ runner.os }}
           path: dist/plugins/*.zip
+          retention-days: 30

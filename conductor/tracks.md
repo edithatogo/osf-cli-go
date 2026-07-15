@@ -60,9 +60,24 @@ The per-track `plan.md` files are the source of truth for completion state.
 - [x] [software-preprint-readiness](tracks/software-preprint-readiness_20260711/spec.md) — Prepare and assess an OSF CLI Go software preprint; issue #27.
 
 - [x] [paperclip-research-retrieval-parity](tracks/paperclip-research-retrieval-parity_20260713/spec.md) — Benchmark Paperclip research retrieval parity; issue #45.
-- [~] [cline-mcp-marketplace-adoption](tracks/cline-mcp-marketplace-adoption_20260713/spec.md) — Submit OSF MCP server to the official Cline MCP Marketplace; issue #47.
+- [x] [cline-mcp-marketplace-adoption](archive/cline-mcp-marketplace-adoption_20260713/spec.md) — Submit OSF MCP server to the official Cline MCP Marketplace; issue #47.
 - [x] [lobehub-mcp-marketplace-adoption](tracks/lobehub-mcp-marketplace-adoption_20260713/spec.md) — Submit OSF MCP server to LobeHub Marketplace; issue #48.
 - [x] [additional-mcp-registry-sweep](tracks/additional-mcp-registry-sweep_20260713/spec.md) — Evaluate additional MCP registries and agent marketplaces; issue #49.
 - [x] [mcp-quality-evaluation-harness](tracks/mcp-quality-evaluation-harness_20260713/spec.md) — Build repeatable MCP quality and compatibility evaluation; issue #54.
 - [x] [osf-api-entity-coverage](tracks/osf-api-entity-coverage_20260714/spec.md) — Expose typed OSF file-version and node-related read surfaces through CLI and MCP; issue #80.
 - [x] [datalad-git-annex-interoperability](tracks/datalad-git-annex-interoperability_20260714/spec.md) — Define a fixture-backed optional Git, DataLad, and git-annex companion-tool contract; issue #69.
+- [x] [resumable-transfers](archive/resumable-transfers_20260714/spec.md) — Implement resumable, checkpointed transfers for 1.0; issue #95.
+- [x] [structured-observability](archive/structured-observability_20260714/spec.md) — Define and implement structured observability for 1.0; issue #96.
+- [x] [live-osf-release-validation](archive/live-osf-release-validation_20260714/spec.md) — Run live OSF validation for the 1.0 release candidate; issue #97.
+- [x] [release-candidate-provenance](tracks/release-candidate-provenance_20260714/spec.md) — Verify v1.0 release-candidate supply chain and provenance; issue #98.
+- [x] [compatibility-contract-freeze](archive/compatibility-contract-freeze_20260714/spec.md) — Freeze OSF API and CLI/MCP compatibility contracts for 1.0; issue #99.
+- [x] [zenodo-provider-abstraction](archive/zenodo-provider-abstraction_20260715/spec.md) — Add Zenodo support through a provider-neutral OSF/Zenodo research repository model; issue #101.
+- [x] [zenodo-api-provenance](archive/zenodo-api-provenance_20260715/spec.md) — Pin Zenodo API evidence and detect upstream contract drift; subissue #102.
+- [x] [repository-provider-contract](archive/repository-provider-contract_20260715/spec.md) — Define capability-aware, lossless provider contracts; subissue #103.
+- [x] [zenodo-readonly-client](archive/zenodo-readonly-client_20260715/spec.md) — Implement an offline-tested read-only Zenodo REST client; subissue #104.
+- [x] [provider-scoped-cli](archive/provider-scoped-cli_20260715/spec.md) — Add explicit provider-scoped CLI discovery workflows; subissue #105.
+- [x] [provider-scoped-mcp](archive/provider-scoped-mcp_20260715/spec.md) — Expose capability-aware provider-scoped MCP read tools; subissue #106.
+- [x] [zenodo-oai-pmh](archive/zenodo-oai-pmh_20260715/spec.md) — Implement Zenodo OAI-PMH harvesting as a separate adapter; subissue #107.
+- [x] [zenodo-sandbox-transfers](archive/zenodo-sandbox-transfers_20260715/spec.md) — Validate safe resumable Zenodo transfers in the sandbox; subissue #108.
+- [x] [zenodo-publication-state](archive/zenodo-publication-state_20260715/spec.md) — Model DOI and publication workflows as an irreversible state machine; subissue #109.
+- [x] [multi-provider-release-integration](archive/multi-provider-release-integration_20260715/spec.md) — Integrate provider validation into CI, releases, observability, and docs; subissue #111.

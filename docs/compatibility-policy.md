@@ -30,3 +30,41 @@ first release in which removal may occur.
 `OSF_TOKEN` is the preferred automation credential. Username/password fallback
 is intentionally secondary and may not work for SSO or two-factor accounts.
 Credentials are never persisted by the project or emitted in logs.
+
+## Enforced 1.0 baseline
+
+The CLI root JSON contract is frozen in
+`internal/cli/testdata/compatibility/cli-root.json`. The MCP tool names and
+input-property contract is frozen in
+`internal/mcpserver/testdata/compatibility/mcp-tools.json`. The corresponding
+tests compare generated contracts with these fixtures, and CI runs them in
+the explicit `Compatibility contract` step.
+
+The compatibility baseline also covers the documented exit codes, bounded
+search and preprint limits, authentication precedence and redaction tests,
+and MCP validation-error behavior. A change to a frozen name, required input,
+field type, exit code, authentication rule, or limit must update the fixture,
+this policy, and `docs/migration-v1.md` in the same change. New fields and
+optional inputs remain additive within the 1.x window.
+
+The additive 2026-07-15 baseline introduces the provider-scoped `zenodo`
+command, including its `oai` subgroup, and the
+`zenodo_oai_records_list`, `zenodo_oai_sets_list`, and
+`zenodo_oai_formats_list` tools. They remain separate from Zenodo REST
+discovery. The same additive baseline includes `repository_capabilities_get`,
+`zenodo_records_search`, `zenodo_record_get`, and `zenodo_files_list`. All
+pre-existing CLI commands, MCP tools, inputs, output fields, and limits are
+unchanged.
+
+Authenticated Zenodo transfer/publication packages and the cross-provider copy
+saga are internal validation machinery. They are not frozen public CLI, API, or
+MCP promises and are not advertised by registry metadata. Promoting a write
+surface requires additive fixtures, explicit confirmation and rollback rules,
+threat-model review, and migration guidance before release.
+
+The OSF API source remains a pinned remote manifest in
+`docs/osf-api-schema-source.json`. The runtime client is typed and maintained
+locally; no generated or vendored replacement schema is accepted until the
+source ownership, license, update cadence, and compatibility implications are
+reviewed. Endpoint families not represented by the current CLI or MCP
+contract remain explicitly deferred in that manifest and the feature matrix.

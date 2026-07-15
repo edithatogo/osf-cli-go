@@ -1,9 +1,13 @@
 package osfapi
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
+
+// ErrRangeUnsupported indicates that a provider did not honor a range request.
+var ErrRangeUnsupported = errors.New("download range request was not honored")
 
 type document[T any] struct {
 	Data  T     `json:"data"`
@@ -18,6 +22,8 @@ type Links struct {
 	Prev     string `json:"prev,omitempty"`
 	Related  string `json:"related,omitempty"`
 	Download string `json:"download,omitempty"`
+	Upload   string `json:"upload,omitempty"`
+	Delete   string `json:"delete,omitempty"`
 }
 
 // APIError preserves OSF status and error detail fields.

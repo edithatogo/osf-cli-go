@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - "v0.3.1"
+      - "v*"
 
 permissions:
   contents: read
@@ -26,24 +26,13 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-        with:
-          node-version: "24"
-
-      - name: Install MCPB CLI
-        shell: bash
-        run: |
-          set -euo pipefail
-          npm pack --ignore-scripts https://registry.npmjs.org/@anthropic-ai/mcpb/-/mcpb-2.1.2.tgz
-          node -e 'const fs=require("fs"); const crypto=require("crypto"); const expected="goRbBC8ySo7SWb7tRzr+tL6FxDc4JPTRCdgfD2omba7freofvjq5rom1lBnYHZHo6Mizs1jAHJeN53aZbDoy8A="; const actual=crypto.createHash("sha512").update(fs.readFileSync("anthropic-ai-mcpb-2.1.2.tgz")).digest("base64"); if (actual !== expected) { throw new Error(`MCPB integrity mismatch: ${actual}`); }'
-          npm install --global --ignore-scripts ./anthropic-ai-mcpb-2.1.2.tgz
-
       - name: Build MCPB bundle
         shell: pwsh
-        run: ./scripts/build-mcpb.ps1 -UseMcpbCli
+        run: ./scripts/build-mcpb.ps1 -Version "$($env:GITHUB_REF_NAME.Substring(1))"
 
       - name: Upload MCPB bundle
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: mcpb-${{ runner.os }}
           path: dist/mcpb/*.mcpb
+          retention-days: 30

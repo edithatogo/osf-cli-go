@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
 )
 
@@ -25,6 +26,7 @@ type readonlyClient interface {
 	ListStorageFiles(context.Context, string, ...string) ([]osfapi.StorageFile, error)
 	GetStorageFile(context.Context, string) (osfapi.StorageFile, error)
 	OpenDownload(context.Context, string) (io.ReadCloser, error)
+	OpenDownloadRange(context.Context, string, int64) (io.ReadCloser, error)
 	GetNodeFilesProvider(context.Context, string) (string, error)
 	UploadFile(context.Context, string, string, io.Reader, string) error
 	CreateFolder(context.Context, string, string) error
@@ -49,17 +51,25 @@ type defaultReadonlyClient struct {
 }
 
 func newDefaultReadonlyClient() readonlyClient {
-	return newDefaultReadonlyClientFromSource(auth.EnvSource{})
+	return newDefaultReadonlyClientWithObserver(auth.EnvSource{}, nil)
 }
 
 func newDefaultReadonlyClientFromSource(source auth.Source) readonlyClient {
+	return newDefaultReadonlyClientWithObserver(source, nil)
+}
+
+func newDefaultReadonlyClientWithObserver(source auth.Source, emitter observability.Emitter) readonlyClient {
 	credentials, err := auth.LoadCredentials(source)
 	if err != nil && credentials.Mode == "" {
 		credentials = auth.Credentials{Mode: auth.ModeAnonymous}
 	}
 	credentialErr := err
 
-	api, err := osfapi.New(osfAPIBaseURL, osfapi.WithCredentials(credentials))
+	options := []osfapi.Option{osfapi.WithCredentials(credentials)}
+	if emitter != nil {
+		options = append(options, osfapi.WithObserver(emitter))
+	}
+	api, err := osfapi.New(osfAPIBaseURL, options...)
 	if err != nil {
 		panic(err)
 	}
@@ -135,6 +145,10 @@ func (c *defaultReadonlyClient) GetStorageFile(ctx context.Context, id string) (
 
 func (c *defaultReadonlyClient) OpenDownload(ctx context.Context, downloadURL string) (io.ReadCloser, error) {
 	return c.api.OpenDownload(ctx, downloadURL)
+}
+
+func (c *defaultReadonlyClient) OpenDownloadRange(ctx context.Context, downloadURL string, offset int64) (io.ReadCloser, error) {
+	return c.api.OpenDownloadRange(ctx, downloadURL, offset)
 }
 
 func (c *defaultReadonlyClient) GetNodeFilesProvider(ctx context.Context, id string) (string, error) {

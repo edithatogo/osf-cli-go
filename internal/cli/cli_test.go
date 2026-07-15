@@ -16,6 +16,8 @@ import (
 	"time"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
+	"github.com/edithatogo/osf-cli-go/internal/download"
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
 )
 
@@ -33,6 +35,77 @@ func TestRunPrintsHelpWithoutArgs(t *testing.T) {
 	}
 	if stderr.Len() != 0 {
 		t.Fatalf("stderr = %q, want empty", stderr.String())
+	}
+}
+
+func TestValidateCommandReportsResearchOutputFindings(t *testing.T) {
+	client := &fakeReadonlyClient{node: osfapi.Node{ID: "project-1", Attributes: osfapi.NodeAttributes{Title: "Study", Description: "Methods", Category: "project"}}, files: []osfapi.StorageFile{{ID: "file-1"}}}
+	var stdout, stderr bytes.Buffer
+	if code := runWithClient([]string{"validate", "project-1", "--profile", "research-output", "--json"}, &stdout, &stderr, client); code != 0 {
+		t.Fatalf("validate returned %d: %s", code, stderr.String())
+	}
+	var report validationReport
+	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if !report.Valid || report.NodeID != "project-1" || len(report.Findings) != 4 {
+		t.Fatalf("validation report = %+v", report)
+	}
+}
+
+func TestValidateCommandReportsPreregistrationFailureAndTable(t *testing.T) {
+	client := &fakeReadonlyClient{node: osfapi.Node{ID: "project-1", Attributes: osfapi.NodeAttributes{Title: "Study", Category: "project"}}}
+	var stdout, stderr bytes.Buffer
+	if code := runWithClient([]string{"validate", "project-1", "--profile", "preregistration"}, &stdout, &stderr, client); code != 0 {
+		t.Fatalf("validate returned %d: %s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "preregistration.category") || !strings.Contains(stdout.String(), "fail") {
+		t.Fatalf("validation table = %q", stdout.String())
+	}
+}
+
+func TestValidateCommandRejectsUnsupportedProfile(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	if code := runWithClient([]string{"validate", "project-1", "--profile", "unknown"}, &stdout, &stderr, &fakeReadonlyClient{}); code != 1 {
+		t.Fatalf("validate returned %d, want validation error: %s", code, stderr.String())
+	}
+}
+
+func TestRunWritesOptInStructuredEventsOutsideCommandOutput(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "events.jsonl")
+	t.Setenv("OSF_EVENT_LOG", logPath)
+	var stdout, stderr bytes.Buffer
+	if code := Run([]string{"unknown-command"}, &stdout, &stderr); code == 0 {
+		t.Fatal("Run returned success for unknown command")
+	}
+	data, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatalf("ReadFile events: %v", err)
+	}
+	if !strings.Contains(string(data), `"name":"cli.command.result"`) {
+		t.Fatalf("events=%q", data)
+	}
+	if strings.Contains(stdout.String(), `"schemaVersion"`) {
+		t.Fatalf("structured events polluted stdout: %q", stdout.String())
+	}
+}
+
+func TestOpenDownloadAtUsesRangeAndTranslatesUnsupportedRange(t *testing.T) {
+	client := &fakeReadonlyClient{downloadBodies: map[string]string{"https://files.osf.io/download": "content"}}
+	if body, err := openDownloadAt(context.Background(), client, "https://files.osf.io/download", 0); err != nil {
+		t.Fatalf("zero-offset open: %v", err)
+	} else {
+		_ = body.Close()
+	}
+	if body, err := openDownloadAt(context.Background(), client, "https://files.osf.io/download", 3); err != nil {
+		t.Fatalf("range open: %v", err)
+	} else {
+		_ = body.Close()
+	}
+
+	rangeClient := &fakeReadonlyClient{rangeErr: osfapi.ErrRangeUnsupported}
+	if _, err := openDownloadAt(context.Background(), rangeClient, "https://files.osf.io/download", 3); !errors.Is(err, download.ErrRangeUnsupported) {
+		t.Fatalf("range error=%v, want ErrRangeUnsupported", err)
 	}
 }
 
@@ -709,17 +782,42 @@ func TestWriteRootContractWithJSON(t *testing.T) {
 	if err := json.Unmarshal(buf.Bytes(), &contract); err != nil {
 		t.Fatalf("stdout is not valid JSON: %v\n%s", err, buf.String())
 	}
-	if len(contract.Commands) != 14 {
-		t.Fatalf("command count = %d, want 14", len(contract.Commands))
+	if len(contract.Commands) != 15 {
+		t.Fatalf("command count = %d, want 15", len(contract.Commands))
 	}
 	if contract.Commands[0].Status != "implemented" || contract.Commands[1].Status != "implemented" {
 		t.Fatalf("unexpected command statuses: %#v", contract.Commands)
 	}
-	wantNames := []string{"auth", "projects", "components", "files", "nodes", "export", "validate", "search", "preprints", "registrations", "resolve", "open", "whoami", "completion"}
+	wantNames := []string{"auth", "projects", "components", "files", "nodes", "export", "validate", "search", "preprints", "registrations", "resolve", "open", "whoami", "zenodo", "completion"}
 	for i, want := range wantNames {
 		if contract.Commands[i].Name != want || contract.Commands[i].Status != "implemented" {
 			t.Fatalf("command %d = %#v, want implemented %q", i, contract.Commands[i], want)
 		}
+	}
+}
+
+func TestRootContractMatchesCompatibilityFixture(t *testing.T) {
+	fixture, err := os.ReadFile("testdata/compatibility/cli-root.json")
+	if err != nil {
+		t.Fatalf("read compatibility fixture: %v", err)
+	}
+
+	var want rootContract
+	if err := json.Unmarshal(fixture, &want); err != nil {
+		t.Fatalf("decode compatibility fixture: %v", err)
+	}
+	var gotBytes bytes.Buffer
+	if err := writeRootContract(&gotBytes); err != nil {
+		t.Fatalf("writeRootContract returned error: %v", err)
+	}
+	var got rootContract
+	if err := json.Unmarshal(gotBytes.Bytes(), &got); err != nil {
+		t.Fatalf("decode generated contract: %v", err)
+	}
+	wantJSON, _ := json.Marshal(want)
+	gotJSON, _ := json.Marshal(got)
+	if !bytes.Equal(gotJSON, wantJSON) {
+		t.Fatalf("CLI compatibility contract changed:\n got: %s\nwant: %s", gotJSON, wantJSON)
 	}
 }
 
@@ -1130,7 +1228,7 @@ func TestFilesDownloadSingleFileOutputsTableAndJSON(t *testing.T) {
 
 	client := &fakeReadonlyClient{
 		storageFiles: map[string]osfapi.StorageFile{
-			"file-1": {ID: "file-1", Attributes: osfapi.StorageFileAttributes{Name: "analysis.csv", Kind: "file", Size: 12}, Links: osfapi.Links{Download: "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-1?download=1"}},
+			"file-1": {ID: "file-1", Attributes: osfapi.StorageFileAttributes{Name: "analysis.csv", Kind: "file", Size: 14}, Links: osfapi.Links{Download: "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-1?download=1"}},
 		},
 		downloadBodies: map[string]string{
 			"https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-1?download=1": "col1,col2\n1,2\n",
@@ -1179,10 +1277,10 @@ func TestFilesDownloadTreeOutputsTableAndJSON(t *testing.T) {
 		storageLists: map[string][]osfapi.StorageFile{
 			"project-1:": {
 				{ID: "folder-1", Attributes: osfapi.StorageFileAttributes{Name: "figures", Kind: "folder"}},
-				{ID: "file-1", Attributes: osfapi.StorageFileAttributes{Name: "analysis.csv", Kind: "file", Size: 12}, Links: osfapi.Links{Download: "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-1?download=1"}},
+				{ID: "file-1", Attributes: osfapi.StorageFileAttributes{Name: "analysis.csv", Kind: "file", Size: 14}, Links: osfapi.Links{Download: "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-1?download=1"}},
 			},
 			"project-1:figures": {
-				{ID: "file-2", Attributes: osfapi.StorageFileAttributes{Name: "plot.png", Kind: "file", Size: 24}, Links: osfapi.Links{Download: "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-2?download=1"}},
+				{ID: "file-2", Attributes: osfapi.StorageFileAttributes{Name: "plot.png", Kind: "file", Size: 9}, Links: osfapi.Links{Download: "https://files.osf.io/v1/resources/project-123/providers/osfstorage/file-2?download=1"}},
 			},
 		},
 		downloadBodies: map[string]string{
@@ -1503,6 +1601,123 @@ func TestFilesDownloadRejectsInvalidFlags(t *testing.T) {
 	}
 }
 
+func TestExportCommandWritesSnapshotAndToleratesOptionalFailures(t *testing.T) {
+	client := &fakeReadonlyClient{
+		node:     osfapi.Node{ID: "project-1", Attributes: osfapi.NodeAttributes{Title: "Study", Category: "project", Description: "Description"}, Links: osfapi.Links{Self: "https://osf.io/project-1/"}},
+		children: []osfapi.Node{{ID: "component-1", Attributes: osfapi.NodeAttributes{Title: "Data", Category: "component"}}},
+		files:    []osfapi.StorageFile{{ID: "file-1", Attributes: osfapi.StorageFileAttributes{Name: "data.csv", Kind: "file", Size: 12}}},
+	}
+	var stdout bytes.Buffer
+	cmd := newExportCommand(client)
+	cmd.Flags().String("output", outputModeTable, "output mode")
+	cmd.Flags().Bool("json", false, "json output")
+	cmd.SetArgs([]string{"https://osf.io/project-1/"})
+	cmd.SetOut(&stdout)
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("export returned error: %v", err)
+	}
+	if !strings.Contains(stdout.String(), "project-1") || !strings.Contains(stdout.String(), "Files") {
+		t.Fatalf("export output = %q", stdout.String())
+	}
+	if client.gotNodeID != "project-1" {
+		t.Fatalf("node id = %q, want project-1", client.gotNodeID)
+	}
+}
+
+func TestProgressWriterTracksBytesAndFinishesForFileOutput(t *testing.T) {
+	tmp := t.TempDir() + "/progress.log"
+	file, err := os.Create(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pw := NewProgressWriter(file)
+	if n, err := pw.Write([]byte("abc")); err != nil || n != 3 {
+		t.Fatalf("Write returned n=%d err=%v", n, err)
+	}
+	pw.Finish()
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+	content, err := os.ReadFile(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), "downloaded 3 bytes - done") {
+		t.Fatalf("progress output = %q", content)
+	}
+}
+
+func TestDefaultReadonlyClientDelegatesAllProviderOperations(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	api, err := osfapi.New(server.URL+"/", osfapi.WithHTTPClient(server.Client()), osfapi.WithBearerToken("test-token"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := &defaultReadonlyClient{api: api, credentials: auth.Credentials{Mode: auth.ModeBearerToken, Token: "test-token"}, bearerToken: true}
+	ctx := context.Background()
+	delegates := []func(){
+		func() { _, _ = client.CurrentUser(ctx) },
+		func() { _, _ = client.ListProjects(ctx) },
+		func() { _, _ = client.GetNode(ctx, "node-1") },
+		func() { _, _ = client.CreateNode(ctx, "title", "project", "description") },
+		func() { _, _ = client.UpdateNode(ctx, "node-1", "title", "description") },
+		func() { _ = client.DeleteNode(ctx, "node-1") },
+		func() { _, _ = client.ListNodeContributors(ctx, "node-1") },
+		func() { _, _ = client.ListNodeChildren(ctx, "node-1") },
+		func() { _, _ = client.ListStorageFiles(ctx, "node-1", "data") },
+		func() { _, _ = client.GetStorageFile(ctx, "file-1") },
+		func() { _, _ = client.OpenDownload(ctx, server.URL+"/download") },
+		func() { _, _ = client.OpenDownloadRange(ctx, server.URL+"/download", 1) },
+		func() { _, _ = client.GetNodeFilesProvider(ctx, "node-1") },
+		func() {
+			_ = client.UploadFile(ctx, server.URL+"/provider", "file.txt", strings.NewReader("data"), "overwrite")
+		},
+		func() { _ = client.CreateFolder(ctx, server.URL+"/provider", "folder") },
+		func() { _ = client.DeleteFile(ctx, server.URL+"/provider", "file.txt") },
+		func() { _, _ = client.ListPreprints(ctx, "osf", 10) },
+		func() { _, _ = client.SearchPreprints(ctx, "study", "osf", 10) },
+		func() { _, _ = client.SearchOSF(ctx, "study", 10) },
+		func() { _, _ = client.ListNodeAddons(ctx, "node-1") },
+		func() { _, _ = client.ListFileVersions(ctx, "file-1") },
+		func() { _, _ = client.ListWikiPages(ctx, "node-1") },
+		func() { _, _ = client.ListNodeComments(ctx, "node-1") },
+		func() { _, _ = client.ListNodeLogs(ctx, "node-1") },
+		func() { _, _ = client.ListNodeIdentifiers(ctx, "node-1") },
+		func() { _, _ = client.CreateRegistration(ctx, "node-1", osfapi.RegistrationRequest{Title: "draft"}) },
+		func() { _, _ = client.ResolveDOI(ctx, "10.1234/study") },
+	}
+	for _, delegate := range delegates {
+		delegate()
+	}
+}
+
+func TestDefaultReadonlyClientCredentialModesAndObserver(t *testing.T) {
+	tokenSource := auth.FuncSource(func(name string) (string, bool) {
+		if name == auth.TokenEnv {
+			return "test-token", true
+		}
+		return "", false
+	})
+	client := newDefaultReadonlyClientFromSource(tokenSource).(*defaultReadonlyClient)
+	if client.AuthMode() != auth.ModeBearerToken || !client.bearerToken {
+		t.Fatalf("token client mode=%q bearer=%v", client.AuthMode(), client.bearerToken)
+	}
+	missing := newDefaultReadonlyClientFromSource(auth.FuncSource(func(string) (string, bool) { return "", false })).(*defaultReadonlyClient)
+	if missing.AuthMode() != auth.ModeAnonymous {
+		t.Fatalf("missing credentials mode=%q", missing.AuthMode())
+	}
+	if _, err := missing.CurrentUser(context.Background()); err == nil {
+		t.Fatal("missing credentials returned nil error")
+	}
+	observed := newDefaultReadonlyClientWithObserver(tokenSource, observability.NopEmitter{}).(*defaultReadonlyClient)
+	if observed.AuthMode() != auth.ModeBearerToken {
+		t.Fatalf("observed client mode=%q", observed.AuthMode())
+	}
+}
+
 type fakeReadonlyClient struct {
 	currentUser              osfapi.User
 	projects                 []osfapi.Node
@@ -1551,6 +1766,7 @@ type fakeReadonlyClient struct {
 	gotUpdateNodeDescription string
 	gotDeleteNodeID          string
 	entityErr                error
+	rangeErr                 error
 }
 
 func (f *fakeReadonlyClient) CurrentUser(context.Context) (osfapi.User, error) {
@@ -1735,6 +1951,13 @@ func (f *fakeReadonlyClient) OpenDownload(_ context.Context, downloadURL string)
 		}
 	}
 	return nil, fmt.Errorf("missing download body %q", downloadURL)
+}
+
+func (f *fakeReadonlyClient) OpenDownloadRange(ctx context.Context, downloadURL string, _ int64) (io.ReadCloser, error) {
+	if f.rangeErr != nil {
+		return nil, f.rangeErr
+	}
+	return f.OpenDownload(ctx, downloadURL)
 }
 
 func TestExportJSONOutput(t *testing.T) {

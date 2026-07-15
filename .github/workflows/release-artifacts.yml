@@ -10,6 +10,26 @@ permissions:
   contents: read
 
 jobs:
+  compatibility:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - name: Verify frozen CLI and MCP compatibility contracts
+        run: go test ./internal/cli ./internal/mcpserver -run 'CompatibilityFixture|RootContractMatchesCompatibilityFixture'
+      - name: Validate and render provider release claims
+        run: |
+          mkdir -p dist
+          go run ./tools/checkproviderrelease -report dist/multi-provider-validation-report.md
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: provider-release-evidence
+          path: dist/multi-provider-validation-report.md
+          retention-days: 30
+
   verify-go-install:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
@@ -28,6 +48,7 @@ jobs:
           test "$installed" = "$version"
 
   binaries:
+    needs: compatibility
     strategy:
       fail-fast: false
       matrix:
@@ -69,15 +90,71 @@ jobs:
           mkdir -p dist
           go build -trimpath -ldflags "-s -w -X main.version=$version" -o "dist/osf-$GOOS-$GOARCH$suffix" ./cmd/osf
           go build -trimpath -ldflags "-s -w -X main.version=$version" -o "dist/osf-mcp-$GOOS-$GOARCH$suffix" ./cmd/osf-mcp
-          GOOS= GOARCH= go run ./tools/checksums dist "dist/SHA256SUMS-$GOOS-$GOARCH.txt"
+          case "$RUNNER_OS:$GOOS:$GOARCH" in
+            Linux:linux:amd64|macOS:darwin:arm64|Windows:windows:amd64)
+              expected="$version"
+              actual=$("dist/osf-$GOOS-$GOARCH$suffix" --version)
+              test "$actual" = "$expected"
+              ;;
+          esac
+          env GOOS= GOARCH= go run ./tools/checksums dist "dist/SHA256SUMS-$GOOS-$GOARCH.txt"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: osf-cli-go-${{ matrix.goos }}-${{ matrix.goarch }}
           path: dist/*
+          retention-days: 30
+
+  mcpb:
+    if: startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: macos-latest
+          - os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - name: Build MCPB bundle
+        shell: pwsh
+        run: ./scripts/build-mcpb.ps1 -Version "$($env:GITHUB_REF_NAME.Substring(1))"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: mcpb-${{ runner.os }}
+          path: dist/mcpb/*.mcpb
+          retention-days: 30
+
+  plugin-archives:
+    if: startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: macos-latest
+          - os: windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - name: Build plugin archives
+        shell: pwsh
+        run: ./scripts/build-plugin-archives.ps1 -Version "$($env:GITHUB_REF_NAME.Substring(1))"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: plugin-archives-${{ runner.os }}
+          path: dist/plugins/*.zip
+          retention-days: 30
 
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: binaries
+    needs: [binaries, mcpb, plugin-archives]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -87,13 +164,33 @@ jobs:
           pattern: osf-cli-go-*
           path: dist
           merge-multiple: true
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: provider-release-evidence
+          path: dist
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: mcpb-*
+          path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: plugin-archives-*
+          path: dist
+          merge-multiple: true
       - name: Publish release assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release create "$GITHUB_REF_NAME" dist/* \
-            --repo "$GITHUB_REPOSITORY" \
-            --verify-tag \
-            --generate-notes \
-            --title "$GITHUB_REF_NAME"
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* \
+              --repo "$GITHUB_REPOSITORY" \
+              --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* \
+              --repo "$GITHUB_REPOSITORY" \
+              --verify-tag \
+              --generate-notes \
+              --title "$GITHUB_REF_NAME"
+          fi

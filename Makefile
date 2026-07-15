@@ -1,4 +1,4 @@
-.PHONY: fmt test race vet stubs reviews matrix coverage build check lint vuln
+.PHONY: fmt test race vet stubs reviews matrix zenodo-api provider-release coverage build check lint vuln
 
 fmt:
 	go fmt ./...
@@ -21,6 +21,12 @@ reviews:
 matrix:
 	go run ./tools/checkfeaturematrix
 
+zenodo-api:
+	go run ./tools/checkzenodoapi
+
+provider-release:
+	go run ./tools/checkproviderrelease
+
 coverage:
 	go test ./... -coverprofile=coverage.out
 	go tool cover -func=coverage.out
@@ -34,4 +40,4 @@ lint:
 vuln:
 	govulncheck ./...
 
-check: fmt test race vet stubs reviews matrix coverage
+check: fmt test race vet stubs reviews matrix zenodo-api provider-release coverage

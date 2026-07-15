@@ -29,6 +29,12 @@ jobs:
         run: go test -race ./...
       - name: Fuzz URL resolution
         run: go test ./internal/osfapi -run=FuzzResolveReference -fuzz=FuzzResolveReference -fuzztime=10s
+      - name: Fuzz Zenodo read boundaries
+        run: |
+          go test ./internal/zenodoapi -run=FuzzResolvePagination -fuzz=FuzzResolvePagination -fuzztime=3s
+          go test ./internal/zenodoapi -run=FuzzDecodeSearchPage -fuzz=FuzzDecodeSearchPage -fuzztime=3s
+          go test ./internal/zenodoapi -run=FuzzDecodeFiles -fuzz=FuzzDecodeFiles -fuzztime=3s
+          go test ./internal/zenodooai -run=FuzzDecodeEnvelope -fuzz=FuzzDecodeEnvelope -fuzztime=3s
       - name: Vet
         run: go vet ./...
       - name: Anti-stub scan
@@ -39,11 +45,21 @@ jobs:
         run: go run ./tools/checkregistries
       - name: Feature matrix contract
         run: go run ./tools/checkfeaturematrix
+      - name: Zenodo API capability contract
+        run: go run ./tools/checkzenodoapi
+      - name: Repository provider conformance
+        run: go test ./internal/repository/...
+      - name: Provider observability contract
+        run: go test ./internal/observability ./internal/osfapi ./internal/zenodoapi ./internal/zenodooai
+      - name: Multi-provider claim consistency
+        run: go run ./tools/checkproviderrelease
       - name: Release readiness contract
         run: go run ./tools/checkreleasecontract
+      - name: Compatibility contract
+        run: go test ./internal/cli ./internal/mcpserver -run 'CompatibilityFixture|RootContractMatchesCompatibilityFixture'
       - name: Coverage
         run: |
-          go test ./... -coverprofile=coverage.out
+          go test -count=1 ./... -coverprofile=coverage.out
           go tool cover -func=coverage.out
       - name: Coverage summary
         run: |
@@ -78,7 +94,7 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Generate coverage profile
-        run: go test ./... -coverprofile=coverage.out
+        run: go test -count=1 ./... -coverprofile=coverage.out
       - name: Upload patch coverage to Codecov
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7
         with:

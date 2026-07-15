@@ -4,6 +4,7 @@ meta:
   category: research
   tags:
     - osf
+    - zenodo
     - open-science
     - research
     - data
@@ -12,8 +13,8 @@ meta:
 about:
   title: OSF CLI Go
   description: |
-    Read-only MCP tools for authenticated Open Science Framework projects,
-    components, files, contributors, and research metadata.
+    Read-only MCP tools for Open Science Framework workflows and public Zenodo
+    records, files, provider capabilities, and OAI-PMH metadata.
 source:
   project: https://github.com/edithatogo/osf-cli-go
   commit: 6610369

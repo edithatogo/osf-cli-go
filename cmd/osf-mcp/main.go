@@ -2,36 +2,64 @@ package main
 
 import (
 	"context"
-	"log/slog"
+	"fmt"
+	"io"
 	"os"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
 	"github.com/edithatogo/osf-cli-go/internal/buildinfo"
 	"github.com/edithatogo/osf-cli-go/internal/mcpserver"
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
+	"github.com/edithatogo/osf-cli-go/internal/zenodoapi"
+	"github.com/edithatogo/osf-cli-go/internal/zenodooai"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 var version = "0.0.0-dev"
 
 func main() {
-	effectiveVersion := buildinfo.Version(version)
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil)).With(
-		"service", "osf-mcp",
-		"version", effectiveVersion,
-	)
-	credentials, _ := auth.LoadCredentials(auth.EnvSource{})
-	client, err := osfapi.New("", osfapi.WithCredentials(credentials))
-	if err != nil {
-		logger.Error("initialize OSF client", "error", auth.RedactError(err))
+	if err := run(context.Background(), os.Stderr, &mcp.StdioTransport{}); err != nil {
+		_, _ = os.Stderr.WriteString(err.Error() + "\n")
 		os.Exit(1)
+	}
+}
+
+func run(ctx context.Context, stderr io.Writer, transport mcp.Transport) error {
+	effectiveVersion := buildinfo.Version(version)
+	emitter, closer, err := observability.OpenFromEnv(stderr)
+	if err != nil {
+		return fmt.Errorf("open event log: %w", err)
+	}
+	defer func() { _ = closer.Close() }()
+	ctx = observability.WithEmitter(observability.WithOperationID(ctx, observability.NewID("op")), emitter)
+	observability.Emit(ctx, emitter, observability.Event{
+		Name:   "mcp.server",
+		Fields: map[string]any{"state": "starting", "transport": "stdio", "version": effectiveVersion},
+	})
+	credentials, _ := auth.LoadCredentials(auth.EnvSource{})
+	var client *osfapi.Client
+	client, err = osfapi.New("", osfapi.WithCredentials(credentials), osfapi.WithObserver(emitter))
+	if err != nil {
+		observability.Emit(ctx, emitter, observability.Event{Level: observability.LevelError, Name: "mcp.server", Outcome: observability.OutcomeError, Error: observability.RedactedError(err)})
+		return err
 	}
 
-	server := mcpserver.New(client, mcpserver.Options{Version: effectiveVersion})
-	logger.Info("starting MCP server", "transport", "stdio")
-	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
-		logger.Error("MCP server stopped", "error", auth.RedactError(err))
+	oai, err := zenodooai.New("", zenodooai.WithObserver(emitter))
+	if err != nil {
+		observability.Emit(ctx, emitter, observability.Event{Level: observability.LevelError, Name: "mcp.server", Outcome: observability.OutcomeError, Error: observability.RedactedError(err)})
+		return err
+	}
+	zenodo, err := zenodoapi.New("", zenodoapi.WithObserver(emitter))
+	if err != nil {
+		observability.Emit(ctx, emitter, observability.Event{Level: observability.LevelError, Name: "mcp.server", Outcome: observability.OutcomeError, Error: observability.RedactedError(err)})
 		os.Exit(1)
 	}
-	logger.Info("MCP server stopped")
+	server := mcpserver.New(client, mcpserver.Options{Version: effectiveVersion, Events: emitter, ZenodoOAI: oai, ZenodoREST: zenodo})
+	if err := server.Run(ctx, transport); err != nil {
+		observability.Emit(ctx, emitter, observability.Event{Level: observability.LevelError, Name: "mcp.server", Outcome: observability.OutcomeError, Error: observability.RedactedError(err)})
+		return err
+	}
+	observability.Emit(ctx, emitter, observability.Event{Name: "mcp.server", Fields: map[string]any{"state": "stopped"}})
+	return nil
 }

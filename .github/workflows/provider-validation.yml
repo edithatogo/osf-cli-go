@@ -1,0 +1,130 @@
+name: Provider validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      zenodo_transfer:
+        description: Run disposable Zenodo Sandbox transfer validation
+        required: true
+        type: boolean
+        default: false
+      zenodo_publication:
+        description: Run irreversible Zenodo Sandbox publication validation
+        required: true
+        type: boolean
+        default: false
+      cross_provider_copy:
+        description: Run disposable OSF-qualified to Zenodo Sandbox copy validation
+        required: true
+        type: boolean
+        default: false
+      osf_production:
+        description: Run scoped validation against a disposable OSF project
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provider-validation-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  offline-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - name: Validate and render provider claims
+        run: go run ./tools/checkproviderrelease -report provider-validation-report.md
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: provider-validation-report
+          path: provider-validation-report.md
+
+  zenodo-transfer:
+    if: inputs.zenodo_transfer
+    runs-on: ubuntu-latest
+    environment: provider-sandbox
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - name: Validate disposable Zenodo transfer
+        env:
+          ZENODO_SANDBOX_VALIDATION: "1"
+          ZENODO_TOKEN: ${{ secrets.ZENODO_SANDBOX_TOKEN }}
+        run: go run ./tools/zenodosandboxvalidation -live -evidence zenodo-transfer-evidence.md
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: zenodo-transfer-evidence
+          path: zenodo-transfer-evidence.md
+
+  zenodo-publication:
+    if: inputs.zenodo_publication
+    runs-on: ubuntu-latest
+    environment: provider-sandbox-publication
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - name: Validate Zenodo publication lifecycle
+        env:
+          ZENODO_PUBLICATION_VALIDATION: "1"
+          ZENODO_TOKEN: ${{ secrets.ZENODO_SANDBOX_PUBLICATION_TOKEN }}
+        run: go run ./tools/zenodopublicationvalidation -live -evidence zenodo-publication-evidence.md
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: zenodo-publication-evidence
+          path: zenodo-publication-evidence.md
+
+  cross-provider-copy:
+    if: inputs.cross_provider_copy
+    runs-on: ubuntu-latest
+    environment: provider-sandbox
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - name: Validate disposable cross-provider copy
+        env:
+          CROSS_PROVIDER_SANDBOX_VALIDATION: "1"
+          ZENODO_TOKEN: ${{ secrets.ZENODO_SANDBOX_TOKEN }}
+        run: go run ./tools/crossprovidervalidation -live -evidence cross-provider-evidence.md
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: cross-provider-evidence
+          path: cross-provider-evidence.md
+
+  osf-production:
+    if: inputs.osf_production
+    runs-on: ubuntu-latest
+    environment: provider-production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - name: Validate disposable OSF project
+        env:
+          OSF_LIVE_VALIDATION: "1"
+          OSF_VALIDATE_WRITES: "1"
+          OSF_TOKEN: ${{ secrets.OSF_VALIDATION_TOKEN }}
+          OSF_VALIDATE_PROJECT: ${{ secrets.OSF_VALIDATE_PROJECT }}
+        run: go run ./tools/livevalidation -live -evidence osf-production-evidence.md
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: osf-production-evidence
+          path: osf-production-evidence.md

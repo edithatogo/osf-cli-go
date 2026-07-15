@@ -2,7 +2,11 @@
 
 ## Initial Concept
 
-Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps researchers, research software engineers, and evidence/package maintainers inspect, download, upload, synchronize, and export OSF project content from the terminal.
+Build a fast, scriptable Go CLI for Open Science Framework (OSF) workflows and
+provider-scoped public Zenodo discovery. Help researchers, research software
+engineers, and evidence/package maintainers inspect, transfer, validate, and
+export research repository content without erasing provider-specific identity,
+metadata, or publication safety.
 
 ## Users
 
@@ -14,6 +18,8 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
 ## Product Goals
 
 - Provide a clean `osf` CLI with predictable commands, useful help text, and safe defaults.
+- Provide opt-in, redacted operational events for troubleshooting without polluting command output or collecting telemetry.
+- Keep provider claims digest-bound and explicit about offline, sandbox, or production validation.
 - Treat the OSF API v2 documentation as the technical dictionary for object shapes, attributes, relationships, pagination, and allowed values.
 - Treat the OSF Dictionary as the conceptual glossary for user-facing language such as projects, components, registrations, preprints, forks, embargoes, contributors, wiki, and files.
 - Preserve metadata fidelity using the OSF Metadata Profile where project metadata maps to persistent identifiers, FAIR metadata, DataCite-oriented concepts, or discovery metatags.
@@ -28,6 +34,13 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
 - List OSF Storage files and folders for a node.
 - Download a single file or a folder tree with clear conflict handling.
 - Emit JSON output for automation and table output for humans.
+- Emit versioned structured operational events to an operator-selected local destination when explicitly enabled.
+- Harvest public Zenodo OAI-PMH metadata with native XML and provenance while
+  keeping protocol continuation separate from REST discovery.
+- Search and inspect public Zenodo records and file inventories through
+  provider-scoped, qualified-identity CLI commands.
+- Expose the same public Zenodo reads and provider capability negotiation to
+  agents through stable, read-only MCP tools.
 
 ## Later Scope
 
@@ -36,6 +49,13 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
 - Manage tags, metadata fields, contributors, and licenses where OSF API permissions allow.
 - Export project snapshots including metadata, contributor lists, file inventories, wiki content, component hierarchy, and activity logs.
 - Support reproducible manifests for backup and audit workflows.
+- Maintain sandbox-validated, sandbox-only Zenodo draft transfer primitives and
+  publication workflows through reviewed irreversible state machines. Keep
+  production publication and stable CLI/MCP writes disabled until a separate
+  public-write compatibility and safety review approves them.
+- Maintain explicit, provenance-preserving OSF-to-Zenodo and Zenodo-to-OSF
+  mapping contracts with deterministic checkpoints, truthful partial results,
+  and draft-only compensation. Keep unsupported rollback paths fail-closed.
 - Add shell completions and packaged releases for Windows, macOS, and Linux.
 
 ## Reference Tools And Lessons
@@ -43,6 +63,8 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
 - OSF API v2 docs: authoritative data model, endpoints, pagination, relationships, and validation rules.
 - OSF Dictionary: user-facing terminology for projects, components, registrations, preregistrations, embargoes, wikis, files, contributors, and add-ons.
 - OSF Metadata Profile: metadata vocabulary and FAIR/discovery mapping reference.
+- Zenodo developer documentation, sandbox guidance, terms, and repository
+  policies: authoritative inputs for the post-1.0 provider roadmap.
 - `osfclient`: familiar CLI concepts such as init, list, clone, fetch, upload, remove, and local config.
 - `osfr`: broad OSF entity coverage, explicit conflicts behavior, and distinction between nodes, files, and users.
 - `osf-project-exporter`: project export target that includes metadata, files, contributors, wiki content, and components.
@@ -54,6 +76,7 @@ Build a fast, scriptable Go CLI for the Open Science Framework (OSF) that helps 
 - Hide OSF permission failures behind optimistic behavior.
 - Store passwords. Prefer personal access tokens and environment variables.
 - Invent metadata terms that diverge from OSF API v2 or OSF help documentation.
+- Silently mirror, publish, or equate OSF and Zenodo resources.
 
 ## Product Principles
 

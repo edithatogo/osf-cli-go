@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
+	"github.com/edithatogo/osf-cli-go/internal/zenodooai"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -33,12 +35,25 @@ type OSFClient interface {
 	ResolveDOI(context.Context, string) (osfapi.DOIResolution, error)
 }
 
+// ZenodoOAIClient is the public metadata-harvesting surface exposed separately from REST.
+type ZenodoOAIClient interface {
+	ListRecords(context.Context, zenodooai.Request) (zenodooai.Page, error)
+	ListSets(context.Context) ([]zenodooai.Set, error)
+	ListMetadataFormats(context.Context, string) ([]zenodooai.MetadataFormat, error)
+}
+
 type Server struct {
 	client OSFClient
+	zenodo ZenodoRESTClient
+	oai    ZenodoOAIClient
+	events observability.Emitter
 }
 
 type Options struct {
-	Version string
+	Version    string
+	Events     observability.Emitter
+	ZenodoOAI  ZenodoOAIClient
+	ZenodoREST ZenodoRESTClient
 }
 
 type EmptyInput struct{}
@@ -74,6 +89,18 @@ type PreprintSearchInput struct {
 
 type DOIInput struct {
 	Identifier string `json:"identifier" jsonschema:"DOI, doi.org URL, or OSF DOI URL"`
+}
+
+type OAIRecordsInput struct {
+	MetadataPrefix  string `json:"metadataPrefix,omitempty" jsonschema:"OAI metadata prefix; defaults to oai_dc"`
+	Set             string `json:"set,omitempty" jsonschema:"optional OAI set spec"`
+	From            string `json:"from,omitempty" jsonschema:"inclusive RFC3339 or YYYY-MM-DD start"`
+	Until           string `json:"until,omitempty" jsonschema:"inclusive RFC3339 or YYYY-MM-DD end"`
+	ResumptionToken string `json:"resumptionToken,omitempty" jsonschema:"opaque token from a prior page; exclusive with set/from/until"`
+}
+
+type OAIFormatsInput struct {
+	Identifier string `json:"identifier,omitempty" jsonschema:"optional OAI identifier"`
 }
 
 type FileVersionOutput struct {
@@ -191,6 +218,28 @@ type DOIResult struct {
 	ResolvedURL string `json:"resolvedUrl"`
 }
 
+type OAIRecordOutput struct {
+	Identifier        string               `json:"identifier"`
+	Datestamp         string               `json:"datestamp"`
+	SetSpecs          []string             `json:"setSpecs,omitempty"`
+	Deleted           bool                 `json:"deleted,omitempty"`
+	NativeMetadataXML string               `json:"nativeMetadataXml,omitempty"`
+	AboutXML          string               `json:"aboutXml,omitempty"`
+	Provenance        zenodooai.Provenance `json:"provenance"`
+}
+
+type OAIRecordsResult struct {
+	Records []OAIRecordOutput          `json:"records"`
+	Next    *zenodooai.ResumptionToken `json:"next,omitempty"`
+}
+
+type OAISetsResult struct {
+	Sets []zenodooai.Set `json:"sets"`
+}
+type OAIFormatsResult struct {
+	Formats []zenodooai.MetadataFormat `json:"formats"`
+}
+
 // New returns an MCP server with read-only OSF tools registered.
 func New(client OSFClient, opts Options) *mcp.Server {
 	version := strings.TrimSpace(opts.Version)
@@ -198,7 +247,7 @@ func New(client OSFClient, opts Options) *mcp.Server {
 		version = "0.0.0-dev"
 	}
 
-	service := &Server{client: client}
+	service := &Server{client: client, zenodo: opts.ZenodoREST, oai: opts.ZenodoOAI, events: opts.Events}
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "osf-cli-go",
 		Version: version,
@@ -251,6 +300,17 @@ func New(client OSFClient, opts Options) *mcp.Server {
 		Name:        "osf_doi_resolve",
 		Description: "Resolve a DOI to an OSF web resource without downloading or writing data.",
 	}, service.ResolveDOI)
+	if service.oai != nil {
+		mcp.AddTool(server, &mcp.Tool{Name: "zenodo_oai_records_list", Description: "List one public Zenodo OAI-PMH record page and return its opaque continuation."}, service.ListOAIRecords)
+		mcp.AddTool(server, &mcp.Tool{Name: "zenodo_oai_sets_list", Description: "List public Zenodo OAI-PMH selective-harvesting sets."}, service.ListOAISets)
+		mcp.AddTool(server, &mcp.Tool{Name: "zenodo_oai_formats_list", Description: "List public Zenodo OAI-PMH metadata formats."}, service.ListOAIFormats)
+	}
+	if service.zenodo != nil {
+		mcp.AddTool(server, &mcp.Tool{Name: "repository_capabilities_get", Description: "Return the reviewed OSF or Zenodo provider capability contract."}, service.GetRepositoryCapabilities)
+		mcp.AddTool(server, &mcp.Tool{Name: "zenodo_records_search", Description: "Search public published Zenodo records."}, service.SearchZenodoRecords)
+		mcp.AddTool(server, &mcp.Tool{Name: "zenodo_record_get", Description: "Get a public published Zenodo record by native, qualified, or canonical URL identity."}, service.GetZenodoRecord)
+		mcp.AddTool(server, &mcp.Tool{Name: "zenodo_files_list", Description: "List files attached to a public published Zenodo record."}, service.ListZenodoFiles)
+	}
 
 	return server
 }
@@ -258,7 +318,7 @@ func New(client OSFClient, opts Options) *mcp.Server {
 func (s *Server) Whoami(ctx context.Context, _ *mcp.CallToolRequest, _ EmptyInput) (*mcp.CallToolResult, UserResult, error) {
 	user, err := s.client.CurrentUser(ctx)
 	if err != nil {
-		return nil, UserResult{}, mcpError(err)
+		return nil, UserResult{}, s.mcpError(ctx, err)
 	}
 	return nil, UserResult{User: toUserOutput(user)}, nil
 }
@@ -266,7 +326,7 @@ func (s *Server) Whoami(ctx context.Context, _ *mcp.CallToolRequest, _ EmptyInpu
 func (s *Server) ListProjects(ctx context.Context, _ *mcp.CallToolRequest, _ EmptyInput) (*mcp.CallToolResult, NodesResult, error) {
 	nodes, err := s.client.ListCurrentUserProjects(ctx)
 	if err != nil {
-		return nil, NodesResult{}, mcpError(err)
+		return nil, NodesResult{}, s.mcpError(ctx, err)
 	}
 	return nil, NodesResult{Nodes: toNodeOutputs(nodes)}, nil
 }
@@ -274,11 +334,11 @@ func (s *Server) ListProjects(ctx context.Context, _ *mcp.CallToolRequest, _ Emp
 func (s *Server) GetProject(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, NodeResult, error) {
 	id, err := normalizeNodeID(in.ID)
 	if err != nil {
-		return nil, NodeResult{}, mcpError(err)
+		return nil, NodeResult{}, s.mcpError(ctx, err)
 	}
 	node, err := s.client.GetNode(ctx, id)
 	if err != nil {
-		return nil, NodeResult{}, mcpError(err)
+		return nil, NodeResult{}, s.mcpError(ctx, err)
 	}
 	return nil, NodeResult{Node: toNodeOutput(node)}, nil
 }
@@ -286,11 +346,11 @@ func (s *Server) GetProject(ctx context.Context, _ *mcp.CallToolRequest, in Node
 func (s *Server) ListComponents(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, NodesResult, error) {
 	id, err := normalizeNodeID(in.ID)
 	if err != nil {
-		return nil, NodesResult{}, mcpError(err)
+		return nil, NodesResult{}, s.mcpError(ctx, err)
 	}
 	nodes, err := s.client.ListNodeChildren(ctx, id)
 	if err != nil {
-		return nil, NodesResult{}, mcpError(err)
+		return nil, NodesResult{}, s.mcpError(ctx, err)
 	}
 	return nil, NodesResult{Nodes: toNodeOutputs(nodes)}, nil
 }
@@ -298,15 +358,15 @@ func (s *Server) ListComponents(ctx context.Context, _ *mcp.CallToolRequest, in 
 func (s *Server) ListFiles(ctx context.Context, _ *mcp.CallToolRequest, in FilesInput) (*mcp.CallToolResult, FilesResult, error) {
 	id, err := normalizeNodeID(in.ID)
 	if err != nil {
-		return nil, FilesResult{}, mcpError(err)
+		return nil, FilesResult{}, s.mcpError(ctx, err)
 	}
 	segments, err := storagePathSegments(in.Path)
 	if err != nil {
-		return nil, FilesResult{}, mcpError(err)
+		return nil, FilesResult{}, s.mcpError(ctx, err)
 	}
 	files, err := s.client.ListStorageFiles(ctx, id, segments...)
 	if err != nil {
-		return nil, FilesResult{}, mcpError(err)
+		return nil, FilesResult{}, s.mcpError(ctx, err)
 	}
 	return nil, FilesResult{Files: toFileOutputs(files)}, nil
 }
@@ -314,11 +374,11 @@ func (s *Server) ListFiles(ctx context.Context, _ *mcp.CallToolRequest, in Files
 func (s *Server) ListContributors(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, ContributorsResult, error) {
 	id, err := normalizeNodeID(in.ID)
 	if err != nil {
-		return nil, ContributorsResult{}, mcpError(err)
+		return nil, ContributorsResult{}, s.mcpError(ctx, err)
 	}
 	contributors, err := s.client.ListNodeContributors(ctx, id)
 	if err != nil {
-		return nil, ContributorsResult{}, mcpError(err)
+		return nil, ContributorsResult{}, s.mcpError(ctx, err)
 	}
 	return nil, ContributorsResult{Contributors: toContributorOutputs(contributors)}, nil
 }
@@ -326,11 +386,11 @@ func (s *Server) ListContributors(ctx context.Context, _ *mcp.CallToolRequest, i
 func (s *Server) ListFileVersions(ctx context.Context, _ *mcp.CallToolRequest, in FileInput) (*mcp.CallToolResult, FileVersionsResult, error) {
 	fileID := strings.TrimSpace(in.ID)
 	if fileID == "" {
-		return nil, FileVersionsResult{}, mcpError(errors.New("id is required"))
+		return nil, FileVersionsResult{}, s.mcpError(ctx, errors.New("id is required"))
 	}
 	versions, err := s.client.ListFileVersions(ctx, fileID)
 	if err != nil {
-		return nil, FileVersionsResult{}, mcpError(err)
+		return nil, FileVersionsResult{}, s.mcpError(ctx, err)
 	}
 	out := make([]FileVersionOutput, 0, len(versions))
 	for _, version := range versions {
@@ -342,11 +402,11 @@ func (s *Server) ListFileVersions(ctx context.Context, _ *mcp.CallToolRequest, i
 func (s *Server) ListAddons(ctx context.Context, _ *mcp.CallToolRequest, in NodeInput) (*mcp.CallToolResult, NodesResult, error) {
 	id, err := normalizeNodeID(in.ID)
 	if err != nil {
-		return nil, NodesResult{}, mcpError(err)
+		return nil, NodesResult{}, s.mcpError(ctx, err)
 	}
 	addons, err := s.client.ListNodeAddons(ctx, id)
 	if err != nil {
-		return nil, NodesResult{}, mcpError(err)
+		return nil, NodesResult{}, s.mcpError(ctx, err)
 	}
 	return nil, NodesResult{Nodes: toNodeOutputs(addons)}, nil
 }
@@ -370,11 +430,11 @@ func (s *Server) ListIdentifiers(ctx context.Context, _ *mcp.CallToolRequest, in
 func (s *Server) listRelated(ctx context.Context, rawID string, list func(context.Context, string) ([]osfapi.RelatedResource, error)) (*mcp.CallToolResult, RelatedResourcesResult, error) {
 	id, err := normalizeNodeID(rawID)
 	if err != nil {
-		return nil, RelatedResourcesResult{}, mcpError(err)
+		return nil, RelatedResourcesResult{}, s.mcpError(ctx, err)
 	}
 	resources, err := list(ctx, id)
 	if err != nil {
-		return nil, RelatedResourcesResult{}, mcpError(err)
+		return nil, RelatedResourcesResult{}, s.mcpError(ctx, err)
 	}
 	out := make([]RelatedResourceOutput, 0, len(resources))
 	for _, resource := range resources {
@@ -386,15 +446,15 @@ func (s *Server) listRelated(ctx context.Context, rawID string, list func(contex
 func (s *Server) Search(ctx context.Context, _ *mcp.CallToolRequest, in SearchInput) (*mcp.CallToolResult, SearchResults, error) {
 	query := strings.TrimSpace(in.Query)
 	if query == "" {
-		return nil, SearchResults{}, mcpError(errors.New("query is required"))
+		return nil, SearchResults{}, s.mcpError(ctx, errors.New("query is required"))
 	}
 	limit, err := boundedLimit(in.Limit)
 	if err != nil {
-		return nil, SearchResults{}, mcpError(err)
+		return nil, SearchResults{}, s.mcpError(ctx, err)
 	}
 	results, err := s.client.SearchOSF(ctx, query, limit)
 	if err != nil {
-		return nil, SearchResults{}, mcpError(err)
+		return nil, SearchResults{}, s.mcpError(ctx, err)
 	}
 	out := make([]SearchResult, 0, len(results))
 	for _, result := range results {
@@ -406,11 +466,11 @@ func (s *Server) Search(ctx context.Context, _ *mcp.CallToolRequest, in SearchIn
 func (s *Server) ListPreprints(ctx context.Context, _ *mcp.CallToolRequest, in PreprintsInput) (*mcp.CallToolResult, NodesResult, error) {
 	limit, err := boundedLimit(in.Limit)
 	if err != nil {
-		return nil, NodesResult{}, mcpError(err)
+		return nil, NodesResult{}, s.mcpError(ctx, err)
 	}
 	preprints, err := s.client.ListPreprints(ctx, strings.TrimSpace(in.Provider), limit)
 	if err != nil {
-		return nil, NodesResult{}, mcpError(err)
+		return nil, NodesResult{}, s.mcpError(ctx, err)
 	}
 	return nil, NodesResult{Nodes: toNodeOutputs(preprints)}, nil
 }
@@ -418,15 +478,15 @@ func (s *Server) ListPreprints(ctx context.Context, _ *mcp.CallToolRequest, in P
 func (s *Server) SearchPreprints(ctx context.Context, _ *mcp.CallToolRequest, in PreprintSearchInput) (*mcp.CallToolResult, PreprintsResult, error) {
 	query := strings.TrimSpace(in.Query)
 	if query == "" {
-		return nil, PreprintsResult{}, mcpError(errors.New("query is required"))
+		return nil, PreprintsResult{}, s.mcpError(ctx, errors.New("query is required"))
 	}
 	limit, err := boundedSearchLimit(in.Limit)
 	if err != nil {
-		return nil, PreprintsResult{}, mcpError(err)
+		return nil, PreprintsResult{}, s.mcpError(ctx, err)
 	}
 	preprints, err := s.client.SearchPreprints(ctx, query, strings.TrimSpace(in.Provider), limit)
 	if err != nil {
-		return nil, PreprintsResult{}, mcpError(err)
+		return nil, PreprintsResult{}, s.mcpError(ctx, err)
 	}
 	out := make([]PreprintOutput, 0, len(preprints))
 	for _, preprint := range preprints {
@@ -447,13 +507,87 @@ func (s *Server) SearchPreprints(ctx context.Context, _ *mcp.CallToolRequest, in
 func (s *Server) ResolveDOI(ctx context.Context, _ *mcp.CallToolRequest, in DOIInput) (*mcp.CallToolResult, DOIResult, error) {
 	identifier := strings.TrimSpace(in.Identifier)
 	if identifier == "" {
-		return nil, DOIResult{}, mcpError(errors.New("identifier is required"))
+		return nil, DOIResult{}, s.mcpError(ctx, errors.New("identifier is required"))
 	}
 	resolution, err := s.client.ResolveDOI(ctx, identifier)
 	if err != nil {
-		return nil, DOIResult{}, mcpError(err)
+		return nil, DOIResult{}, s.mcpError(ctx, err)
 	}
 	return nil, DOIResult{DOI: resolution.DOI, ResolvedURL: resolution.ResolvedURL}, nil
+}
+
+func (s *Server) ListOAIRecords(ctx context.Context, _ *mcp.CallToolRequest, in OAIRecordsInput) (*mcp.CallToolResult, OAIRecordsResult, error) {
+	request, err := oaiRequest(in)
+	if err != nil {
+		return nil, OAIRecordsResult{}, s.mcpError(ctx, err)
+	}
+	page, err := s.oai.ListRecords(ctx, request)
+	if err != nil {
+		return nil, OAIRecordsResult{}, s.mcpError(ctx, err)
+	}
+	result := OAIRecordsResult{Records: make([]OAIRecordOutput, 0, len(page.Records))}
+	if !page.Next.Empty() {
+		result.Next = &page.Next
+	}
+	for _, record := range page.Records {
+		var native string
+		if record.NativeMetadata != nil {
+			native = string(record.NativeMetadata.Bytes())
+		}
+		result.Records = append(result.Records, OAIRecordOutput{Identifier: record.Header.Identifier, Datestamp: record.Header.Datestamp, SetSpecs: append([]string(nil), record.Header.SetSpecs...), Deleted: record.Header.Deleted, NativeMetadataXML: native, AboutXML: string(record.AboutXML), Provenance: record.Provenance})
+	}
+	return nil, result, nil
+}
+
+func (s *Server) ListOAISets(ctx context.Context, _ *mcp.CallToolRequest, _ EmptyInput) (*mcp.CallToolResult, OAISetsResult, error) {
+	sets, err := s.oai.ListSets(ctx)
+	if err != nil {
+		return nil, OAISetsResult{}, s.mcpError(ctx, err)
+	}
+	return nil, OAISetsResult{Sets: sets}, nil
+}
+
+func (s *Server) ListOAIFormats(ctx context.Context, _ *mcp.CallToolRequest, in OAIFormatsInput) (*mcp.CallToolResult, OAIFormatsResult, error) {
+	formats, err := s.oai.ListMetadataFormats(ctx, strings.TrimSpace(in.Identifier))
+	if err != nil {
+		return nil, OAIFormatsResult{}, s.mcpError(ctx, err)
+	}
+	return nil, OAIFormatsResult{Formats: formats}, nil
+}
+
+func oaiRequest(in OAIRecordsInput) (zenodooai.Request, error) {
+	prefix := strings.TrimSpace(in.MetadataPrefix)
+	if prefix == "" {
+		prefix = "oai_dc"
+	}
+	if token := strings.TrimSpace(in.ResumptionToken); token != "" {
+		if strings.TrimSpace(in.Set) != "" || strings.TrimSpace(in.From) != "" || strings.TrimSpace(in.Until) != "" {
+			return zenodooai.Request{}, errors.New("resumptionToken cannot be combined with set, from, or until")
+		}
+		return zenodooai.Request{Token: zenodooai.ResumptionToken{Value: token, MetadataPrefix: prefix}}, nil
+	}
+	from, err := parseOAIDate(in.From)
+	if err != nil {
+		return zenodooai.Request{}, errors.New("from must be RFC3339 or YYYY-MM-DD")
+	}
+	until, err := parseOAIDate(in.Until)
+	if err != nil {
+		return zenodooai.Request{}, errors.New("until must be RFC3339 or YYYY-MM-DD")
+	}
+	return zenodooai.Request{MetadataPrefix: prefix, Set: strings.TrimSpace(in.Set), From: from, Until: until}, nil
+}
+
+func parseOAIDate(value string) (time.Time, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return time.Time{}, nil
+	}
+	for _, layout := range []string{time.RFC3339, time.DateOnly} {
+		if parsed, err := time.Parse(layout, value); err == nil {
+			return parsed, nil
+		}
+	}
+	return time.Time{}, errors.New("invalid OAI date")
 }
 
 func boundedLimit(limit int) (int, error) {
@@ -476,8 +610,15 @@ func boundedSearchLimit(limit int) (int, error) {
 	return limit, nil
 }
 
-func mcpError(err error) error {
-	return auth.RedactError(err)
+func (s *Server) mcpError(ctx context.Context, err error) error {
+	redacted := auth.RedactError(err)
+	observability.Emit(ctx, s.events, observability.Event{
+		Level:   observability.LevelError,
+		Name:    "mcp.tool.error",
+		Outcome: observability.OutcomeError,
+		Error:   observability.RedactedError(redacted),
+	})
+	return redacted
 }
 
 func normalizeNodeID(raw string) (string, error) {

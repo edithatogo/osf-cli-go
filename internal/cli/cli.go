@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
 	"github.com/edithatogo/osf-cli-go/internal/buildinfo"
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/spf13/cobra"
 )
 
@@ -38,23 +40,61 @@ type contractEntry struct {
 
 // Run executes the osf CLI and returns a process exit code.
 func Run(args []string, stdout io.Writer, stderr io.Writer) int {
-	root := newRootCommandWithClient(stdout, stderr, nil)
+	emitter, closer, err := observability.OpenFromEnv(stderr)
+	if err != nil {
+		_, _ = fmt.Fprintln(stderr, err)
+		return 2
+	}
+	defer func() { _ = closer.Close() }()
+	root := newRootCommandWithProviders(stdout, stderr, newDefaultReadonlyClientWithObserver(auth.EnvSource{}, emitter), newDefaultZenodoRESTClient(emitter), newDefaultZenodoOAIClient(emitter))
 	root.SetArgs(args)
-	ctx := WithSignal(context.Background())
+	ctx := observability.WithEmitter(observability.WithOperationID(WithSignal(context.Background()), observability.NewID("op")), emitter)
 	root.SetContext(ctx)
+	started := time.Now()
+	observability.Emit(ctx, emitter, observability.Event{
+		Name:       "cli.command",
+		Fields:     map[string]any{"argumentCount": len(args)},
+		RetryCount: 0,
+	})
 
 	if err := root.Execute(); err != nil {
 		err = auth.RedactError(err)
+		observability.Emit(ctx, emitter, observability.Event{
+			Level:      observability.LevelError,
+			Name:       "cli.command.result",
+			DurationMS: time.Since(started).Milliseconds(),
+			Outcome:    observability.OutcomeError,
+			Error:      observability.RedactedError(err),
+		})
 		_, _ = fmt.Fprintln(stderr, err)
 		return exitCodeForError(err)
 	}
+	observability.Emit(ctx, emitter, observability.Event{
+		Name:       "cli.command.result",
+		DurationMS: time.Since(started).Milliseconds(),
+		Outcome:    observability.OutcomeOK,
+	})
 
 	return 0
 }
 
 func newRootCommandWithClient(stdout, stderr io.Writer, client readonlyClient) *cobra.Command {
+	return newRootCommandWithClients(stdout, stderr, client, newDefaultZenodoOAIClient(nil))
+}
+
+func newRootCommandWithClients(stdout, stderr io.Writer, client readonlyClient, oai zenodoOAIClient) *cobra.Command {
+	return newRootCommandWithProviders(stdout, stderr, client, newDefaultZenodoRESTClient(nil), oai)
+}
+
+func newRootCommandWithProviders(stdout, stderr io.Writer, client readonlyClient, rest zenodoRESTClient, oai zenodoOAIClient) *cobra.Command {
 	if client == nil {
 		client = newDefaultReadonlyClient()
+	}
+	if oai == nil {
+		oai = newDefaultZenodoOAIClient(nil)
+	}
+	if rest == nil {
+		rest = newDefaultZenodoRESTClient(nil)
 	}
 
 	root := &cobra.Command{
@@ -106,6 +146,7 @@ func newRootCommandWithClient(stdout, stderr io.Writer, client readonlyClient) *
 		newResolveCommand(),
 		newOpenCommand(),
 		newWhoamiCommand(client),
+		newZenodoCommand(rest, oai),
 		newCompletionCommand(root),
 	)
 
@@ -184,6 +225,7 @@ func writeRootContract(w io.Writer) error {
 			{Name: "resolve", Status: "implemented", Description: "Resolve an OSF DOI or DOI URL"},
 			{Name: "open", Status: "implemented", Description: "Open an OSF node in the default browser"},
 			{Name: "whoami", Status: "implemented", Description: "Show the active OSF account (alias for auth whoami)"},
+			{Name: "zenodo", Status: "implemented", Description: "Search and inspect public Zenodo records or harvest OAI-PMH metadata"},
 			{Name: "completion", Status: "implemented", Description: "Generate shell completion scripts"},
 		},
 	})

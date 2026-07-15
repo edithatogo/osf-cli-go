@@ -8,6 +8,7 @@
 - Inspect the authenticated account with `osf auth whoami`.
 - List and inspect projects, components, and OSF Storage files.
 - Download files and folder trees with conservative conflict handling.
+- Resume interrupted downloads with integrity-checked checkpoints.
 - Upload files, create OSF Storage folders, and remove files through explicit WaterButler commands.
 - Search OSF, list preprints, create draft registrations, and export node snapshots.
 - Emit table output for humans and JSON output for automation.
@@ -17,9 +18,11 @@
 - [Install](install.md) explains local and release-based installation.
 - [Usage](usage.md) covers authentication, output modes, and common workflows.
 - [Commands](commands.md) lists the current CLI command surface.
+- [Structured observability](observability.md) documents opt-in redacted event logs.
 - [Examples](examples.md) provides copyable workflow examples.
 - [Development](development.md) documents local validation and repository hardening expectations.
 - [1.0 launch review](v1-launch-review.md) records dated readiness evidence and explicit waivers.
+- [Zenodo sandbox transfers](zenodo-sandbox-transfers.md) defines the internal, sandbox-only write and integrity boundary.
 
 ## Status
 

@@ -8,7 +8,7 @@ stored in the repository.
 | Client | Template | Installation or copy target | Provider status |
 | --- | --- | --- | --- |
 | Cursor | `.cursor/mcp.json`, `.plugin/plugin.json`, `.mcp.json` | Project `.cursor/mcp.json` or Cursor Directory plugin submission | Submission prepared; provider review remains pending |
-| Cline | `integrations/cline/cline_mcp_settings.json` | `~/.cline/data/settings/cline_mcp_settings.json` | MCP configuration available; Cline Marketplace listing not claimed |
+| Cline | `integrations/cline/cline_mcp_settings.json` | `~/.cline/data/settings/cline_mcp_settings.json` | Submitted in upstream issue #2024; approval and listing not claimed |
 | Roo Code | `.roo/mcp.json` | Project `.roo/mcp.json` | MCP configuration available; Roo marketplace listing not claimed |
 | Windsurf | `integrations/windsurf/mcp_config.json` | Windsurf MCP configuration file | MCP configuration available; provider listing not claimed |
 | VS Code | `.vscode/mcp.json` | Workspace `.vscode/mcp.json` | MCP configuration available; VS Code gallery submission not claimed |

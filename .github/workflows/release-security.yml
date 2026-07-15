@@ -2,11 +2,6 @@ name: Release Security Metadata
 
 on:
   workflow_dispatch:
-    inputs:
-      image_tag:
-        description: Image tag to sign when manually rerunning security metadata
-        required: false
-        type: string
   push:
     tags:
       - "v*"
@@ -23,6 +18,11 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+      - name: Gate provenance and SBOM on provider claims
+        run: go run ./tools/checkproviderrelease
       - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
       - uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4
         with:
@@ -37,6 +37,7 @@ jobs:
             type=semver,pattern={{version}}
             type=ref,event=branch
       - name: Build and publish image with SBOM and provenance
+        id: build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
@@ -52,9 +53,9 @@ jobs:
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
       - name: Sign published image keylessly
         env:
-          IMAGE_TAG: ${{ inputs.image_tag }}
-          DEFAULT_IMAGE_TAG: ${{ steps.meta.outputs.version }}
+          IMAGE: ghcr.io/edithatogo/osf-cli-go-osf-mcp
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           set -euo pipefail
-          image_tag="${IMAGE_TAG:-$DEFAULT_IMAGE_TAG}"
-          cosign sign --yes "ghcr.io/edithatogo/osf-cli-go-osf-mcp:${image_tag}"
+          test -n "$IMAGE_DIGEST"
+          cosign sign --yes "$IMAGE@$IMAGE_DIGEST"

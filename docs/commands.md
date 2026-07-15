@@ -121,6 +121,9 @@ Download one file by OSF file ID, OSF file API URL, or direct WaterButler downlo
 Options:
 
 - `--conflict fail|skip|overwrite`, default `fail`
+- Interrupted downloads resume automatically from `<destination>.part` using a
+  validated `<destination>.resume.json` checkpoint when the provider supports
+  byte ranges; providers that ignore ranges are restarted safely.
 
 ### `osf files download --tree <node-guid-or-url> <destination>`
 
@@ -213,6 +216,19 @@ presence or registration category. It does not inspect paper text, invoke an
 LLM, modify OSF, or claim that a research method is scientifically valid.
 
 ## Browser And Shell Integration
+
+## Zenodo OAI-PMH
+
+`osf zenodo records search|get` searches or inspects published REST records,
+and `osf zenodo files list` lists a record's files. `osf zenodo capabilities`
+reports supported, partial, and unsupported provider operations.
+
+`osf zenodo oai harvest` retrieves one public metadata page and returns its
+opaque continuation in JSON output. Add `--all` for bounded automatic
+resumption, or `--resume-token` to continue a persisted harvest. Sets and
+metadata schemas are available through `osf zenodo oai sets` and
+`osf zenodo oai formats`. These commands remain independent of Zenodo REST
+search and never use repository write credentials.
 
 ### `osf open <guid-or-url>`
 

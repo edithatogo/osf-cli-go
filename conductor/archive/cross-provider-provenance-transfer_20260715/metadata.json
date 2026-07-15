@@ -1,0 +1,10 @@
+{
+  "track_id": "cross-provider-provenance-transfer_20260715",
+  "type": "feature",
+  "status": "in_progress",
+  "created_at": "2026-07-15T00:00:00Z",
+  "updated_at": "2026-07-15T03:50:00+10:00",
+  "description": "Design explicit cross-provider copy with provenance and recovery",
+  "github_issue": "https://github.com/edithatogo/osf-cli-go/issues/110",
+  "parent_issue": "https://github.com/edithatogo/osf-cli-go/issues/101"
+}

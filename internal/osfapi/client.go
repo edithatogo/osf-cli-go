@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/edithatogo/osf-cli-go/internal/auth"
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 )
 
 const defaultBaseURL = "https://api.osf.io/v2/"
@@ -27,6 +29,7 @@ type Client struct {
 	httpClient  *http.Client
 	bearerToken string
 	credentials auth.Credentials
+	emitter     observability.Emitter
 }
 
 // Option configures a Client using the functional options pattern.
@@ -63,6 +66,11 @@ func WithUsernamePassword(username, password string) Option {
 	return func(c *Client) {
 		c.credentials = auth.Credentials{Mode: auth.ModeUsernamePassword, Username: username, Password: password}
 	}
+}
+
+// WithObserver enables redacted structured request events.
+func WithObserver(emitter observability.Emitter) Option {
+	return func(c *Client) { c.emitter = emitter }
 }
 
 // New creates a Client that communicates with the given OSF API base URL.
@@ -127,7 +135,7 @@ func (c *Client) GetStorageFile(ctx context.Context, id string) (StorageFile, er
 
 // ResolveDOI resolves an OSF DOI without using the OSF API credentials.
 func (c *Client) ResolveDOI(ctx context.Context, identifier string) (DOIResolution, error) {
-	return ResolveDOI(ctx, identifier)
+	return resolveDOIWithHTTPClient(ctx, identifier, c.httpClient)
 }
 
 // ListFileVersions loads all versions for a file.
@@ -209,7 +217,7 @@ func (c *Client) get(ctx context.Context, endpoint string, dst any) (*url.URL, e
 	c.sign(req)
 	req.Header.Set("Accept", "application/vnd.api+json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +261,7 @@ func (c *Client) post(ctx context.Context, endpoint string, body any, dst any) (
 	req.Header.Set("Accept", "application/vnd.api+json")
 	req.Header.Set("Content-Type", "application/vnd.api+json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +307,7 @@ func (c *Client) patch(ctx context.Context, endpoint string, body any, dst any) 
 	req.Header.Set("Accept", "application/vnd.api+json")
 	req.Header.Set("Content-Type", "application/vnd.api+json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return nil, err
 	}
@@ -335,7 +343,7 @@ func (c *Client) delete(ctx context.Context, endpoint string) error {
 	c.sign(req)
 	req.Header.Set("Accept", "application/vnd.api+json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return err
 	}
@@ -348,9 +356,62 @@ func (c *Client) delete(ctx context.Context, endpoint string) error {
 	return nil
 }
 
+func (c *Client) doHTTP(req *http.Request) (*http.Response, error) {
+	started := time.Now()
+	resp, err := c.httpClient.Do(req)
+	status := 0
+	if resp != nil {
+		status = resp.StatusCode
+	}
+	if c.emitter != nil {
+		outcome := observability.OutcomeOK
+		if err != nil || status >= 400 {
+			outcome = observability.OutcomeError
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				outcome = observability.OutcomeCancel
+			}
+		}
+		observability.Emit(req.Context(), c.emitter, observability.Event{
+			Provider:      "osf",
+			Level:         levelForHTTP(outcome),
+			Name:          "api.request",
+			DurationMS:    time.Since(started).Milliseconds(),
+			RetryCount:    0,
+			Outcome:       outcome,
+			EndpointClass: observability.EndpointClass(req.URL.String()),
+			Fields: map[string]any{
+				"method": req.Method,
+				"status": status,
+			},
+			Error: observability.RedactedError(err),
+		})
+	}
+	return resp, err
+}
+
+func levelForHTTP(outcome string) string {
+	if outcome == observability.OutcomeOK {
+		return observability.LevelInfo
+	}
+	return observability.LevelError
+}
+
 // OpenDownload opens the given download URL and returns the response body.
 // The caller is responsible for closing the returned io.ReadCloser.
 func (c *Client) OpenDownload(ctx context.Context, downloadURL string) (io.ReadCloser, error) {
+	return c.openDownload(ctx, downloadURL, 0)
+}
+
+// OpenDownloadRange opens a download at offset. Providers that ignore the
+// range request return ErrRangeUnsupported so callers can restart safely.
+func (c *Client) OpenDownloadRange(ctx context.Context, downloadURL string, offset int64) (io.ReadCloser, error) {
+	if offset < 0 {
+		return nil, fmt.Errorf("download offset must not be negative")
+	}
+	return c.openDownload(ctx, downloadURL, offset)
+}
+
+func (c *Client) openDownload(ctx context.Context, downloadURL string, offset int64) (io.ReadCloser, error) {
 	reqURL, err := c.resolveEndpoint(downloadURL)
 	if err != nil {
 		return nil, err
@@ -362,8 +423,11 @@ func (c *Client) OpenDownload(ctx context.Context, downloadURL string) (io.ReadC
 	}
 	c.sign(req)
 	req.Header.Set("Accept", "*/*")
+	if offset > 0 {
+		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", offset))
+	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return nil, err
 	}
@@ -376,6 +440,10 @@ func (c *Client) OpenDownload(ctx context.Context, downloadURL string) (io.ReadC
 		}
 		return nil, parseAPIError(resp.StatusCode, req.Method, req.URL.RequestURI(), body)
 	}
+	if offset > 0 && resp.StatusCode != http.StatusPartialContent {
+		_ = resp.Body.Close()
+		return nil, ErrRangeUnsupported
+	}
 
 	return resp.Body, nil
 }
@@ -384,21 +452,17 @@ func (c *Client) OpenDownload(ctx context.Context, downloadURL string) (io.ReadC
 // The providerURL is typically obtained from GET /v2/nodes/{id}/files/osfstorage/
 // and looks like "https://files.osf.io/v1/providers/osfstorage/..."
 func (c *Client) UploadFile(ctx context.Context, providerURL, fileName string, content io.Reader, conflict string) error {
-	fullURL, err := waterButlerPath(providerURL, fileName, false)
+	name := strings.TrimSpace(fileName)
+	fullURL, err := waterButlerUploadURL(providerURL, name, conflict)
 	if err != nil {
 		return err
 	}
-	if conflict != "" {
-		parsed, _ := url.Parse(fullURL)
-		q := parsed.Query()
-		q.Set("kind", "file")
-		if conflict == "overwrite" {
-			q.Set("conflict", "overwrite")
-		} else {
-			q.Set("conflict", "fail")
+	if conflict == "overwrite" {
+		if existing, found, lookupErr := c.findWaterButlerFile(ctx, providerURL, name); lookupErr != nil {
+			return lookupErr
+		} else if found {
+			fullURL = existing.Links.Upload
 		}
-		parsed.RawQuery = q.Encode()
-		fullURL = parsed.String()
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, fullURL, content)
@@ -410,7 +474,7 @@ func (c *Client) UploadFile(ctx context.Context, providerURL, fileName string, c
 	}
 	c.sign(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return err
 	}
@@ -421,6 +485,65 @@ func (c *Client) UploadFile(ctx context.Context, providerURL, fileName string, c
 		return fmt.Errorf("upload failed: %s", strings.TrimSpace(string(body)))
 	}
 	return nil
+}
+
+func waterButlerUploadURL(providerURL, fileName, conflict string) (string, error) {
+	name := strings.TrimSpace(fileName)
+	if name == "" || name == "." || name == ".." || strings.ContainsAny(name, `/\\`) {
+		return "", fmt.Errorf("file name %q must be a single path segment", fileName)
+	}
+	parsed, err := url.Parse(providerURL)
+	if err != nil {
+		return "", fmt.Errorf("parse provider URL: %w", err)
+	}
+	query := parsed.Query()
+	query.Set("kind", "file")
+	query.Set("name", name)
+	switch conflict {
+	case "", "fail":
+		query.Set("conflict", "fail")
+	case "overwrite":
+		query.Set("conflict", "overwrite")
+	default:
+		return "", fmt.Errorf("unsupported upload conflict policy %q", conflict)
+	}
+	parsed.RawQuery = query.Encode()
+	return parsed.String(), nil
+}
+
+func (c *Client) findWaterButlerFile(ctx context.Context, providerURL, fileName string) (struct{ Links Links }, bool, error) {
+	empty := struct{ Links Links }{}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, providerURL, nil)
+	if err != nil {
+		return empty, false, err
+	}
+	c.sign(req)
+	resp, err := c.doHTTP(req)
+	if err != nil {
+		return empty, false, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return empty, false, parseAPIError(resp.StatusCode, req.Method, req.URL.RequestURI(), body)
+	}
+	var collection struct {
+		Data []struct {
+			Attributes struct {
+				Name string `json:"name"`
+			} `json:"attributes"`
+			Links Links `json:"links"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&collection); err != nil {
+		return empty, false, fmt.Errorf("decode WaterButler file listing: %w", err)
+	}
+	for _, entry := range collection.Data {
+		if entry.Attributes.Name == fileName && entry.Links.Upload != "" {
+			return struct{ Links Links }{Links: entry.Links}, true, nil
+		}
+	}
+	return empty, false, nil
 }
 
 // CreateFolder creates a folder via WaterButler.
@@ -441,7 +564,7 @@ func (c *Client) CreateFolder(ctx context.Context, providerURL, folderName strin
 	}
 	c.sign(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return err
 	}
@@ -460,6 +583,11 @@ func (c *Client) DeleteFile(ctx context.Context, providerURL, fileName string) e
 	if err != nil {
 		return err
 	}
+	if existing, found, lookupErr := c.findWaterButlerFile(ctx, providerURL, strings.TrimSpace(fileName)); lookupErr != nil {
+		return lookupErr
+	} else if found && existing.Links.Delete != "" {
+		fullURL = existing.Links.Delete
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, fullURL, nil)
 	if err != nil {
@@ -467,7 +595,7 @@ func (c *Client) DeleteFile(ctx context.Context, providerURL, fileName string) e
 	}
 	c.sign(req)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.doHTTP(req)
 	if err != nil {
 		return err
 	}
@@ -638,6 +766,7 @@ func (c *Client) GetNodeFilesProvider(ctx context.Context, nodeID string) (strin
 		Attributes struct {
 			Name     string `json:"name"`
 			FullName string `json:"full_name"`
+			Provider string `json:"provider"`
 		} `json:"attributes"`
 		Links Links `json:"links"`
 	}]
@@ -645,8 +774,14 @@ func (c *Client) GetNodeFilesProvider(ctx context.Context, nodeID string) (strin
 		return "", err
 	}
 	for _, provider := range doc.Data {
-		if provider.ID == "osfstorage" {
+		if provider.ID != "osfstorage" && provider.Attributes.Provider != "osfstorage" && !strings.HasSuffix(provider.ID, ":osfstorage") {
+			continue
+		}
+		if provider.Links.Self != "" {
 			return provider.Links.Self, nil
+		}
+		if provider.Links.Upload != "" {
+			return provider.Links.Upload, nil
 		}
 	}
 	return "", fmt.Errorf("no osfstorage provider found for node %q", nodeID)

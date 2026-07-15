@@ -1,0 +1,74 @@
+# Live OSF Validation Evidence
+
+- Generated: 2026-07-15T05:09:49Z
+- Mode: live
+- Environment:
+  - OSF_TOKEN: set (redacted)
+  - OSF_USERNAME: missing
+  - OSF_PASSWORD: missing
+  - OSF_VALIDATE_PROJECT: set (redacted)
+  - OSF_LIVE_VALIDATION: true
+  - OSF_VALIDATE_WRITES: true
+- Planned coverage:
+  - auth whoami: planned
+  - projects list: planned
+  - projects get: planned
+  - components list: planned
+  - files list: planned
+  - files addons: planned
+  - export: planned
+  - search: planned
+  - preprints list: planned
+  - files upload: planned
+  - files upload conflict: planned
+  - cancellation: planned
+  - MCP project get: planned
+  - files cleanup: planned
+  - files download: planned
+- Results:
+  - auth whoami: passed
+    - Output: command completed successfully
+    - Elapsed: 4.511s
+  - projects list: passed
+    - Output: command completed successfully
+    - Elapsed: 6.574s
+  - projects get: passed
+    - Output: command completed successfully
+    - Elapsed: 4.551s
+  - components list: passed
+    - Output: command completed successfully
+    - Elapsed: 5.262s
+  - files list: passed
+    - Output: command completed successfully
+    - Elapsed: 4.694s
+  - files addons: passed
+    - Output: command completed successfully
+    - Elapsed: 5.652s
+  - export: passed
+    - Output: command completed successfully
+    - Elapsed: 3.886s
+  - search: passed
+    - Output: command completed successfully
+    - Elapsed: 9.153s
+  - preprints list: passed
+    - Output: command completed successfully
+    - Elapsed: 6.376s
+  - files upload: passed
+    - Output: command completed successfully
+    - Elapsed: 5.857s
+  - files upload conflict: passed
+    - Output: existing-file conflict rejected as expected
+    - Elapsed: 6.851s
+  - cancellation: passed
+    - Output: command stopped at the cancellation deadline
+    - Elapsed: 0s
+  - MCP project get: passed
+    - Output: command completed successfully
+    - Elapsed: 5.019s
+  - files cleanup: passed
+    - Output: command completed successfully
+    - Elapsed: 7.635s
+  - files download: passed
+    - Output: command completed successfully
+    - Elapsed: 6.481s
+- Cleanup: disposable project deleted after validation; generated upload fixtures removed; temporary validation token revoked.

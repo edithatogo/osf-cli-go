@@ -13,6 +13,19 @@ Before upgrading automation:
    in project files.
 4. Review release notes for any explicitly deprecated command, field, or tool.
 
+The additive 2026-07-15 contract introduces public Zenodo REST reads under
+`osf zenodo records|files`, public OAI-PMH harvesting under `osf zenodo oai`,
+three `zenodo_oai_*` MCP tools, provider capability discovery, and three public
+Zenodo REST MCP tools. Existing OSF automation requires no migration. OAI-PMH
+consumers should persist the returned opaque resumption token and must not
+treat it as a Zenodo REST page URL.
+
+No migration is required for the internal Zenodo sandbox transfer,
+publication, or cross-provider validation packages because they are not public
+CLI or MCP interfaces. Automation must not infer production write support from
+their sandbox evidence. A future public write surface will be introduced only
+through an additive contract and dedicated migration note.
+
 The first breaking change, if one becomes necessary, will require a major
 version, a replacement path, and at least one minor-release deprecation period
 where practical.

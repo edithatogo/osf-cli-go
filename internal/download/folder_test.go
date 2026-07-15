@@ -33,6 +33,17 @@ func TestNewFolderDownloadPlanRejectsNoReaderOrOpener(t *testing.T) {
 	}
 }
 
+func TestNewFolderDownloadPlanRequiresIdentityForRangeOpener(t *testing.T) {
+	_, err := NewFolderDownloadPlan(t.TempDir(), ConflictOverwrite, []FolderDownloadFile{
+		{RemotePath: "file.txt", OpenRange: func(int64) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader("content")), nil
+		}},
+	})
+	if err == nil || !strings.Contains(err.Error(), "source identity") {
+		t.Fatalf("error=%v, want source identity validation", err)
+	}
+}
+
 func TestNewFolderDownloadPlanRejectsEmptyDestRoot(t *testing.T) {
 	_, err := NewFolderDownloadPlan("", ConflictFail, []FolderDownloadFile{
 		{RemotePath: "file.txt", Reader: strings.NewReader("x")},
@@ -91,6 +102,53 @@ func TestFolderDownloadPlanWritesNestedPaths(t *testing.T) {
 		if string(got) != want {
 			t.Fatalf("file %q = %q, want %q", rel, string(got), want)
 		}
+	}
+}
+
+func TestFolderDownloadPlanResumesInterruptedRangeDownload(t *testing.T) {
+	dir := t.TempDir()
+	expectedBytes := int64(6)
+	offsets := make([]int64, 0, 2)
+	first := true
+
+	plan, err := NewFolderDownloadPlan(dir, ConflictOverwrite, []FolderDownloadFile{
+		{
+			RemotePath:     "nested/file.txt",
+			SourceIdentity: "osf:file-1",
+			KnownBytes:     &expectedBytes,
+			OpenRange: func(offset int64) (io.ReadCloser, error) {
+				offsets = append(offsets, offset)
+				if first {
+					first = false
+					return io.NopCloser(&interruptedReader{data: "abc", limit: 3}), nil
+				}
+				if offset != 3 {
+					return nil, errors.New("unexpected resume offset")
+				}
+				return io.NopCloser(strings.NewReader("def")), nil
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewFolderDownloadPlan: %v", err)
+	}
+	if _, err := plan.Execute(); err == nil {
+		t.Fatal("first Execute returned nil error, want interrupted transfer")
+	}
+	manifest, err := plan.Execute()
+	if err != nil {
+		t.Fatalf("resumed Execute: %v", err)
+	}
+	if len(offsets) != 2 || offsets[0] != 0 || offsets[1] != 3 {
+		t.Fatalf("offsets=%v, want [0 3]", offsets)
+	}
+	record := manifest.Records[0]
+	if record.Status != FolderDownloadWritten || !record.Resumed || record.Bytes == nil || *record.Bytes != expectedBytes {
+		t.Fatalf("record=%+v, want resumed written record", record)
+	}
+	content, err := os.ReadFile(filepath.Join(dir, "nested", "file.txt"))
+	if err != nil || string(content) != "abcdef" {
+		t.Fatalf("content=%q err=%v, want abcdef", content, err)
 	}
 }
 

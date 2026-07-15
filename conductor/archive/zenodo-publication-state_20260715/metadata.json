@@ -1,0 +1,10 @@
+{
+  "track_id": "zenodo-publication-state_20260715",
+  "type": "feature",
+  "status": "completed",
+  "created_at": "2026-07-15T00:00:00Z",
+  "updated_at": "2026-07-15T03:45:00+10:00",
+  "description": "Model DOI and publication workflows as an irreversible state machine",
+  "github_issue": "https://github.com/edithatogo/osf-cli-go/issues/109",
+  "parent_issue": "https://github.com/edithatogo/osf-cli-go/issues/101"
+}

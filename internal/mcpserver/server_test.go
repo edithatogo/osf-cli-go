@@ -5,10 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"sort"
 	"strings"
 	"testing"
 
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 	"github.com/edithatogo/osf-cli-go/internal/osfapi"
+	"github.com/edithatogo/osf-cli-go/internal/zenodooai"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -40,6 +44,13 @@ func TestServerExposesReadOnlyTools(t *testing.T) {
 		"osf_preprints_list",
 		"osf_preprints_search",
 		"osf_doi_resolve",
+		"zenodo_oai_records_list",
+		"zenodo_oai_sets_list",
+		"zenodo_oai_formats_list",
+		"repository_capabilities_get",
+		"zenodo_records_search",
+		"zenodo_record_get",
+		"zenodo_files_list",
 	}
 	got := map[string]bool{}
 	for _, name := range names {
@@ -52,26 +63,166 @@ func TestServerExposesReadOnlyTools(t *testing.T) {
 	}
 }
 
+func TestMCPToolErrorsEmitRedactedEvents(t *testing.T) {
+	var events strings.Builder
+	server := &Server{events: observability.NewJSONEmitter(&events, observability.LevelInfo)}
+	_, _, err := server.Search(context.Background(), nil, SearchInput{Query: "  "})
+	if err == nil {
+		t.Fatal("Search returned nil error for empty query")
+	}
+	if !strings.Contains(events.String(), `"name":"mcp.tool.error"`) || !strings.Contains(events.String(), `"class":"validation"`) {
+		t.Fatalf("events=%q", events.String())
+	}
+}
+
+func TestMCPOSFReadMethodsSuccessPaths(t *testing.T) {
+	server := &Server{client: &fakeOSFClient{}, events: observability.NopEmitter{}}
+	ctx := context.Background()
+	checks := []struct {
+		name string
+		call func() error
+	}{
+		{"whoami", func() error { _, _, err := server.Whoami(ctx, nil, EmptyInput{}); return err }},
+		{"projects", func() error { _, _, err := server.ListProjects(ctx, nil, EmptyInput{}); return err }},
+		{"project", func() error { _, _, err := server.GetProject(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"components", func() error { _, _, err := server.ListComponents(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"files", func() error {
+			_, _, err := server.ListFiles(ctx, nil, FilesInput{ID: "project-1", Path: "data/raw"})
+			return err
+		}},
+		{"contributors", func() error { _, _, err := server.ListContributors(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"versions", func() error { _, _, err := server.ListFileVersions(ctx, nil, FileInput{ID: "file-1"}); return err }},
+		{"addons", func() error { _, _, err := server.ListAddons(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"wikis", func() error { _, _, err := server.ListWikis(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"comments", func() error { _, _, err := server.ListComments(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"logs", func() error { _, _, err := server.ListLogs(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"identifiers", func() error { _, _, err := server.ListIdentifiers(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"search", func() error { _, _, err := server.Search(ctx, nil, SearchInput{Query: "study", Limit: 10}); return err }},
+		{"preprints", func() error {
+			_, _, err := server.ListPreprints(ctx, nil, PreprintsInput{Provider: "osf", Limit: 10})
+			return err
+		}},
+		{"preprint search", func() error {
+			_, _, err := server.SearchPreprints(ctx, nil, PreprintSearchInput{Query: "study", Provider: "osf", Limit: 10})
+			return err
+		}},
+		{"doi", func() error {
+			_, _, err := server.ResolveDOI(ctx, nil, DOIInput{Identifier: "10.1234/study"})
+			return err
+		}},
+	}
+	for _, check := range checks {
+		t.Run(check.name, func(t *testing.T) {
+			if err := check.call(); err != nil {
+				t.Fatalf("success path returned error: %v", err)
+			}
+		})
+	}
+}
+
+func TestMCPInputBoundaryContracts(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		got  func() (int, error)
+		want int
+		err  bool
+	}{
+		{"limit negative", func() (int, error) { return boundedLimit(-1) }, 0, true},
+		{"limit maximum", func() (int, error) { return boundedLimit(100) }, 100, false},
+		{"limit too high", func() (int, error) { return boundedLimit(101) }, 0, true},
+		{"search default", func() (int, error) { return boundedSearchLimit(0) }, 10, false},
+		{"search minimum", func() (int, error) { return boundedSearchLimit(1) }, 1, false},
+		{"search too high", func() (int, error) { return boundedSearchLimit(101) }, 0, true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := test.got()
+			if got != test.want || (err != nil) != test.err {
+				t.Fatalf("got=%d err=%v, want %d error=%v", got, err, test.want, test.err)
+			}
+		})
+	}
+	for _, value := range []string{"2026-07-15", "2026-07-15T12:00:00Z", ""} {
+		if _, err := parseOAIDate(value); err != nil {
+			t.Fatalf("parseOAIDate(%q): %v", value, err)
+		}
+	}
+	if _, err := parseOAIDate("15/07/2026"); err == nil {
+		t.Fatal("invalid OAI date returned nil error")
+	}
+	if _, err := oaiRequest(OAIRecordsInput{ResumptionToken: "token", Set: "set"}); err == nil {
+		t.Fatal("conflicting OAI resumption arguments returned nil error")
+	}
+	if request, err := oaiRequest(OAIRecordsInput{ResumptionToken: "token", MetadataPrefix: "custom"}); err != nil || request.Token.Value != "token" {
+		t.Fatalf("token request=%+v err=%v", request, err)
+	}
+}
+
+func TestMCPOSFReadMethodsReturnBackendErrors(t *testing.T) {
+	server := &Server{client: &fakeOSFClient{failErr: errors.New("backend unavailable")}, events: observability.NopEmitter{}}
+	ctx := context.Background()
+	calls := []struct {
+		name string
+		call func() error
+	}{
+		{"whoami", func() error { _, _, err := server.Whoami(ctx, nil, EmptyInput{}); return err }},
+		{"projects", func() error { _, _, err := server.ListProjects(ctx, nil, EmptyInput{}); return err }},
+		{"project", func() error { _, _, err := server.GetProject(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"components", func() error { _, _, err := server.ListComponents(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"files", func() error { _, _, err := server.ListFiles(ctx, nil, FilesInput{ID: "project-1"}); return err }},
+		{"contributors", func() error { _, _, err := server.ListContributors(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"versions", func() error { _, _, err := server.ListFileVersions(ctx, nil, FileInput{ID: "file-1"}); return err }},
+		{"addons", func() error { _, _, err := server.ListAddons(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"wikis", func() error { _, _, err := server.ListWikis(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"comments", func() error { _, _, err := server.ListComments(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"logs", func() error { _, _, err := server.ListLogs(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"identifiers", func() error { _, _, err := server.ListIdentifiers(ctx, nil, NodeInput{ID: "project-1"}); return err }},
+		{"search", func() error { _, _, err := server.Search(ctx, nil, SearchInput{Query: "study"}); return err }},
+		{"preprints", func() error { _, _, err := server.ListPreprints(ctx, nil, PreprintsInput{}); return err }},
+		{"preprint search", func() error {
+			_, _, err := server.SearchPreprints(ctx, nil, PreprintSearchInput{Query: "study"})
+			return err
+		}},
+		{"doi", func() error {
+			_, _, err := server.ResolveDOI(ctx, nil, DOIInput{Identifier: "10.1234/study"})
+			return err
+		}},
+	}
+	for _, test := range calls {
+		t.Run(test.name, func(t *testing.T) {
+			if err := test.call(); err == nil {
+				t.Fatal("backend failure returned nil error")
+			}
+		})
+	}
+}
+
 func TestServerToolInputSchemasMatchPackagedContract(t *testing.T) {
 	session := connectTestServer(t, &fakeOSFClient{})
 
 	want := map[string][]string{
-		"osf_whoami":             {},
-		"osf_projects_list":      {},
-		"osf_project_get":        {"id"},
-		"osf_components_list":    {"id"},
-		"osf_files_list":         {"id", "path"},
-		"osf_file_versions_list": {"id"},
-		"osf_addons_list":        {"id"},
-		"osf_wikis_list":         {"id"},
-		"osf_comments_list":      {"id"},
-		"osf_logs_list":          {"id"},
-		"osf_identifiers_list":   {"id"},
-		"osf_contributors_list":  {"id"},
-		"osf_search":             {"query", "limit"},
-		"osf_preprints_list":     {"provider", "limit"},
-		"osf_preprints_search":   {"query", "provider", "limit"},
-		"osf_doi_resolve":        {"identifier"},
+		"osf_whoami":                  {},
+		"osf_projects_list":           {},
+		"osf_project_get":             {"id"},
+		"osf_components_list":         {"id"},
+		"osf_files_list":              {"id", "path"},
+		"osf_file_versions_list":      {"id"},
+		"osf_addons_list":             {"id"},
+		"osf_wikis_list":              {"id"},
+		"osf_comments_list":           {"id"},
+		"osf_logs_list":               {"id"},
+		"osf_identifiers_list":        {"id"},
+		"osf_contributors_list":       {"id"},
+		"osf_search":                  {"query", "limit"},
+		"osf_preprints_list":          {"provider", "limit"},
+		"osf_preprints_search":        {"query", "provider", "limit"},
+		"osf_doi_resolve":             {"identifier"},
+		"zenodo_oai_records_list":     {"metadataPrefix", "set", "from", "until", "resumptionToken"},
+		"zenodo_oai_sets_list":        {},
+		"zenodo_oai_formats_list":     {"identifier"},
+		"repository_capabilities_get": {"provider"},
+		"zenodo_records_search":       {"query", "limit"},
+		"zenodo_record_get":           {"id"},
+		"zenodo_files_list":           {"id"},
 	}
 	for tool, err := range session.Tools(t.Context(), nil) {
 		if err != nil {
@@ -89,6 +240,51 @@ func TestServerToolInputSchemasMatchPackagedContract(t *testing.T) {
 	}
 	for name := range want {
 		t.Fatalf("missing tool %q", name)
+	}
+}
+
+func TestServerToolSchemasMatchCompatibilityFixture(t *testing.T) {
+	fixture, err := os.ReadFile("testdata/compatibility/mcp-tools.json")
+	if err != nil {
+		t.Fatalf("read compatibility fixture: %v", err)
+	}
+	var want struct {
+		SchemaVersion int `json:"schemaVersion"`
+		Tools         []struct {
+			Name       string   `json:"name"`
+			Properties []string `json:"properties"`
+		} `json:"tools"`
+	}
+	if err := json.Unmarshal(fixture, &want); err != nil {
+		t.Fatalf("decode compatibility fixture: %v", err)
+	}
+	if want.SchemaVersion != 1 {
+		t.Fatalf("schema version = %d, want 1", want.SchemaVersion)
+	}
+	wantTools := map[string][]string{}
+	for _, tool := range want.Tools {
+		wantTools[tool.Name] = append([]string{}, tool.Properties...)
+		sort.Strings(wantTools[tool.Name])
+	}
+
+	session := connectTestServer(t, &fakeOSFClient{})
+	gotTools := map[string][]string{}
+	for tool, err := range session.Tools(t.Context(), nil) {
+		if err != nil {
+			t.Fatalf("Tools returned error: %v", err)
+		}
+		properties := schemaProperties(t, tool.InputSchema)
+		got := make([]string, 0, len(properties))
+		for property := range properties {
+			got = append(got, property)
+		}
+		sort.Strings(got)
+		gotTools[tool.Name] = got
+	}
+	gotJSON, _ := json.Marshal(gotTools)
+	wantJSON, _ := json.Marshal(wantTools)
+	if string(gotJSON) != string(wantJSON) {
+		t.Fatalf("MCP compatibility contract changed:\n got: %s\nwant: %s", gotJSON, wantJSON)
 	}
 }
 
@@ -331,7 +527,7 @@ func TestToolFailureRedactsSecretMaterial(t *testing.T) {
 func connectTestServer(t *testing.T, osf OSFClient) *mcp.ClientSession {
 	t.Helper()
 	ctx := context.Background()
-	server := New(osf, Options{Version: "test"})
+	server := New(osf, Options{Version: "test", ZenodoOAI: fakeZenodoOAI{}, ZenodoREST: &fakeZenodoREST{}})
 	t1, t2 := mcp.NewInMemoryTransports()
 	if _, err := server.Connect(ctx, t1, nil); err != nil {
 		t.Fatalf("server Connect: %v", err)
@@ -403,6 +599,35 @@ type fakeOSFClient struct {
 	gotDOI           string
 	gotRelatedID     string
 	failErr          error
+}
+
+type fakeZenodoOAI struct {
+	failErr error
+	page    zenodooai.Page
+}
+
+func (fake fakeZenodoOAI) ListRecords(_ context.Context, request zenodooai.Request) (zenodooai.Page, error) {
+	if fake.failErr != nil {
+		return zenodooai.Page{}, fake.failErr
+	}
+	if fake.page.Records != nil || !fake.page.Next.Empty() {
+		return fake.page, nil
+	}
+	return zenodooai.Page{Records: []zenodooai.Record{{Header: zenodooai.Header{Identifier: "oai:zenodo.org:1001", Datestamp: "2026-07-15"}, Provenance: zenodooai.Provenance{MetadataPrefix: request.MetadataPrefix}}}}, nil
+}
+
+func (fake fakeZenodoOAI) ListSets(context.Context) ([]zenodooai.Set, error) {
+	if fake.failErr != nil {
+		return nil, fake.failErr
+	}
+	return []zenodooai.Set{{Spec: "user-demo", Name: "Demo"}}, nil
+}
+
+func (fake fakeZenodoOAI) ListMetadataFormats(context.Context, string) ([]zenodooai.MetadataFormat, error) {
+	if fake.failErr != nil {
+		return nil, fake.failErr
+	}
+	return []zenodooai.MetadataFormat{{Prefix: "oai_dc"}}, nil
 }
 
 func (f *fakeOSFClient) ListFileVersions(_ context.Context, id string) ([]osfapi.FileVersion, error) {

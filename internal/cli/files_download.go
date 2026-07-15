@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -16,17 +17,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type countingReader struct {
-	reader io.Reader
-	n      int64
-}
-
-func (r *countingReader) Read(p []byte) (int, error) {
-	n, err := r.reader.Read(p)
-	r.n += int64(n)
-	return n, err
-}
-
 func int64Ptr(v int64) *int64 {
 	return &v
 }
@@ -38,6 +28,9 @@ type filesDownloadResult struct {
 	Source         string                  `json:"source"`
 	Destination    string                  `json:"destination"`
 	ConflictPolicy download.ConflictPolicy `json:"conflictPolicy"`
+	Resumed        bool                    `json:"resumed"`
+	Checksum       string                  `json:"checksum,omitempty"`
+	CheckpointPath string                  `json:"checkpointPath,omitempty"`
 	Records        []filesDownloadRecord   `json:"records"`
 }
 
@@ -128,53 +121,48 @@ func downloadSingleFile(ctx context.Context, client readonlyClient, source, dest
 		RemotePath: source,
 		LocalPath:  localPath,
 	}
-	if file.ID != "" || file.Attributes.Name != "" || file.Attributes.Kind != "" {
-		size := int64Ptr(file.Attributes.Size)
-		record.Bytes = size
+	if file.Attributes.Size > 0 {
+		record.Bytes = int64Ptr(file.Attributes.Size)
 	}
 
-	src, err := client.OpenDownload(ctx, downloadURL)
-	if err != nil {
-		record.Status = download.FolderDownloadFailed
-		record.Error = err.Error()
-		return filesDownloadResult{
-			Mode:           "file",
-			Source:         source,
-			Destination:    localPath,
-			ConflictPolicy: policy,
-			Records:        []filesDownloadRecord{record},
-		}, err
+	expectedChecksum := ""
+	if md5 := strings.TrimSpace(file.Attributes.Extra.Hashes.MD5); md5 != "" {
+		expectedChecksum = "md5:" + md5
 	}
-	defer func() { _ = src.Close() }()
-
-	counting := &countingReader{reader: src}
-	written, err := download.WriteStreamAtomically(localPath, counting, 0o644, policy)
-	if err != nil {
-		record.Status = download.FolderDownloadFailed
-		record.Error = err.Error()
-		return filesDownloadResult{
-			Mode:           "file",
-			Source:         source,
-			Destination:    localPath,
-			ConflictPolicy: policy,
-			Records:        []filesDownloadRecord{record},
-		}, err
-	}
-
-	if written {
-		record.Status = download.FolderDownloadWritten
-		record.Bytes = int64Ptr(counting.n)
-	} else {
-		record.Status = download.FolderDownloadSkipped
-	}
-
-	return filesDownloadResult{
+	resume, err := download.ResumeStreamAtomically(func(offset int64) (io.ReadCloser, error) {
+		return openDownloadAt(ctx, client, downloadURL, offset)
+	}, download.ResumeOptions{
+		Destination:      localPath,
+		Source:           downloadURL,
+		ExpectedSize:     record.Bytes,
+		ExpectedChecksum: expectedChecksum,
+		Policy:           policy,
+		Context:          ctx,
+	})
+	result := filesDownloadResult{
 		Mode:           "file",
 		Source:         source,
 		Destination:    localPath,
 		ConflictPolicy: policy,
+		Resumed:        resume.Resumed,
+		Checksum:       resume.Checksum,
+		CheckpointPath: resume.CheckpointPath,
 		Records:        []filesDownloadRecord{record},
-	}, nil
+	}
+	if err != nil {
+		record.Status = download.FolderDownloadFailed
+		record.Error = err.Error()
+		result.Records[0] = record
+		return result, err
+	}
+	if resume.Completed {
+		record.Status = download.FolderDownloadWritten
+		record.Bytes = int64Ptr(resume.Bytes)
+	} else {
+		record.Status = download.FolderDownloadSkipped
+	}
+	result.Records[0] = record
+	return result, nil
 }
 
 func downloadFolderTree(ctx context.Context, client readonlyClient, source, destination string, policy download.ConflictPolicy) (filesDownloadResult, error) {
@@ -242,16 +230,42 @@ func collectFolderDownloadFiles(ctx context.Context, client readonlyClient, node
 
 		remotePath := path.Join(append(append([]string(nil), segments...), name)...)
 		urlCopy := downloadURL
+		expectedChecksum := ""
+		if md5 := strings.TrimSpace(file.Attributes.Extra.Hashes.MD5); md5 != "" {
+			expectedChecksum = "md5:" + md5
+		}
 		planned = append(planned, download.FolderDownloadFile{
 			RemotePath: remotePath,
 			Open: func() (io.ReadCloser, error) {
 				return client.OpenDownload(ctx, urlCopy)
 			},
-			KnownBytes: int64Ptr(file.Attributes.Size),
+			OpenRange: func(offset int64) (io.ReadCloser, error) {
+				return openDownloadAt(ctx, client, urlCopy, offset)
+			},
+			SourceIdentity:   urlCopy,
+			ExpectedChecksum: expectedChecksum,
+			KnownBytes: func() *int64 {
+				if file.Attributes.Size <= 0 {
+					return nil
+				}
+				return int64Ptr(file.Attributes.Size)
+			}(),
+			Context: ctx,
 		})
 	}
 
 	return planned, nil
+}
+
+func openDownloadAt(ctx context.Context, client readonlyClient, downloadURL string, offset int64) (io.ReadCloser, error) {
+	if offset == 0 {
+		return client.OpenDownload(ctx, downloadURL)
+	}
+	src, err := client.OpenDownloadRange(ctx, downloadURL, offset)
+	if errors.Is(err, osfapi.ErrRangeUnsupported) {
+		return nil, download.ErrRangeUnsupported
+	}
+	return src, err
 }
 
 func resolveFileSource(ctx context.Context, client readonlyClient, source string) (osfapi.StorageFile, string, error) {
@@ -276,7 +290,8 @@ func resolveFileSource(ctx context.Context, client readonlyClient, source string
 			return osfapi.StorageFile{}, "", fmt.Errorf("could not find file id in %q", source)
 		}
 
-		if parsed.Host == "files.osf.io" || strings.Contains(parsed.Path, "/download") || strings.Contains(parsed.RawQuery, "download=1") {
+		isOSFFilesHost := parsed.Host == "files.osf.io" || (strings.HasPrefix(parsed.Host, "files.") && strings.HasSuffix(parsed.Host, ".osf.io"))
+		if isOSFFilesHost || strings.Contains(parsed.Path, "/download") || strings.Contains(parsed.RawQuery, "download=1") {
 			return osfapi.StorageFile{}, trimmed, nil
 		}
 

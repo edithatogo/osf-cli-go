@@ -1,8 +1,10 @@
 package osfapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,7 +14,215 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/edithatogo/osf-cli-go/internal/observability"
 )
+
+func TestClientEmitsRedactedRequestEvent(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		_, _ = io.WriteString(w, `{"data":{"id":"user-1","type":"users","attributes":{"full_name":"Test User"}}}`)
+	}))
+	defer srv.Close()
+	var events bytes.Buffer
+	emitter := observability.NewJSONEmitter(&events, observability.LevelInfo)
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()), WithBearerToken("secret-token"), WithObserver(emitter))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.CurrentUser(observability.WithOperationID(context.Background(), "op-api-test")); err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(events.Bytes(), []byte(`"name":"api.request"`)) || bytes.Contains(events.Bytes(), []byte("secret-token")) {
+		t.Fatalf("events=%q", events.String())
+	}
+}
+
+func TestClientEmitsErrorAndCancellationRequestEvents(t *testing.T) {
+	var events strings.Builder
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = io.WriteString(w, `{"errors":[{"title":"failed"}]}`)
+	}))
+	defer srv.Close()
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()), WithObserver(observability.NewJSONEmitter(&events, observability.LevelInfo)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = client.GetNode(context.Background(), "failed")
+	if !strings.Contains(events.String(), `"outcome":"error"`) {
+		t.Fatalf("error event=%q", events.String())
+	}
+
+	cancelled := context.Background()
+	cancelled, cancel := context.WithCancel(cancelled)
+	cancel()
+	client, err = New(srv.URL, WithHTTPClient(&http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+		return nil, context.Canceled
+	})}), WithObserver(observability.NewJSONEmitter(&events, observability.LevelInfo)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = client.GetNode(cancelled, "cancelled")
+	if !strings.Contains(events.String(), `"outcome":"canceled"`) {
+		t.Fatalf("cancellation event=%q", events.String())
+	}
+}
+
+func TestWaterButlerUploadURLAndRangeValidation(t *testing.T) {
+	for _, test := range []struct {
+		name, conflict, want, err string
+	}{
+		{"fail", "", "conflict=fail", ""},
+		{"explicit fail", "fail", "conflict=fail", ""},
+		{"overwrite", "overwrite", "conflict=overwrite", ""},
+		{"bad conflict", "merge", "", "unsupported upload conflict"},
+		{"path traversal", "", "", "single path segment"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			name := "report.csv"
+			if test.name == "path traversal" {
+				name = "../report.csv"
+			}
+			got, err := waterButlerUploadURL("https://files.osf.io/provider", name, test.conflict)
+			if test.err != "" {
+				if err == nil || !strings.Contains(err.Error(), test.err) {
+					t.Fatalf("error=%v, want %q", err, test.err)
+				}
+				return
+			}
+			if err != nil || !strings.Contains(got, test.want) || !strings.Contains(got, "kind=file") {
+				t.Fatalf("url=%q err=%v", got, err)
+			}
+		})
+	}
+	client, err := New("https://api.osf.io/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.OpenDownloadRange(context.Background(), "https://files.osf.io/file", -1); err == nil {
+		t.Fatal("negative range offset returned nil error")
+	}
+}
+
+func TestUploadOverwriteUsesExistingWaterButlerTarget(t *testing.T) {
+	var uploaded string
+	var srv *httptest.Server
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			_, _ = io.WriteString(w, `{"data":[{"attributes":{"name":"report.csv"},"links":{"upload":"`+srv.URL+`/target"}}]}`)
+		case http.MethodPut:
+			if r.URL.Path != "/target" {
+				t.Fatalf("upload path=%q", r.URL.Path)
+			}
+			body, _ := io.ReadAll(r.Body)
+			uploaded = string(body)
+			w.WriteHeader(http.StatusCreated)
+		default:
+			t.Fatalf("method=%s", r.Method)
+		}
+	}))
+	defer srv.Close()
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := client.UploadFile(context.Background(), srv.URL+"/provider", "report.csv", strings.NewReader("contents"), "overwrite"); err != nil {
+		t.Fatal(err)
+	}
+	if uploaded != "contents" {
+		t.Fatalf("uploaded=%q, want contents", uploaded)
+	}
+}
+
+func TestResolveDOIWithHTTPClientValidatesAndHandlesFallback(t *testing.T) {
+	if _, err := resolveDOIWithHTTPClient(context.Background(), "not-a-doi", nil); err == nil {
+		t.Fatal("invalid DOI returned nil error")
+	}
+	if _, err := resolveDOIWithHTTPClient(context.Background(), "https://example.org/10.1234/test", nil); err == nil {
+		t.Fatal("non-doi.org URL returned nil error")
+	}
+
+	tests := []struct {
+		name       string
+		transport  roundTripFunc
+		wantMethod []string
+		wantErr    string
+	}{
+		{name: "head success", transport: func(req *http.Request) (*http.Response, error) {
+			return doiResponse(req, http.StatusOK, "https://osf.io/project-1/"), nil
+		}, wantMethod: []string{http.MethodHead}},
+		{name: "get fallback", transport: func(req *http.Request) (*http.Response, error) {
+			status := http.StatusMethodNotAllowed
+			if req.Method == http.MethodGet {
+				status = http.StatusOK
+			}
+			return doiResponse(req, status, "https://osf.io/project-1/"), nil
+		}, wantMethod: []string{http.MethodHead, http.MethodGet}},
+		{name: "non osf destination", transport: func(req *http.Request) (*http.Response, error) {
+			return doiResponse(req, http.StatusOK, "https://example.org/elsewhere"), nil
+		}, wantErr: "non-OSF host"},
+		{name: "http failure", transport: func(req *http.Request) (*http.Response, error) {
+			return doiResponse(req, http.StatusInternalServerError, "https://osf.io/project-1/"), nil
+		}, wantErr: "returned HTTP 500"},
+		{name: "transport failure", transport: func(*http.Request) (*http.Response, error) {
+			return nil, errors.New("network down")
+		}, wantErr: "network down"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var methods []string
+			client := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				methods = append(methods, req.Method)
+				return test.transport(req)
+			})}
+			got, err := resolveDOIWithHTTPClient(context.Background(), "10.1234/test", client)
+			if test.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), test.wantErr) {
+					t.Fatalf("error = %v, want %q", err, test.wantErr)
+				}
+				return
+			}
+			if err != nil || got.ResolvedURL != "https://osf.io/project-1/" {
+				t.Fatalf("resolution=%+v err=%v", got, err)
+			}
+			if !slicesEqual(methods, test.wantMethod) {
+				t.Fatalf("methods=%v want %v", methods, test.wantMethod)
+			}
+		})
+	}
+}
+
+func TestClientResolveDOIUsesConfiguredHTTPClient(t *testing.T) {
+	client, err := New("https://api.osf.io/v2/", WithHTTPClient(&http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		return doiResponse(req, http.StatusOK, "https://osf.io/project-1/"), nil
+	})}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := client.ResolveDOI(context.Background(), "10.1234/test")
+	if err != nil || got.ResolvedURL != "https://osf.io/project-1/" {
+		t.Fatalf("resolution=%+v err=%v", got, err)
+	}
+}
+
+func doiResponse(req *http.Request, status int, location string) *http.Response {
+	parsed, _ := url.Parse(location)
+	return &http.Response{StatusCode: status, Body: io.NopCloser(strings.NewReader("")), Request: &http.Request{Method: req.Method, URL: parsed}}
+}
+
+func slicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
 
 func FuzzResolveReference(f *testing.F) {
 	for _, seed := range []string{"/v2/nodes/project-123/", "?page=2", "https://example.org/resource", "\x00"} {
@@ -276,6 +486,52 @@ func TestGetStorageFileAndOpenDownload(t *testing.T) {
 	}
 	if string(got) != "downloaded bytes" {
 		t.Fatalf("download body = %q", string(got))
+	}
+}
+
+func TestOpenDownloadRangeHonorsPartialContent(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got, want := r.Header.Get("Range"), "bytes=3-"; got != want {
+			t.Fatalf("Range header = %q, want %q", got, want)
+		}
+		w.WriteHeader(http.StatusPartialContent)
+		_, _ = w.Write([]byte("def"))
+	}))
+	defer srv.Close()
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := client.OpenDownloadRange(t.Context(), srv.URL+"/download", 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = body.Close() }()
+	got, err := io.ReadAll(body)
+	if err != nil || string(got) != "def" {
+		t.Fatalf("range body=%q err=%v", got, err)
+	}
+}
+
+func TestOpenDownloadRangeRejectsIgnoredRange(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("abcdef"))
+	}))
+	defer srv.Close()
+	client, err := New(srv.URL, WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := client.OpenDownloadRange(t.Context(), srv.URL+"/download", 3)
+	if body != nil {
+		_ = body.Close()
+	}
+	if !errors.Is(err, ErrRangeUnsupported) {
+		t.Fatalf("error=%v, want ErrRangeUnsupported", err)
 	}
 }
 
@@ -814,6 +1070,11 @@ func TestDeleteNode(t *testing.T) {
 	t.Parallel()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"data":[]}`))
+			return
+		}
 		if got := r.Method; got != http.MethodDelete {
 			t.Fatalf("method = %q", got)
 		}
@@ -1060,14 +1321,20 @@ func TestListStorageFilesWithSegments(t *testing.T) {
 func TestUploadFile(t *testing.T) {
 	t.Parallel()
 
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	var srv *httptest.Server
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = fmt.Fprintf(w, `{"data":[{"attributes":{"name":"report.txt"},"links":{"upload":%q}}]}`, srv.URL+"/v1/providers/osfstorage/abc123/report-id?kind=file")
+			return
+		}
 		if got := r.Method; got != http.MethodPut {
 			t.Fatalf("method = %q", got)
 		}
 		if got := r.Header.Get("Authorization"); got != "Bearer token-123" {
 			t.Fatalf("authorization header = %q", got)
 		}
-		if got := r.URL.Path; got != "/v1/providers/osfstorage/abc123/report.txt" {
+		if got := r.URL.Path; got != "/v1/providers/osfstorage/abc123/report-id" {
 			t.Fatalf("path = %q", got)
 		}
 		if got := r.Header.Get("Content-Type"); got != "text/plain; charset=utf-8" {
@@ -1076,7 +1343,7 @@ func TestUploadFile(t *testing.T) {
 		if got := r.URL.Query().Get("kind"); got != "file" {
 			t.Fatalf("kind = %q", got)
 		}
-		if got := r.URL.Query().Get("conflict"); got != "overwrite" {
+		if got := r.URL.Query().Get("conflict"); got != "" {
 			t.Fatalf("conflict = %q", got)
 		}
 		body, _ := io.ReadAll(r.Body)
@@ -1221,6 +1488,11 @@ func TestDeleteFile(t *testing.T) {
 	t.Parallel()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"data":[]}`))
+			return
+		}
 		if got := r.Method; got != http.MethodDelete {
 			t.Fatalf("method = %q", got)
 		}
@@ -1439,6 +1711,32 @@ func TestGetNodeFilesProvider(t *testing.T) {
 		t.Fatalf("GetNodeFilesProvider returned error: %v", err)
 	}
 	if providerURL != "https://files.osf.io/v1/providers/osfstorage/abc123" {
+		t.Fatalf("provider URL = %q", providerURL)
+	}
+}
+
+func TestGetNodeFilesProviderSupportsCurrentOSFShape(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Path; got != "/v2/nodes/project-123/files/" {
+			t.Fatalf("path = %q", got)
+		}
+		w.Header().Set("Content-Type", "application/vnd.api+json")
+		_, _ = w.Write([]byte(`{"data":[{"id":"project-123:osfstorage","type":"files","attributes":{"provider":"osfstorage","name":"osfstorage","kind":"folder"},"links":{"upload":"https://files.osf.io/v1/resources/project-123/providers/osfstorage/","new_folder":"https://files.osf.io/v1/resources/project-123/providers/osfstorage/?kind=folder"}}],"links":{}}`))
+	}))
+	defer srv.Close()
+
+	client, err := New(srv.URL+"/v2/", WithHTTPClient(srv.Client()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	providerURL, err := client.GetNodeFilesProvider(t.Context(), "project-123")
+	if err != nil {
+		t.Fatalf("GetNodeFilesProvider returned error: %v", err)
+	}
+	if providerURL != "https://files.osf.io/v1/resources/project-123/providers/osfstorage/" {
 		t.Fatalf("provider URL = %q", providerURL)
 	}
 }

@@ -1,0 +1,24 @@
+{
+  "hits": {
+    "total": 3,
+    "hits": [
+      {
+        "id": "1003",
+        "conceptrecid": "9003",
+        "doi": "10.5281/zenodo.1003",
+        "metadata": {"title": "Third record", "creators": [{"name": "Example, C"}]},
+        "files": [
+          {
+            "id": "legacy-file",
+            "key": "legacy.txt",
+            "size": 4,
+            "checksum": "md5:098f6bcd4621d373cade4e832627b4f6",
+            "links": {"self": "https://zenodo.org/api/files/legacy-file"}
+          }
+        ],
+        "links": {"self": "https://zenodo.org/api/records/1003"}
+      }
+    ]
+  },
+  "links": {}
+}
