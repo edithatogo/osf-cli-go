@@ -1,0 +1,1 @@
+Review: retained nil-safe observability contract coverage with an explicit staticcheck suppression; golangci-lint run ./... passes.
