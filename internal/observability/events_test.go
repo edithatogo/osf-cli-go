@@ -120,3 +120,55 @@ func TestRedactedErrorRemovesLocalPaths(t *testing.T) {
 		t.Fatalf("error=%+v", err)
 	}
 }
+
+func TestObservabilityContractsCoverContextClassificationAndEndpointClasses(t *testing.T) {
+	t.Parallel()
+	if OperationID(nil) != "" || RequestID(nil) != "" || EmitterFromContext(nil) != nil {
+		t.Fatal("nil context returned values")
+	}
+	ctx := WithRequestID(WithOperationID(context.Background(), " op-1 "), " req-1 ")
+	if OperationID(ctx) != "op-1" || RequestID(ctx) != "req-1" {
+		t.Fatalf("context ids = %q/%q", OperationID(ctx), RequestID(ctx))
+	}
+	if got := NewID(" test "); !strings.HasPrefix(got, "test-") {
+		t.Fatalf("NewID = %q", got)
+	}
+	for _, test := range []struct {
+		err  error
+		want string
+	}{
+		{errors.New("forbidden operation"), "authorization"},
+		{errors.New("resource not found"), "not_found"},
+		{errors.New("decode json response"), "decode"},
+		{errors.New("unexpected failure"), "internal"},
+	} {
+		if got := ClassifyError(test.err); got != test.want {
+			t.Fatalf("ClassifyError(%v) = %q, want %q", test.err, got, test.want)
+		}
+	}
+	for _, test := range []struct {
+		value, want string
+	}{
+		{"https://files.osf.io/file", "storage"},
+		{"https://api.osf.io/v2/nodes", "api"},
+		{"https://example.test/path", "external"},
+		{"not a URL", "unknown"},
+		{"/relative", "unknown"},
+	} {
+		if got := EndpointClass(test.value); got != test.want {
+			t.Fatalf("EndpointClass(%q) = %q, want %q", test.value, got, test.want)
+		}
+	}
+	fields := redactMap(map[string]any{
+		"password": "secret", "source": "/tmp/source", "error": "Bearer token",
+		"fields": map[string]any{"api_key": "secret", "count": 3},
+		"items":  []any{"/tmp/path", map[string]any{"credential": "secret"}},
+	})
+	if fields["password"] != "[REDACTED]" || fields["source"] != "[REDACTED_PATH]" {
+		t.Fatalf("redacted fields = %#v", fields)
+	}
+	if normalizeLevel("debug") != LevelDebug || normalizeLevel("unknown") != LevelInfo || !levelAllowed(LevelError, LevelWarn) || levelAllowed(LevelDebug, LevelError) {
+		t.Fatal("level policy mismatch")
+	}
+	NopEmitter{}.Emit(Event{})
+}

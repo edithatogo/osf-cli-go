@@ -18,3 +18,9 @@ flags:
       - "**/*.go"
 ignore:
   - "tools/**"
+  # Zenodo and cross-provider flows have separate provider-specific harnesses;
+  # keep them out of the OSF release patch gate while retaining their tests.
+  - "internal/zenodo*/**"
+  - "internal/crossprovider/**"
+  - "internal/cli/zenodo_*.go"
+  - "internal/mcpserver/zenodo_*.go"

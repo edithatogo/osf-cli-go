@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/edithatogo/osf-cli-go/internal/download"
 )
@@ -493,6 +494,64 @@ func TestCreateDraftCleansMalformedProviderResponse(t *testing.T) {
 	}
 	if !deleted.Load() {
 		t.Fatal("CreateDraft did not clean malformed draft")
+	}
+}
+
+func TestTransferHelpersCoverBoundaryPolicies(t *testing.T) {
+	t.Parallel()
+	if got := normalizeChecksum("ABCDEF0123456789ABCDEF0123456789"); got != "md5:abcdef0123456789abcdef0123456789" {
+		t.Fatalf("normalizeChecksum = %q", got)
+	}
+	for _, value := range []string{"md5:abcdef0123456789abcdef0123456789", "md5:ABCDEF0123456789ABCDEF0123456789"} {
+		if !validMD5(value) {
+			t.Fatalf("validMD5(%q) = false", value)
+		}
+	}
+	for _, value := range []string{"", "md5:short", "sha256:abcdef", "md5:zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"} {
+		if validMD5(value) {
+			t.Fatalf("validMD5(%q) = true", value)
+		}
+	}
+	for _, test := range []struct {
+		value  string
+		offset int64
+		want   bool
+	}{
+		{value: "bytes 4-", offset: 4, want: true},
+		{value: "bytes 3-", offset: 4, want: false},
+		{value: "", offset: 0, want: false},
+	} {
+		if got := validContentRange(test.value, test.offset); got != test.want {
+			t.Fatalf("validContentRange(%q, %d) = %v", test.value, test.offset, got)
+		}
+	}
+	for _, test := range []struct {
+		value, want string
+	}{
+		{"2", "2s"},
+		{" 4 ", "4s"},
+		{"-1", "200ms"},
+		{"9", "5s"},
+		{"99", "5s"},
+	} {
+		if got := retryDelay(test.value, 200*time.Millisecond); got.String() != test.want {
+			t.Fatalf("retryDelay(%q) = %s, want %s", test.value, got, test.want)
+		}
+	}
+	if body, err := readBounded(strings.NewReader("ok"), 2); err != nil || string(body) != "ok" {
+		t.Fatalf("readBounded success = %q, %v", body, err)
+	}
+	if _, err := readBounded(strings.NewReader("too long"), 2); !errors.Is(err, ErrResponseTooLarge) {
+		t.Fatalf("readBounded overflow = %v", err)
+	}
+	if got := rawID(json.RawMessage(`"draft-1"`)); got != "draft-1" {
+		t.Fatalf("rawID string = %q", got)
+	}
+	if got := rawID(json.RawMessage(`123`)); got != "123" {
+		t.Fatalf("rawID number = %q", got)
+	}
+	if got := rawID(json.RawMessage(`true`)); got != "" {
+		t.Fatalf("rawID boolean = %q", got)
 	}
 }
 
