@@ -1,0 +1,1 @@
+Review: removed unpinned MCPB npm installer from both workflows after Scorecard finding; native deterministic bundling retained; actionlint, go test ./..., and git diff --check pass.
