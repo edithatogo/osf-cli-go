@@ -36,34 +36,3 @@ jobs:
           name: plugin-archives-${{ runner.os }}
           path: dist/plugins/*.zip
           retention-days: 30
-
-  publish:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
-        with:
-          pattern: plugin-archives-*
-          path: dist
-          merge-multiple: true
-      - name: Upload plugin release assets
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          for attempt in $(seq 1 24); do
-            if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-              break
-            fi
-            if [ "$attempt" = 24 ]; then
-              echo "release $GITHUB_REF_NAME was not created" >&2
-              exit 1
-            fi
-            sleep 5
-          done
-          mapfile -t assets < <(find dist -type f -name '*.zip' -print)
-          test "${#assets[@]}" -gt 0
-          gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --repo "$GITHUB_REPOSITORY" --clobber
