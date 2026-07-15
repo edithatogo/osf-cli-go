@@ -185,6 +185,7 @@ func TestResumeFileUploadInvalidatesMalformedCheckpointAndAcceptsNilContext(t *t
 	if err := os.WriteFile(checkpoint, []byte("{"), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	//nolint:staticcheck // nil is intentional coverage for the documented nil-context fallback.
 	result, err := ResumeFileUpload(nil, UploadOptions{SourcePath: source, SourceIdentity: "source", CheckpointPath: checkpoint}, func(_ context.Context, offset, total int64, content io.Reader) (int64, bool, error) {
 		body, readErr := io.ReadAll(content)
 		return offset + int64(len(body)), total == int64(len(body)), readErr
