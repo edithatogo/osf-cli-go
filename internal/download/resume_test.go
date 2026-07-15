@@ -265,6 +265,28 @@ func TestResumeStreamAtomicallyHandlesMalformedCheckpointAndPartialPath(t *testi
 	}
 }
 
+func TestResumeStreamAtomicallyRetainsCheckpointWriteFailure(t *testing.T) {
+	dir := t.TempDir()
+	dst := filepath.Join(dir, "result.txt")
+	checkpoint := resumeCheckpointPath(dst)
+	first := true
+	_, err := ResumeStreamAtomically(func(int64) (io.ReadCloser, error) {
+		if first {
+			first = false
+			if err := os.Remove(checkpoint); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Mkdir(checkpoint, 0o700); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return io.NopCloser(strings.NewReader("content")), nil
+	}, ResumeOptions{Destination: dst, Source: "source", Policy: ConflictOverwrite})
+	if err == nil || !strings.Contains(err.Error(), "finalize resume checkpoint") {
+		t.Fatalf("checkpoint write error=%v, want finalize error", err)
+	}
+}
+
 func TestResumeStreamAtomicallyRejectsStalledReaders(t *testing.T) {
 	dst := filepath.Join(t.TempDir(), "result.txt")
 	result, err := ResumeStreamAtomically(func(int64) (io.ReadCloser, error) {
