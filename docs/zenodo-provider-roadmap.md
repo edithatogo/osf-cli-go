@@ -1,9 +1,10 @@
-# Zenodo Provider Roadmap
+# Repository Provider Roadmap
 
-This roadmap tracks the staged provider-neutral repository layer for OSF and
-Zenodo. The provider contract, public REST reads, and public OAI-PMH harvesting
-are offline-tested; internal write and cross-provider workflows are
-sandbox-validated and remain unavailable as public CLI or MCP writes.
+This roadmap tracks the staged provider-neutral repository layer. OSF and
+Zenodo are the current concrete providers. Their provider contract, public REST
+reads, and public OAI-PMH harvesting are offline-tested; internal write and
+cross-provider workflows are sandbox-validated and remain unavailable as
+public CLI or MCP writes.
 
 ## API mapping
 
@@ -29,6 +30,27 @@ sandbox-validated and remain unavailable as public CLI or MCP writes.
 | 5 | [#108 transfers](https://github.com/edithatogo/osf-cli-go/issues/108), `conductor/archive/zenodo-sandbox-transfers_20260715/`; [#109 publication](https://github.com/edithatogo/osf-cli-go/issues/109), `conductor/archive/zenodo-publication-state_20260715/` | Disposable sandbox evidence proves integrity, cleanup, and irreversible-state safety |
 | 6 | [#110 cross-provider copy](https://github.com/edithatogo/osf-cli-go/issues/110), `conductor/archive/cross-provider-provenance-transfer_20260715/` | Dry-run, provenance, idempotency, compensation, and failure recovery pass |
 | 7 | [#111 release integration](https://github.com/edithatogo/osf-cli-go/issues/111), `conductor/archive/multi-provider-release-integration_20260715/` | CI, release evidence, observability, docs, matrix, and registry claims agree |
+
+## Long-term provider candidates
+
+The following providers are research candidates after the OSF and Zenodo
+write-capability work is complete and production-validated. Listing a provider
+here does not create an implementation track, issue, delivery commitment, API
+support claim, or registry claim.
+
+| Provider | Authoritative API surface to evaluate | Semantics that must remain provider-specific | Entry gate before implementation planning |
+|---|---|---|---|
+| Figshare | Figshare API v2 and upload service | Articles, collections, projects, institutional tenancy, multipart uploads, DOI reservation/publication, and OAuth scopes | Pin the OpenAPI source; audit public/private and institutional behavior; map lifecycle and upload constraints into the provider contract |
+| Dryad | Dryad REST API v2.1, Search API, and partner Submission API | Dataset versions, curation and submission review, partner/API-account authorization, file replacement, DOI lifecycle, and publication charges or institutional coverage | Confirm partner access and terms; pin the supported API version; model curation states and non-technical publication gates |
+| Harvard Dataverse | Dataverse Native, Search, Data Access, and optional SWORD APIs, validated against Harvard Dataverse and portable Dataverse installations | Dataverse collections, dataset drafts and versions, installation-specific metadata blocks, files, embargoes, review workflows, DOI/Handle configuration, and administrator-only operations | Separate portable Dataverse behavior from Harvard-specific policy; inventory API families and server-version drift; define installation capability discovery |
+| Mendeley Data | Mendeley Datasets and File Contents APIs | OAuth application access, draft/public version boundaries, immutable published versions, file-content attachment, media types, and DOI assignment | Verify current developer access and terms; pin media-type versions; assess API longevity and export/migration requirements before accepting write scope |
+
+Candidate evaluation must reuse the provider-qualified identity, lossless native
+metadata, capability negotiation, redacted observability, conformance testing,
+and irreversible-publication controls established for OSF and Zenodo. A future
+provider receives a dedicated specification only after its authoritative API,
+terms, credentials, sandbox or disposable test route, and lifecycle semantics
+have been verified.
 
 ## Architecture guardrails
 

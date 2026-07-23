@@ -15,7 +15,7 @@ nav:
   - Examples: examples.md
   - Architecture: architecture.md
   - Zenodo API provenance: zenodo-api-provenance.md
-  - Zenodo provider roadmap: zenodo-provider-roadmap.md
+  - Repository provider roadmap: zenodo-provider-roadmap.md
   - Repository provider contract: repository-provider-contract.md
   - Zenodo read-only client: zenodo-readonly-client.md
   - Zenodo provider CLI: zenodo-cli.md
