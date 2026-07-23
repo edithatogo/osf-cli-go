@@ -33,7 +33,7 @@ func newZenodoCommand(rest zenodoRESTClient, client zenodoOAIClient) *cobra.Comm
 	command := &cobra.Command{Use: "zenodo", Short: "Use provider-specific Zenodo workflows"}
 	oai := &cobra.Command{Use: "oai", Short: "Harvest public Zenodo OAI-PMH metadata"}
 	oai.AddCommand(newZenodoOAIHarvestCommand(client), newZenodoOAISetsCommand(client), newZenodoOAIFormatsCommand(client))
-	command.AddCommand(newZenodoRecordsCommand(rest), newZenodoFilesCommand(rest), newZenodoCapabilitiesCommand(), newZenodoPublishCommand(), oai)
+	command.AddCommand(newZenodoRecordsCommand(rest), newZenodoFilesCommand(rest), newZenodoDepositsCommand(), newZenodoCapabilitiesCommand(), newZenodoPublishCommand(), oai)
 	return command
 }
 

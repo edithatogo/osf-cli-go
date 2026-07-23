@@ -3,8 +3,9 @@
 This roadmap tracks the staged provider-neutral repository layer. OSF and
 Zenodo are the current concrete providers. Their provider contract, public REST
 reads, and public OAI-PMH harvesting are offline-tested; internal write and
-cross-provider workflows are sandbox-validated and remain unavailable as
-public CLI or MCP writes.
+cross-provider workflows are sandbox-validated. The minimum sandbox draft and
+publication lifecycle is available through the CLI; production and MCP writes
+remain unavailable.
 
 ## API mapping
 

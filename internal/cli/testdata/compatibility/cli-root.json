@@ -18,7 +18,7 @@
     {"name": "resolve", "status": "implemented", "description": "Resolve an OSF DOI or DOI URL"},
     {"name": "open", "status": "implemented", "description": "Open an OSF node in the default browser"},
     {"name": "whoami", "status": "implemented", "description": "Show the active OSF account (alias for auth whoami)"},
-    {"name": "zenodo", "status": "implemented", "description": "Search and inspect public Zenodo records or harvest OAI-PMH metadata"},
+    {"name": "zenodo", "status": "implemented", "description": "Read public Zenodo records and manage explicitly gated sandbox drafts"},
     {"name": "completion", "status": "implemented", "description": "Generate shell completion scripts"}
   ]
 }

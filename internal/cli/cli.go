@@ -225,7 +225,7 @@ func writeRootContract(w io.Writer) error {
 			{Name: "resolve", Status: "implemented", Description: "Resolve an OSF DOI or DOI URL"},
 			{Name: "open", Status: "implemented", Description: "Open an OSF node in the default browser"},
 			{Name: "whoami", Status: "implemented", Description: "Show the active OSF account (alias for auth whoami)"},
-			{Name: "zenodo", Status: "implemented", Description: "Search and inspect public Zenodo records or harvest OAI-PMH metadata"},
+			{Name: "zenodo", Status: "implemented", Description: "Read public Zenodo records and manage explicitly gated sandbox drafts"},
 			{Name: "completion", Status: "implemented", Description: "Generate shell completion scripts"},
 		},
 	})
