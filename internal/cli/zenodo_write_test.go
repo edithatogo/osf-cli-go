@@ -71,6 +71,8 @@ func (fake *fakeZenodoPublication) ApplyDraftMetadata(_ context.Context, _ strin
 }
 
 func TestZenodoWriteCommandsAreGuardedAndExecutable(t *testing.T) {
+	zenodoProduction = false
+	t.Cleanup(func() { zenodoProduction = false })
 	transfer := &fakeZenodoTransfer{draft: zenodotransfer.Draft{ID: "123", BucketURL: "https://sandbox.zenodo.org/api/files/bucket"}}
 	publication := &fakeZenodoPublication{}
 	oldTransfer, oldPublication := newZenodoTransferClient, newZenodoPublicationClient
@@ -98,6 +100,22 @@ func TestZenodoWriteCommandsAreGuardedAndExecutable(t *testing.T) {
 	}
 	if _, err := executeZenodoWriteCommand("zenodo", "files", "delete", "123", "file-1", "--confirm", "zenodo:delete-file:123:file-1"); err != nil || transfer.deletedFile != "123/file-1" {
 		t.Fatalf("delete=%q err=%v", transfer.deletedFile, err)
+	}
+}
+
+func TestZenodoProductionWritesRequireTargetAndConfirmations(t *testing.T) {
+	zenodoProduction = false
+	t.Cleanup(func() { zenodoProduction = false })
+	transfer := &fakeZenodoTransfer{draft: zenodotransfer.Draft{ID: "123", BucketURL: "https://zenodo.org/api/files/bucket"}}
+	oldTransfer := newZenodoTransferClient
+	newZenodoTransferClient = func() (zenodoTransferClient, error) { return transfer, nil }
+	t.Cleanup(func() { newZenodoTransferClient = oldTransfer })
+
+	if _, err := executeZenodoWriteCommand("zenodo", "deposits", "create", "--production", "--execute"); err == nil || transfer.created {
+		t.Fatal("production draft creation succeeded without its confirmation")
+	}
+	if _, err := executeZenodoWriteCommand("zenodo", "deposits", "create", "--production", "--execute", "--confirm", "zenodo:production:create-draft"); err != nil || !transfer.created {
+		t.Fatalf("production draft creation err=%v created=%v", err, transfer.created)
 	}
 }
 

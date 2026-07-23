@@ -41,6 +41,16 @@ func TestNewRequiresDedicatedTokenAndRejectsProduction(t *testing.T) {
 	}
 }
 
+func TestNewAllowsProductionOnlyWithExplicitOption(t *testing.T) {
+	client, err := New("https://zenodo.org/api/", "secret", WithProductionWrites())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := client.baseURL.String(); got != "https://zenodo.org/api/" {
+		t.Fatalf("base URL = %q", got)
+	}
+}
+
 func TestDraftTransferRetriesVerifiesAndCleansUp(t *testing.T) {
 	t.Parallel()
 	const token = "sandbox-secret-token"

@@ -39,11 +39,13 @@ normalized discovery fields, links, and the lossless `nativeMetadata` JSON.
 File JSON includes the parent record's qualified ID, provider-native file ID,
 key, size, checksum, links, and preferred public download URL.
 
-## Sandbox write commands
+## Guarded write commands
 
 Zenodo writes use only `ZENODO_TOKEN`; the CLI never reuses `OSF_TOKEN`. They
-default to `https://sandbox.zenodo.org/api/`, reject production Zenodo, and
-require explicit execution flags or exact destructive/irreversible challenges.
+default to `https://sandbox.zenodo.org/api/`. Production writes require all of
+`--production`, `ZENODO_BASE_URL=https://zenodo.org/api/`, `--execute`, a
+dedicated token with the required deposit scopes, and an exact action-specific
+confirmation. The production flag alone never changes the endpoint.
 
 ```powershell
 $env:ZENODO_TOKEN = '<dedicated sandbox token>'
@@ -62,6 +64,17 @@ osf.exe zenodo deposits discard 12345
 osf.exe zenodo deposits discard 12345 --execute --confirm 'zenodo:discard:12345:discarded'
 osf.exe zenodo publish 12345 --metadata metadata.json
 osf.exe zenodo publish 12345 --metadata metadata.json --execute --confirm 'zenodo:publish:12345:published'
+```
+
+For production, include `--production` and the required confirmation. For
+example, production draft creation is:
+
+```powershell
+$env:ZENODO_BASE_URL = 'https://zenodo.org/api/'
+$env:ZENODO_TOKEN = '<dedicated production token>'
+
+osf.exe zenodo deposits create --production --execute `
+  --confirm 'zenodo:production:create-draft' --json
 ```
 
 Metadata updates and publication consume a strict JSON object. Unknown fields,
@@ -83,8 +96,10 @@ embargo dates fail locally before a client or authenticated request is created:
 Draft creation and upload require `--execute`. Metadata update emits a validated
 preview without `--execute`. Lifecycle commands emit a dry-run plan by default;
 publish and discard execution additionally require the exact `confirmation`
-value from that plan. File deletion prints its deterministic confirmation in
-the validation error and performs no request until the exact value is supplied.
+value from that plan. Production draft creation, upload, and metadata update
+also require the action-specific confirmation shown by their validation errors.
+File deletion prints its deterministic confirmation in the validation error and
+performs no request until the exact value is supplied.
 
 The implementation follows Zenodo's official depositions, bucket upload, and
 deposition-actions API documented at <https://developers.zenodo.org/>. Uploads
@@ -94,10 +109,10 @@ are whole-file PUTs with explicit `fail`, `skip`, or `overwrite` conflict policy
 
 `osf zenodo capabilities` is generated from the reviewed provider contract.
 The capability contract reports write operations as partial because only
-unpublished sandbox depositions are accepted and lifecycle constraints remain
+unpublished depositions are accepted and lifecycle constraints remain
 provider-specific. `zenodo records create` and `zenodo records update` remain
 unsupported aliases; writes use the explicit `zenodo deposits` and draft-file
-commands above. Production and MCP writes remain unavailable.
+commands above. MCP writes remain unavailable.
 
 OAI-PMH harvesting remains a separate subgroup documented in
 [Zenodo OAI-PMH harvesting](zenodo-oai-pmh.md).
