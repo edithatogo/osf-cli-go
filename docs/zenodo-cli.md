@@ -39,14 +39,65 @@ normalized discovery fields, links, and the lossless `nativeMetadata` JSON.
 File JSON includes the parent record's qualified ID, provider-native file ID,
 key, size, checksum, links, and preferred public download URL.
 
+## Sandbox write commands
+
+Zenodo writes use only `ZENODO_TOKEN`; the CLI never reuses `OSF_TOKEN`. They
+default to `https://sandbox.zenodo.org/api/`, reject production Zenodo, and
+require explicit execution flags or exact destructive/irreversible challenges.
+
+```powershell
+$env:ZENODO_TOKEN = '<dedicated sandbox token>'
+
+osf.exe zenodo deposits create --execute --json
+osf.exe zenodo deposits get 12345 --json
+osf.exe zenodo deposits metadata 12345 --metadata metadata.json
+osf.exe zenodo deposits metadata 12345 --metadata metadata.json --execute
+osf.exe zenodo files draft-list 12345
+osf.exe zenodo files upload 12345 .\dataset.csv --execute
+osf.exe zenodo files delete 12345 file-id --confirm 'zenodo:delete-file:12345:file-id'
+osf.exe zenodo deposits reserve-doi 12345
+osf.exe zenodo deposits new-version 12345
+osf.exe zenodo deposits new-version 12345 --execute
+osf.exe zenodo deposits discard 12345
+osf.exe zenodo deposits discard 12345 --execute --confirm 'zenodo:discard:12345:discarded'
+osf.exe zenodo publish 12345 --metadata metadata.json
+osf.exe zenodo publish 12345 --metadata metadata.json --execute --confirm 'zenodo:publish:12345:published'
+```
+
+Metadata updates and publication consume a strict JSON object. Unknown fields,
+trailing JSON values, incomplete creators, invalid access policies, and stale
+embargo dates fail locally before a client or authenticated request is created:
+
+```json
+{
+  "title": "Dataset title",
+  "description": "Dataset description",
+  "uploadType": "dataset",
+  "creators": [{"name": "Doe, Jane"}],
+  "keywords": ["reproducibility"],
+  "access": "open",
+  "license": "cc-by-4.0"
+}
+```
+
+Draft creation and upload require `--execute`. Metadata update emits a validated
+preview without `--execute`. Lifecycle commands emit a dry-run plan by default;
+publish and discard execution additionally require the exact `confirmation`
+value from that plan. File deletion prints its deterministic confirmation in
+the validation error and performs no request until the exact value is supplied.
+
+The implementation follows Zenodo's official depositions, bucket upload, and
+deposition-actions API documented at <https://developers.zenodo.org/>. Uploads
+are whole-file PUTs with explicit `fail`, `skip`, or `overwrite` conflict policy.
+
 ## Capability guidance
 
 `osf zenodo capabilities` is generated from the reviewed provider contract.
-Write-shaped invocations such as `zenodo records create`, `zenodo files upload`,
-and `zenodo publish` fail with a typed partial-capability error and explain the
-draft, sandbox, or irreversible lifecycle constraint. They never make a write
-request. Sandbox transfers and publication remain owned by issues #108 and
-#109.
+The capability contract reports write operations as partial because only
+unpublished sandbox depositions are accepted and lifecycle constraints remain
+provider-specific. `zenodo records create` and `zenodo records update` remain
+unsupported aliases; writes use the explicit `zenodo deposits` and draft-file
+commands above. Production and MCP writes remain unavailable.
 
 OAI-PMH harvesting remains a separate subgroup documented in
 [Zenodo OAI-PMH harvesting](zenodo-oai-pmh.md).

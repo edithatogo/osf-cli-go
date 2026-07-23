@@ -169,7 +169,7 @@ func newZenodoFilesCommand(client zenodoRESTClient) *cobra.Command {
 		}
 		return output.WriteTable(cmd.OutOrStdout(), []string{"KEY", "SIZE", "CHECKSUM", "DOWNLOAD URL"}, table)
 	}})
-	command.AddCommand(newUnsupportedZenodoCommand("upload <record>", repository.CapabilityFileUpload), newUnsupportedZenodoCommand("delete <record>", repository.CapabilityFileDelete))
+	command.AddCommand(newZenodoDraftFilesListCommand(), newZenodoDraftUploadCommand(), newZenodoDraftFileDeleteCommand())
 	return command
 }
 
@@ -195,7 +195,7 @@ func newZenodoCapabilitiesCommand() *cobra.Command {
 }
 
 func newZenodoPublishCommand() *cobra.Command {
-	return newUnsupportedZenodoCommand("publish <record>", repository.CapabilityPublish)
+	return newZenodoLifecycleCommand("publish", "Publish a validated Zenodo sandbox draft", "draft", "publish", true)
 }
 
 func newUnsupportedZenodoCommand(use string, capability repository.Capability) *cobra.Command {

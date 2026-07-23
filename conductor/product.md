@@ -56,6 +56,10 @@ metadata, or publication safety.
 - Maintain explicit, provenance-preserving OSF-to-Zenodo and Zenodo-to-OSF
   mapping contracts with deterministic checkpoints, truthful partial results,
   and draft-only compensation. Keep unsupported rollback paths fail-closed.
+- Evaluate Figshare, Dryad, Harvard Dataverse, and Mendeley Data as long-term
+  provider candidates after OSF and Zenodo production write validation. Keep
+  them roadmap-only until each provider's authoritative API, terms, credential
+  model, lifecycle, and disposable validation route have been verified.
 - Add shell completions and packaged releases for Windows, macOS, and Linux.
 
 ## Reference Tools And Lessons

@@ -55,8 +55,9 @@ was not confirmed.
 Audit evidence records the record ID, transition, outcome, dry-run status, and
 irreversible/destructive flags. It omits metadata, token values, and scope
 inventories, and redacts token-shaped values from errors. No publication write
-is exposed through the stable CLI or MCP surfaces while this lifecycle remains
-an internal sandbox validation contract.
+is exposed through MCP or against production Zenodo. The stable CLI exposes the
+sandbox lifecycle through dry-run-first commands, exact confirmation challenges,
+and the same state-machine validation used by the live validation harness.
 
 The current sandbox automatically reserves a DOI when a deposition is created
 and returns it in `metadata.prereserve_doi`. The reservation transition verifies

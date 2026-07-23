@@ -94,7 +94,7 @@ func TestZenodoCapabilitiesAndUnsupportedGuidance(t *testing.T) {
 		t.Fatalf("output=%q err=%v", output, err)
 	}
 
-	for _, args := range [][]string{{"zenodo", "records", "create"}, {"zenodo", "records", "update", "1001"}, {"zenodo", "files", "upload", "1001"}, {"zenodo", "publish", "1001"}} {
+	for _, args := range [][]string{{"zenodo", "records", "create"}, {"zenodo", "records", "update", "1001"}} {
 		_, err := executeZenodoRESTCommand(t, &fakeZenodoREST{}, args...)
 		var capabilityErr *repository.CapabilitySupportError
 		if !errors.As(err, &capabilityErr) || !errors.Is(err, repository.ErrPartialCapability) || !strings.Contains(err.Error(), "provider zenodo capability") {
@@ -132,7 +132,7 @@ func TestZenodoHelpKeepsProviderScopeExplicit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"records", "files", "capabilities", "oai"} {
+	for _, want := range []string{"records", "files", "deposits", "capabilities", "oai"} {
 		if !strings.Contains(output, want) {
 			t.Fatalf("help missing %q: %s", want, output)
 		}
