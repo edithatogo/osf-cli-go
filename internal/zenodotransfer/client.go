@@ -1,5 +1,5 @@
-// Package zenodotransfer implements authenticated, sandbox-only Zenodo draft
-// file transfers. It deliberately excludes publication and production writes.
+// Package zenodotransfer implements authenticated Zenodo draft file transfers.
+// Production writes require explicit opt-in and publication remains separate.
 package zenodotransfer
 
 import (
@@ -38,7 +38,7 @@ const (
 
 var (
 	// ErrProductionWrite indicates that a transfer tried to target production Zenodo.
-	ErrProductionWrite = errors.New("zenodo transfers are restricted to the sandbox")
+	ErrProductionWrite = errors.New("zenodo production transfers require explicit opt-in")
 	// ErrResponseTooLarge indicates that a control response exceeded its memory budget.
 	ErrResponseTooLarge = errors.New("zenodo transfer response exceeds configured size limit")
 	// ErrFileTooLarge indicates that a source exceeds the configured transfer budget.
@@ -47,13 +47,13 @@ var (
 	ErrFileCountLimit = errors.New("zenodo draft reached configured file count limit")
 	// ErrRemoteConflict indicates that the requested draft filename already exists.
 	ErrRemoteConflict = errors.New("zenodo draft file already exists")
-	// ErrCrossOrigin indicates an API or file link escaped the configured sandbox origin.
-	ErrCrossOrigin = errors.New("zenodo transfer link leaves configured sandbox API origin")
+	// ErrCrossOrigin indicates an API or file link escaped the configured origin.
+	ErrCrossOrigin = errors.New("zenodo transfer link leaves configured API origin")
 	// ErrInvalidContentRange indicates a resumed response started at the wrong byte.
 	ErrInvalidContentRange = errors.New("zenodo download returned an invalid content range")
 )
 
-// Draft identifies a disposable Zenodo sandbox deposition and its upload bucket.
+// Draft identifies a Zenodo deposition and its upload bucket.
 type Draft struct {
 	ID        string `json:"id"`
 	BucketURL string `json:"bucketUrl"`
@@ -68,7 +68,7 @@ type RemoteFile struct {
 	DownloadURL string `json:"downloadUrl"`
 }
 
-// UploadResult reports a whole-file sandbox upload. Resumed remains false
+// UploadResult reports a whole-file upload. Resumed remains false
 // because the documented Zenodo bucket PUT has no partial-upload protocol.
 type UploadResult struct {
 	Remote         RemoteFile `json:"remote"`
@@ -93,14 +93,14 @@ func (err *APIError) Error() string {
 	if err == nil {
 		return "<nil>"
 	}
-	message := fmt.Sprintf("Zenodo sandbox %s %s returned %d", err.Method, err.Path, err.StatusCode)
+	message := fmt.Sprintf("Zenodo %s %s returned %d", err.Method, err.Path, err.StatusCode)
 	if err.Message != "" {
 		message += ": " + err.Message
 	}
 	return message
 }
 
-// Client performs authenticated writes only against a configured Zenodo sandbox.
+// Client performs authenticated writes against an approved Zenodo endpoint.
 type Client struct {
 	baseURL          *url.URL
 	httpClient       *http.Client
@@ -143,7 +143,7 @@ func WithRetryPolicy(maxRetries int, delay time.Duration) Option {
 // a caller that has already obtained an explicit production confirmation.
 func WithProductionWrites() Option { return func(c *Client) { c.allowProduction = true } }
 
-// New constructs a sandbox-only transfer client. The token must come from the
+// New constructs a transfer client. The token must come from the
 // dedicated ZENODO_TOKEN credential boundary; this package never reads OSF_TOKEN.
 func New(baseURL, token string, options ...Option) (*Client, error) {
 	client := &Client{
@@ -156,14 +156,14 @@ func New(baseURL, token string, options ...Option) (*Client, error) {
 	}
 	token = strings.TrimSpace(token)
 	if token == "" {
-		return nil, errors.New("ZENODO_TOKEN is required for sandbox transfers")
+		return nil, errors.New("ZENODO_TOKEN is required for Zenodo transfers")
 	}
 	if strings.TrimSpace(baseURL) == "" {
 		baseURL = defaultSandboxBaseURL
 	}
 	parsed, err := url.Parse(baseURL)
 	if err != nil {
-		return nil, fmt.Errorf("parse Zenodo sandbox base URL: %w", err)
+		return nil, fmt.Errorf("parse Zenodo base URL: %w", err)
 	}
 	if (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.Host == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" {
 		return nil, errors.New("ZENODO_BASE_URL must be a plain HTTP(S) URL without credentials, query, or fragment")
@@ -194,7 +194,7 @@ func New(baseURL, token string, options ...Option) (*Client, error) {
 			return previousRedirect(request, via)
 		}
 		if len(via) >= 10 {
-			return errors.New("stopped after 10 Zenodo sandbox redirects")
+			return errors.New("stopped after 10 Zenodo redirects")
 		}
 		return nil
 	}

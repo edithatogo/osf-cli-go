@@ -104,7 +104,11 @@ func TestZenodoWriteCommandsAreGuardedAndExecutable(t *testing.T) {
 func TestZenodoProductionWritesRequireTargetAndConfirmations(t *testing.T) {
 	transfer := &fakeZenodoTransfer{draft: zenodotransfer.Draft{ID: "123", BucketURL: "https://zenodo.org/api/files/bucket"}}
 	oldTransfer := newZenodoTransferClient
-	newZenodoTransferClient = func(bool) (zenodoTransferClient, error) { return transfer, nil }
+	productionRequested := false
+	newZenodoTransferClient = func(production bool) (zenodoTransferClient, error) {
+		productionRequested = production
+		return transfer, nil
+	}
 	t.Cleanup(func() { newZenodoTransferClient = oldTransfer })
 
 	if _, err := executeZenodoWriteCommand("zenodo", "deposits", "create", "--production", "--execute"); err == nil || transfer.created {
@@ -112,6 +116,19 @@ func TestZenodoProductionWritesRequireTargetAndConfirmations(t *testing.T) {
 	}
 	if _, err := executeZenodoWriteCommand("zenodo", "deposits", "create", "--production", "--execute", "--confirm", "zenodo:production:create-draft"); err != nil || !transfer.created {
 		t.Fatalf("production draft creation err=%v created=%v", err, transfer.created)
+	}
+	if !productionRequested {
+		t.Fatal("production draft creation did not select the production client")
+	}
+
+	productionRequested = false
+	if _, err := executeZenodoWriteCommand("zenodo", "deposits", "get", "123", "--production"); err != nil || !productionRequested {
+		t.Fatalf("production draft get err=%v production=%v", err, productionRequested)
+	}
+
+	productionRequested = false
+	if _, err := executeZenodoWriteCommand("zenodo", "files", "draft-list", "123", "--production"); err != nil || !productionRequested {
+		t.Fatalf("production draft file list err=%v production=%v", err, productionRequested)
 	}
 }
 

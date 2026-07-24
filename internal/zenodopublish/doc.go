@@ -1,3 +1,3 @@
 // Package zenodopublish models and executes explicitly authorized Zenodo
-// sandbox publication lifecycle actions. Production Zenodo writes are rejected.
+// publication lifecycle actions. Production writes require explicit opt-in.
 package zenodopublish
