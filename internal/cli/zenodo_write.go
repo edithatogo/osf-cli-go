@@ -34,11 +34,9 @@ type zenodoPublicationClient interface {
 
 const productionZenodoBaseURL = "https://zenodo.org/api/"
 
-var zenodoProduction bool
-
-var newZenodoTransferClient = func() (zenodoTransferClient, error) {
+var newZenodoTransferClient = func(production bool) (zenodoTransferClient, error) {
 	baseURL := os.Getenv("ZENODO_BASE_URL")
-	if zenodoProduction {
+	if production {
 		if baseURL != productionZenodoBaseURL {
 			return nil, fmt.Errorf("production writes require ZENODO_BASE_URL=%q", productionZenodoBaseURL)
 		}
@@ -47,13 +45,13 @@ var newZenodoTransferClient = func() (zenodoTransferClient, error) {
 	return zenodotransfer.New(baseURL, os.Getenv("ZENODO_TOKEN"))
 }
 
-var newZenodoPublicationClient = func() (zenodoPublicationClient, error) {
+var newZenodoPublicationClient = func(production bool) (zenodoPublicationClient, error) {
 	baseURL := os.Getenv("ZENODO_BASE_URL")
 	scopes := []zenodopublish.Scope{
 		zenodopublish.ScopeDepositWrite,
 		zenodopublish.ScopeDepositActions,
 	}
-	if zenodoProduction {
+	if production {
 		if baseURL != productionZenodoBaseURL {
 			return nil, fmt.Errorf("production writes require ZENODO_BASE_URL=%q", productionZenodoBaseURL)
 		}
@@ -72,28 +70,27 @@ func newZenodoDepositsCommand() *cobra.Command {
 		newZenodoLifecycleCommand("new-version", "Create a new sandbox version draft", "published", "new_version", false),
 		newZenodoLifecycleCommand("discard", "Discard an unpublished Zenodo sandbox draft", "draft", "discard", false),
 	)
-	command.PersistentFlags().BoolVar(&zenodoProduction, "production", false, "allow writes to https://zenodo.org/api/ with additional confirmations")
 	return command
 }
 
-func requireProductionConfirmation(provided, expected string) error {
-	if zenodoProduction && provided != expected {
+func requireProductionConfirmation(production bool, provided, expected string) error {
+	if production && provided != expected {
 		return fmt.Errorf("production write requires --confirm %q", expected)
 	}
 	return nil
 }
 
 func newZenodoDraftCreateCommand() *cobra.Command {
-	var execute bool
+	var execute, production bool
 	var confirmation string
 	command := &cobra.Command{Use: "create", Short: "Create an empty Zenodo sandbox draft", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
 		if !execute {
 			return errors.New("draft creation requires --execute")
 		}
-		if err := requireProductionConfirmation(confirmation, "zenodo:production:create-draft"); err != nil {
+		if err := requireProductionConfirmation(production, confirmation, "zenodo:production:create-draft"); err != nil {
 			return err
 		}
-		client, err := newZenodoTransferClient()
+		client, err := newZenodoTransferClient(production)
 		if err != nil {
 			return err
 		}
@@ -104,13 +101,14 @@ func newZenodoDraftCreateCommand() *cobra.Command {
 		return writeZenodoValue(cmd, draft, []string{"ID", "BUCKET URL"}, []string{draft.ID, draft.BucketURL})
 	}}
 	command.Flags().BoolVar(&execute, "execute", false, "perform the sandbox write")
+	command.Flags().BoolVar(&production, "production", false, "allow a confirmed write to https://zenodo.org/api/")
 	command.Flags().StringVar(&confirmation, "confirm", "", "exact production-action confirmation")
 	return command
 }
 
 func newZenodoDraftGetCommand() *cobra.Command {
 	return &cobra.Command{Use: "get <draft-id>", Short: "Inspect a Zenodo sandbox draft", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
-		client, err := newZenodoTransferClient()
+		client, err := newZenodoTransferClient(false)
 		if err != nil {
 			return err
 		}
@@ -124,6 +122,7 @@ func newZenodoDraftGetCommand() *cobra.Command {
 
 func newZenodoDraftMetadataCommand() *cobra.Command {
 	var metadataPath, confirmation string
+	var production bool
 	var execute bool
 	command := &cobra.Command{Use: "metadata <draft-id>", Short: "Apply validated metadata to a Zenodo sandbox draft", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		metadata, err := readZenodoMetadata(metadataPath, time.Now())
@@ -137,10 +136,10 @@ func newZenodoDraftMetadataCommand() *cobra.Command {
 				Executed bool                   `json:"executed"`
 			}{RecordID: strings.TrimSpace(args[0]), Metadata: metadata})
 		}
-		if err := requireProductionConfirmation(confirmation, "zenodo:production:metadata:"+strings.TrimSpace(args[0])); err != nil {
+		if err := requireProductionConfirmation(production, confirmation, "zenodo:production:metadata:"+strings.TrimSpace(args[0])); err != nil {
 			return err
 		}
-		client, err := newZenodoPublicationClient()
+		client, err := newZenodoPublicationClient(production)
 		if err != nil {
 			return err
 		}
@@ -151,6 +150,7 @@ func newZenodoDraftMetadataCommand() *cobra.Command {
 	}}
 	command.Flags().StringVar(&metadataPath, "metadata", "", "path to a Zenodo metadata JSON file")
 	command.Flags().BoolVar(&execute, "execute", false, "perform the sandbox write")
+	command.Flags().BoolVar(&production, "production", false, "allow a confirmed write to https://zenodo.org/api/")
 	command.Flags().StringVar(&confirmation, "confirm", "", "exact production-action confirmation")
 	_ = command.MarkFlagRequired("metadata")
 	return command
@@ -158,6 +158,7 @@ func newZenodoDraftMetadataCommand() *cobra.Command {
 
 func newZenodoDraftUploadCommand() *cobra.Command {
 	var remoteName, conflict, confirmation string
+	var production bool
 	var execute bool
 	command := &cobra.Command{Use: "upload <draft-id> <local-path>", Short: "Upload a file to a Zenodo sandbox draft", Args: cobra.ExactArgs(2), RunE: func(cmd *cobra.Command, args []string) error {
 		if !execute {
@@ -170,10 +171,10 @@ func newZenodoDraftUploadCommand() *cobra.Command {
 		if remoteName == "" {
 			remoteName = filepath.Base(args[1])
 		}
-		if err := requireProductionConfirmation(confirmation, "zenodo:production:upload:"+strings.TrimSpace(args[0])+":"+remoteName); err != nil {
+		if err := requireProductionConfirmation(production, confirmation, "zenodo:production:upload:"+strings.TrimSpace(args[0])+":"+remoteName); err != nil {
 			return err
 		}
-		client, err := newZenodoTransferClient()
+		client, err := newZenodoTransferClient(production)
 		if err != nil {
 			return err
 		}
@@ -190,13 +191,14 @@ func newZenodoDraftUploadCommand() *cobra.Command {
 	command.Flags().StringVar(&remoteName, "name", "", "remote filename (defaults to the local basename)")
 	command.Flags().StringVar(&conflict, "conflict", string(download.ConflictFail), "conflict policy: fail, skip, or overwrite")
 	command.Flags().BoolVar(&execute, "execute", false, "perform the sandbox write")
+	command.Flags().BoolVar(&production, "production", false, "allow a confirmed write to https://zenodo.org/api/")
 	command.Flags().StringVar(&confirmation, "confirm", "", "exact production-action confirmation")
 	return command
 }
 
 func newZenodoDraftFilesListCommand() *cobra.Command {
 	return &cobra.Command{Use: "draft-list <draft-id>", Short: "List files in a Zenodo sandbox draft", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
-		client, err := newZenodoTransferClient()
+		client, err := newZenodoTransferClient(false)
 		if err != nil {
 			return err
 		}
@@ -221,12 +223,13 @@ func newZenodoDraftFilesListCommand() *cobra.Command {
 
 func newZenodoDraftFileDeleteCommand() *cobra.Command {
 	var confirmation string
+	var production bool
 	command := &cobra.Command{Use: "delete <draft-id> <file-id>", Short: "Delete a file from a Zenodo sandbox draft", Args: cobra.ExactArgs(2), RunE: func(cmd *cobra.Command, args []string) error {
 		expected := fmt.Sprintf("zenodo:delete-file:%s:%s", strings.TrimSpace(args[0]), strings.TrimSpace(args[1]))
 		if confirmation != expected {
 			return fmt.Errorf("exact confirmation required: supply --confirm %q", expected)
 		}
-		client, err := newZenodoTransferClient()
+		client, err := newZenodoTransferClient(production)
 		if err != nil {
 			return err
 		}
@@ -236,12 +239,13 @@ func newZenodoDraftFileDeleteCommand() *cobra.Command {
 		return output.WriteJSON(cmd.OutOrStdout(), map[string]any{"recordId": strings.TrimSpace(args[0]), "fileId": strings.TrimSpace(args[1]), "executed": true})
 	}}
 	command.Flags().StringVar(&confirmation, "confirm", "", "exact destructive-action confirmation")
+	command.Flags().BoolVar(&production, "production", false, "allow a confirmed write to https://zenodo.org/api/")
 	return command
 }
 
 func newZenodoLifecycleCommand(use, short, defaultState, action string, needsMetadata bool) *cobra.Command {
 	var state, metadataPath, confirmation string
-	var execute bool
+	var execute, production bool
 	command := &cobra.Command{Use: use + " <record-id>", Short: short, Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		request := zenodopublish.Request{
 			RecordID: strings.TrimSpace(args[0]), State: zenodopublish.State(state), Action: zenodopublish.Action(action),
@@ -262,7 +266,7 @@ func newZenodoLifecycleCommand(use, short, defaultState, action string, needsMet
 			}
 			return output.WriteJSON(cmd.OutOrStdout(), zenodopublish.Result{Plan: plan, RecordID: plan.RecordID})
 		}
-		client, err := newZenodoPublicationClient()
+		client, err := newZenodoPublicationClient(production)
 		if err != nil {
 			return err
 		}
@@ -274,6 +278,7 @@ func newZenodoLifecycleCommand(use, short, defaultState, action string, needsMet
 	}}
 	command.Flags().StringVar(&state, "state", defaultState, "current lifecycle state")
 	command.Flags().BoolVar(&execute, "execute", false, "perform the sandbox action instead of returning a dry-run plan")
+	command.Flags().BoolVar(&production, "production", false, "allow a confirmed action against https://zenodo.org/api/")
 	command.Flags().StringVar(&confirmation, "confirm", "", "exact confirmation emitted by the dry-run plan")
 	if needsMetadata {
 		command.Flags().StringVar(&metadataPath, "metadata", "", "path to a Zenodo metadata JSON file")
