@@ -77,6 +77,13 @@ osf.exe zenodo deposits create --production --execute `
   --confirm 'zenodo:production:create-draft' --json
 ```
 
+Production draft reads use the same explicit target selection:
+
+```powershell
+osf.exe zenodo deposits get 12345 --production --json
+osf.exe zenodo files draft-list 12345 --production --json
+```
+
 Metadata updates and publication consume a strict JSON object. Unknown fields,
 trailing JSON values, incomplete creators, invalid access policies, and stale
 embargo dates fail locally before a client or authenticated request is created:

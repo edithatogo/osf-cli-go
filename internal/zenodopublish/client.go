@@ -24,9 +24,9 @@ const (
 
 var (
 	// ErrProductionWrite indicates that a lifecycle action targeted production Zenodo.
-	ErrProductionWrite = errors.New("zenodo publication actions are restricted to the sandbox")
-	// ErrCrossOrigin indicates that a provider link escaped the configured sandbox API.
-	ErrCrossOrigin = errors.New("zenodo publication link leaves configured sandbox API origin")
+	ErrProductionWrite = errors.New("zenodo production publication actions require explicit opt-in")
+	// ErrCrossOrigin indicates that a provider link escaped the configured API.
+	ErrCrossOrigin = errors.New("zenodo publication link leaves configured API origin")
 	// ErrResponseTooLarge indicates that a control response exceeded its memory budget.
 	ErrResponseTooLarge = errors.New("zenodo publication response exceeds configured size limit")
 )
@@ -47,7 +47,7 @@ type PartialPublicationError struct {
 }
 
 func (err *PartialPublicationError) Error() string {
-	return fmt.Sprintf("Zenodo sandbox metadata was applied to draft %s but publication was not confirmed; inspect the draft before retrying: %v", err.RecordID, err.Cause)
+	return fmt.Sprintf("Zenodo metadata was applied to draft %s but publication was not confirmed; inspect the draft before retrying: %v", err.RecordID, err.Cause)
 }
 
 func (err *PartialPublicationError) Unwrap() error { return err.Cause }
@@ -56,7 +56,7 @@ func (err *APIError) Error() string {
 	if err == nil {
 		return "<nil>"
 	}
-	message := fmt.Sprintf("Zenodo sandbox %s %s returned %d", err.Method, err.Path, err.StatusCode)
+	message := fmt.Sprintf("Zenodo %s %s returned %d", err.Method, err.Path, err.StatusCode)
 	if err.Message != "" {
 		message += ": " + err.Message
 	}
@@ -75,7 +75,7 @@ type Result struct {
 // AuditSink receives already-redacted lifecycle evidence.
 type AuditSink func(AuditEvent)
 
-// Client performs explicitly gated lifecycle writes against the Zenodo sandbox.
+// Client performs explicitly gated lifecycle writes against an approved Zenodo endpoint.
 type Client struct {
 	baseURL          *url.URL
 	httpClient       *http.Client
@@ -102,7 +102,7 @@ func WithAuditSink(sink AuditSink) Option { return func(c *Client) { c.auditSink
 // a caller that has already obtained an explicit production confirmation.
 func WithProductionWrites() Option { return func(c *Client) { c.allowProduction = true } }
 
-// New constructs a sandbox-only lifecycle client with explicitly declared token scopes.
+// New constructs a lifecycle client with explicitly declared token scopes.
 func New(baseURL, token string, scopes []Scope, options ...Option) (*Client, error) {
 	client := &Client{httpClient: &http.Client{Timeout: defaultTimeout}, maxResponseBytes: defaultResponseLimit}
 	for _, option := range options {
@@ -110,14 +110,14 @@ func New(baseURL, token string, scopes []Scope, options ...Option) (*Client, err
 	}
 	token = strings.TrimSpace(token)
 	if token == "" {
-		return nil, errors.New("ZENODO_TOKEN is required for sandbox publication actions")
+		return nil, errors.New("ZENODO_TOKEN is required for Zenodo publication actions")
 	}
 	if strings.TrimSpace(baseURL) == "" {
 		baseURL = defaultSandboxBaseURL
 	}
 	parsed, err := url.Parse(baseURL)
 	if err != nil {
-		return nil, fmt.Errorf("parse Zenodo sandbox base URL: %w", err)
+		return nil, fmt.Errorf("parse Zenodo base URL: %w", err)
 	}
 	if (parsed.Scheme != "https" && parsed.Scheme != "http") || parsed.Host == "" || parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" {
 		return nil, errors.New("ZENODO_BASE_URL must be a plain HTTP(S) URL without credentials, query, or fragment")
@@ -148,7 +148,7 @@ func New(baseURL, token string, scopes []Scope, options ...Option) (*Client, err
 			return previousRedirect(request, via)
 		}
 		if len(via) >= 10 {
-			return errors.New("stopped after 10 Zenodo sandbox redirects")
+			return errors.New("stopped after 10 Zenodo redirects")
 		}
 		return nil
 	}
@@ -180,7 +180,7 @@ func (client *Client) Execute(ctx context.Context, request Request, now time.Tim
 	return result, nil
 }
 
-// ApplyDraftMetadata validates and updates an unpublished sandbox deposition.
+// ApplyDraftMetadata validates and updates an unpublished deposition.
 // It performs no publication action and requires the client's deposit:write scope.
 func (client *Client) ApplyDraftMetadata(ctx context.Context, recordID string, metadata Metadata, now time.Time) error {
 	if !hasScope(client.scopes, ScopeDepositWrite) {
