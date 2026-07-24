@@ -27,6 +27,7 @@ import (
 
 const (
 	defaultSandboxBaseURL = "https://sandbox.zenodo.org/api/"
+	productionBaseURL     = "https://zenodo.org/api/"
 	defaultTimeout        = 2 * time.Minute
 	defaultResponseLimit  = int64(8 << 20)
 	defaultFileLimit      = int64(50 << 30)
@@ -110,6 +111,7 @@ type Client struct {
 	maxFiles         int
 	maxRetries       int
 	retryDelay       time.Duration
+	allowProduction  bool
 }
 
 // Option configures a transfer Client.
@@ -137,9 +139,21 @@ func WithRetryPolicy(maxRetries int, delay time.Duration) Option {
 	return func(c *Client) { c.maxRetries, c.retryDelay = maxRetries, delay }
 }
 
+// WithProductionWrites permits the production Zenodo API only when selected by
+// a caller that has already obtained an explicit production confirmation.
+func WithProductionWrites() Option { return func(c *Client) { c.allowProduction = true } }
+
 // New constructs a sandbox-only transfer client. The token must come from the
 // dedicated ZENODO_TOKEN credential boundary; this package never reads OSF_TOKEN.
 func New(baseURL, token string, options ...Option) (*Client, error) {
+	client := &Client{
+		httpClient: &http.Client{Timeout: defaultTimeout}, maxResponseBytes: defaultResponseLimit,
+		maxFileBytes: defaultFileLimit, maxFiles: defaultFileCountLimit,
+		maxRetries: defaultMaxRetries, retryDelay: defaultRetryDelay,
+	}
+	for _, option := range options {
+		option(client)
+	}
 	token = strings.TrimSpace(token)
 	if token == "" {
 		return nil, errors.New("ZENODO_TOKEN is required for sandbox transfers")
@@ -156,21 +170,14 @@ func New(baseURL, token string, options ...Option) (*Client, error) {
 	}
 	host := strings.ToLower(parsed.Hostname())
 	local := host == "127.0.0.1" || host == "localhost" || host == "::1"
-	if !local && (parsed.Scheme != "https" || host != "sandbox.zenodo.org") {
+	allowedHost := host == "sandbox.zenodo.org" || (client.allowProduction && host == "zenodo.org")
+	if !local && (parsed.Scheme != "https" || !allowedHost) {
 		return nil, ErrProductionWrite
 	}
 	if !strings.HasSuffix(parsed.Path, "/") {
 		parsed.Path += "/"
 	}
-	client := &Client{
-		baseURL: parsed, token: token, httpClient: &http.Client{Timeout: defaultTimeout},
-		maxResponseBytes: defaultResponseLimit, maxFileBytes: defaultFileLimit,
-		maxFiles:   defaultFileCountLimit,
-		maxRetries: defaultMaxRetries, retryDelay: defaultRetryDelay,
-	}
-	for _, option := range options {
-		option(client)
-	}
+	client.baseURL, client.token = parsed, token
 	if client.httpClient == nil {
 		client.httpClient = &http.Client{Timeout: defaultTimeout}
 	}

@@ -34,6 +34,16 @@ func TestClientRejectsProductionAndMissingCredentials(t *testing.T) {
 	}
 }
 
+func TestClientAllowsProductionOnlyWithExplicitOption(t *testing.T) {
+	client, err := New("https://zenodo.org/api/", "secret", []Scope{ScopeDepositWrite}, WithProductionWrites())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := client.baseURL.String(); got != "https://zenodo.org/api/" {
+		t.Fatalf("base URL = %q", got)
+	}
+}
+
 func TestExecuteRejectsInvalidAndDryRunBeforeNetwork(t *testing.T) {
 	t.Parallel()
 	var calls atomic.Int32

@@ -17,6 +17,7 @@ import (
 
 const (
 	defaultSandboxBaseURL = "https://sandbox.zenodo.org/api/"
+	productionBaseURL     = "https://zenodo.org/api/"
 	defaultTimeout        = 30 * time.Second
 	defaultResponseLimit  = int64(8 << 20)
 )
@@ -82,6 +83,7 @@ type Client struct {
 	scopes           []Scope
 	maxResponseBytes int64
 	auditSink        AuditSink
+	allowProduction  bool
 }
 
 // Option configures a lifecycle Client.
@@ -96,8 +98,16 @@ func WithMaxResponseBytes(limit int64) Option { return func(c *Client) { c.maxRe
 // WithAuditSink receives redacted dry-run, success, and failure events.
 func WithAuditSink(sink AuditSink) Option { return func(c *Client) { c.auditSink = sink } }
 
+// WithProductionWrites permits the production Zenodo API only when selected by
+// a caller that has already obtained an explicit production confirmation.
+func WithProductionWrites() Option { return func(c *Client) { c.allowProduction = true } }
+
 // New constructs a sandbox-only lifecycle client with explicitly declared token scopes.
 func New(baseURL, token string, scopes []Scope, options ...Option) (*Client, error) {
+	client := &Client{httpClient: &http.Client{Timeout: defaultTimeout}, maxResponseBytes: defaultResponseLimit}
+	for _, option := range options {
+		option(client)
+	}
 	token = strings.TrimSpace(token)
 	if token == "" {
 		return nil, errors.New("ZENODO_TOKEN is required for sandbox publication actions")
@@ -114,19 +124,14 @@ func New(baseURL, token string, scopes []Scope, options ...Option) (*Client, err
 	}
 	host := strings.ToLower(parsed.Hostname())
 	local := host == "127.0.0.1" || host == "localhost" || host == "::1"
-	if !local && (parsed.Scheme != "https" || host != "sandbox.zenodo.org") {
+	allowedHost := host == "sandbox.zenodo.org" || (client.allowProduction && host == "zenodo.org")
+	if !local && (parsed.Scheme != "https" || !allowedHost) {
 		return nil, ErrProductionWrite
 	}
 	if !strings.HasSuffix(parsed.Path, "/") {
 		parsed.Path += "/"
 	}
-	client := &Client{
-		baseURL: parsed, token: token, scopes: append([]Scope(nil), scopes...),
-		httpClient: &http.Client{Timeout: defaultTimeout}, maxResponseBytes: defaultResponseLimit,
-	}
-	for _, option := range options {
-		option(client)
-	}
+	client.baseURL, client.token, client.scopes = parsed, token, append([]Scope(nil), scopes...)
 	if client.httpClient == nil {
 		client.httpClient = &http.Client{Timeout: defaultTimeout}
 	}

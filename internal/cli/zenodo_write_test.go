@@ -74,8 +74,8 @@ func TestZenodoWriteCommandsAreGuardedAndExecutable(t *testing.T) {
 	transfer := &fakeZenodoTransfer{draft: zenodotransfer.Draft{ID: "123", BucketURL: "https://sandbox.zenodo.org/api/files/bucket"}}
 	publication := &fakeZenodoPublication{}
 	oldTransfer, oldPublication := newZenodoTransferClient, newZenodoPublicationClient
-	newZenodoTransferClient = func() (zenodoTransferClient, error) { return transfer, nil }
-	newZenodoPublicationClient = func() (zenodoPublicationClient, error) { return publication, nil }
+	newZenodoTransferClient = func(bool) (zenodoTransferClient, error) { return transfer, nil }
+	newZenodoPublicationClient = func(bool) (zenodoPublicationClient, error) { return publication, nil }
 	t.Cleanup(func() { newZenodoTransferClient, newZenodoPublicationClient = oldTransfer, oldPublication })
 
 	if _, err := executeZenodoWriteCommand("zenodo", "deposits", "create"); err == nil || transfer.created {
@@ -101,6 +101,20 @@ func TestZenodoWriteCommandsAreGuardedAndExecutable(t *testing.T) {
 	}
 }
 
+func TestZenodoProductionWritesRequireTargetAndConfirmations(t *testing.T) {
+	transfer := &fakeZenodoTransfer{draft: zenodotransfer.Draft{ID: "123", BucketURL: "https://zenodo.org/api/files/bucket"}}
+	oldTransfer := newZenodoTransferClient
+	newZenodoTransferClient = func(bool) (zenodoTransferClient, error) { return transfer, nil }
+	t.Cleanup(func() { newZenodoTransferClient = oldTransfer })
+
+	if _, err := executeZenodoWriteCommand("zenodo", "deposits", "create", "--production", "--execute"); err == nil || transfer.created {
+		t.Fatal("production draft creation succeeded without its confirmation")
+	}
+	if _, err := executeZenodoWriteCommand("zenodo", "deposits", "create", "--production", "--execute", "--confirm", "zenodo:production:create-draft"); err != nil || !transfer.created {
+		t.Fatalf("production draft creation err=%v created=%v", err, transfer.created)
+	}
+}
+
 func TestZenodoMetadataAndPublishDryRun(t *testing.T) {
 	metadataPath := filepath.Join(t.TempDir(), "metadata.json")
 	metadata := `{"title":"Dataset","description":"Description","uploadType":"dataset","creators":[{"name":"Doe, Jane"}],"access":"open","license":"cc-by-4.0"}`
@@ -115,7 +129,7 @@ func TestZenodoMetadataAndPublishDryRun(t *testing.T) {
 
 	publication := &fakeZenodoPublication{}
 	oldPublication := newZenodoPublicationClient
-	newZenodoPublicationClient = func() (zenodoPublicationClient, error) { return publication, nil }
+	newZenodoPublicationClient = func(bool) (zenodoPublicationClient, error) { return publication, nil }
 	t.Cleanup(func() { newZenodoPublicationClient = oldPublication })
 	output, err = executeZenodoWriteCommand("zenodo", "publish", "123", "--metadata", metadataPath, "--execute", "--confirm", "zenodo:publish:123:published")
 	if err != nil || !publication.request.Authorized || publication.request.DryRun || !strings.Contains(output, `"executed":true`) {
