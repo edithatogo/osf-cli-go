@@ -67,34 +67,83 @@ type Record struct {
 	raw          []byte
 }
 
+func decodeStringLike(data []byte) (string, error) {
+	if len(bytes.TrimSpace(data)) == 0 {
+		return "", nil
+	}
+	var value any
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
+	if err := decoder.Decode(&value); err != nil {
+		return "", err
+	}
+	switch typed := value.(type) {
+	case nil:
+		return "", nil
+	case string:
+		return typed, nil
+	case json.Number:
+		return typed.String(), nil
+	default:
+		return "", fmt.Errorf("expected string or number, got %T", value)
+	}
+}
+
+func decodeStringMap(data map[string]json.RawMessage) (map[string]string, error) {
+	values := make(map[string]string, len(data))
+	for key, raw := range data {
+		value, err := decodeStringLike(raw)
+		if err != nil {
+			// Zenodo exposes nested link groups such as thumbnails. Keep the
+			// scalar links used by this client and retain the complete response
+			// in Record.NativeJSON for callers that need nested provider data.
+			continue
+		}
+		values[key] = value
+	}
+	return values, nil
+}
+
 // NativeJSON returns an independent copy of the original provider response.
 func (record Record) NativeJSON() []byte { return append([]byte(nil), record.raw...) }
 
 // UnmarshalJSON accepts the current entries map and the legacy files array.
 func (record *Record) UnmarshalJSON(data []byte) error {
 	var envelope struct {
-		ID           string            `json:"id"`
-		ConceptRecID string            `json:"conceptrecid"`
-		DOI          string            `json:"doi"`
-		ConceptDOI   string            `json:"conceptdoi"`
-		Created      string            `json:"created"`
-		Updated      string            `json:"updated"`
-		Metadata     RecordMetadata    `json:"metadata"`
-		Files        json.RawMessage   `json:"files"`
-		Links        map[string]string `json:"links"`
+		ID           json.RawMessage            `json:"id"`
+		ConceptRecID json.RawMessage            `json:"conceptrecid"`
+		DOI          string                     `json:"doi"`
+		ConceptDOI   string                     `json:"conceptdoi"`
+		Created      string                     `json:"created"`
+		Updated      string                     `json:"updated"`
+		Metadata     RecordMetadata             `json:"metadata"`
+		Files        json.RawMessage            `json:"files"`
+		Links        map[string]json.RawMessage `json:"links"`
 	}
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	if err := decoder.Decode(&envelope); err != nil {
 		return err
+	}
+	id, err := decodeStringLike(envelope.ID)
+	if err != nil {
+		return fmt.Errorf("decode id: %w", err)
+	}
+	conceptRecID, err := decodeStringLike(envelope.ConceptRecID)
+	if err != nil {
+		return fmt.Errorf("decode conceptrecid: %w", err)
+	}
+	links, err := decodeStringMap(envelope.Links)
+	if err != nil {
+		return fmt.Errorf("decode links: %w", err)
 	}
 	files, err := decodeFiles(envelope.Files)
 	if err != nil {
 		return fmt.Errorf("decode files: %w", err)
 	}
 	*record = Record{
-		ID: envelope.ID, ConceptRecID: envelope.ConceptRecID, DOI: envelope.DOI,
+		ID: id, ConceptRecID: conceptRecID, DOI: envelope.DOI,
 		ConceptDOI: envelope.ConceptDOI, Created: envelope.Created, Updated: envelope.Updated,
-		Metadata: envelope.Metadata, Files: files, Links: envelope.Links,
+		Metadata: envelope.Metadata, Files: files, Links: links,
 		raw: append([]byte(nil), data...),
 	}
 	return nil
