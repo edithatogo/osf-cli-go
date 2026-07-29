@@ -139,6 +139,21 @@ func TestAPIErrorIsTypedAndRedacted(t *testing.T) {
 }
 
 func TestResponseAndPaginationBudgets(t *testing.T) {
+	t.Run("numeric record identifiers", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+			_, _ = io.WriteString(w, `{"hits":{"hits":[{"id":1234,"conceptrecid":5678,"metadata":{"title":"Numeric ID"},"files":[],"links":{"self":"https://example.test/1234","thumbnails":{"10":"https://example.test/thumb"}}}]},"links":{}}`)
+		}))
+		defer server.Close()
+		client := newTestClient(t, server)
+		records, err := client.SearchRecords(t.Context(), "numeric", 0)
+		if err != nil {
+			t.Fatalf("SearchRecords() error = %v", err)
+		}
+		if len(records) != 1 || records[0].ID != "1234" || records[0].ConceptRecID != "5678" || records[0].Links["self"] != "https://example.test/1234" {
+			t.Fatalf("records = %#v", records)
+		}
+	})
+
 	t.Run("response too large", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
 			_, _ = io.WriteString(w, strings.Repeat("x", 65))
