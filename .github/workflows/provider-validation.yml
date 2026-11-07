@@ -36,13 +36,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
       - name: Validate and render provider claims
         run: go run ./tools/checkproviderrelease -report provider-validation-report.md
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: provider-validation-report
           path: provider-validation-report.md
@@ -53,7 +53,7 @@ jobs:
     environment: provider-sandbox
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
@@ -62,7 +62,7 @@ jobs:
           ZENODO_SANDBOX_VALIDATION: "1"
           ZENODO_TOKEN: ${{ secrets.ZENODO_SANDBOX_TOKEN }}
         run: go run ./tools/zenodosandboxvalidation -live -evidence zenodo-transfer-evidence.md
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: zenodo-transfer-evidence
           path: zenodo-transfer-evidence.md
@@ -73,7 +73,7 @@ jobs:
     environment: provider-sandbox-publication
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
@@ -82,7 +82,7 @@ jobs:
           ZENODO_PUBLICATION_VALIDATION: "1"
           ZENODO_TOKEN: ${{ secrets.ZENODO_SANDBOX_PUBLICATION_TOKEN }}
         run: go run ./tools/zenodopublicationvalidation -live -evidence zenodo-publication-evidence.md
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: zenodo-publication-evidence
           path: zenodo-publication-evidence.md
@@ -93,7 +93,7 @@ jobs:
     environment: provider-sandbox
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
@@ -102,7 +102,7 @@ jobs:
           CROSS_PROVIDER_SANDBOX_VALIDATION: "1"
           ZENODO_TOKEN: ${{ secrets.ZENODO_SANDBOX_TOKEN }}
         run: go run ./tools/crossprovidervalidation -live -evidence cross-provider-evidence.md
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: cross-provider-evidence
           path: cross-provider-evidence.md
@@ -113,7 +113,7 @@ jobs:
     environment: provider-production
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
@@ -124,7 +124,7 @@ jobs:
           OSF_TOKEN: ${{ secrets.OSF_VALIDATION_TOKEN }}
           OSF_VALIDATE_PROJECT: ${{ secrets.OSF_VALIDATE_PROJECT }}
         run: go run ./tools/livevalidation -live -evidence osf-production-evidence.md
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: osf-production-evidence
           path: osf-production-evidence.md
