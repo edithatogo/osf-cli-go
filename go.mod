@@ -2,7 +2,7 @@ module github.com/edithatogo/osf-cli-go
 
 go 1.26
 
-toolchain go1.26.5
+toolchain go1.26.11
 
 require (
 	github.com/modelcontextprotocol/go-sdk v1.7.0
