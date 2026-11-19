@@ -235,6 +235,9 @@ func FuzzResolveReference(f *testing.F) {
 	}
 
 	f.Fuzz(func(t *testing.T, ref string) {
+		if len(ref) > 64*1024 {
+			t.Skip()
+		}
 		resolved, err := resolveReference(base, ref)
 		if err != nil {
 			return

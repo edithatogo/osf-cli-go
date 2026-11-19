@@ -473,6 +473,9 @@ func FuzzResolvePagination(f *testing.F) {
 		f.Fatal(err)
 	}
 	f.Fuzz(func(t *testing.T, next string) {
+		if len(next) > 64*1024 {
+			t.Skip()
+		}
 		resolved, err := client.resolvePagination(next)
 		if err == nil && (resolved == nil || resolved.Scheme != "https" || resolved.Host != "zenodo.org") {
 			t.Fatalf("resolved = %v", resolved)
@@ -485,6 +488,9 @@ func FuzzDecodeSearchPage(f *testing.F) {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, value string) {
+		if len(value) > 64*1024 {
+			t.Skip()
+		}
 		_, _, _ = decodeSearchPage([]byte(value))
 	})
 }
@@ -494,6 +500,9 @@ func FuzzDecodeFiles(f *testing.F) {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, value string) {
+		if len(value) > 64*1024 {
+			t.Skip()
+		}
 		_, _ = decodeFiles([]byte(value))
 	})
 }

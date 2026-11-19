@@ -1,0 +1,82 @@
+name: Bounded provider fuzzing
+
+on:
+  pull_request:
+    paths:
+      - '**/*.go'
+      - go.mod
+      - go.sum
+      - '.github/workflows/fuzz.yml'
+      - '.github/workflows/ci.yml'
+      - 'internal/**/testdata/**'
+  schedule:
+    - cron: '41 3 * * 2'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provider-fuzz-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  fuzz:
+    name: ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - package: osfapi
+            target: FuzzResolveReference
+          - package: zenodoapi
+            target: FuzzResolvePagination
+          - package: zenodoapi
+            target: FuzzDecodeSearchPage
+          - package: zenodoapi
+            target: FuzzDecodeFiles
+          - package: zenodoapi
+            target: FuzzRecordNativePreservation
+          - package: zenodooai
+            target: FuzzDecodeEnvelope
+          - package: zenodooai
+            target: FuzzResumptionToken
+    env:
+      GOMAXPROCS: '2'
+      GOMEMLIMIT: 768MiB
+      FUZZ_TIME: ${{ github.event_name == 'pull_request' && '30s' || '300s' }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - name: Record source and toolchain
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/fuzz-logs"
+          { git rev-parse HEAD; go version; } | tee "$RUNNER_TEMP/fuzz-logs/environment.txt"
+      - name: Replay seed corpus
+        run: go test ./internal/${{ matrix.package }} -run='^${{ matrix.target }}$' -count=1 -timeout=1m
+      - name: Run bounded mutation campaign
+        shell: bash
+        run: |
+          set -o pipefail
+          go test ./internal/${{ matrix.package }} -run='^$' \
+            -fuzz='^${{ matrix.target }}$' -fuzztime="$FUZZ_TIME" \
+            -fuzzminimizetime=30s -parallel=2 -timeout=7m \
+            2>&1 | tee "$RUNNER_TEMP/fuzz-logs/campaign.txt"
+      - name: Retain evidence and any minimized failures
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: fuzz-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/fuzz-logs
+            internal/${{ matrix.package }}/testdata/fuzz/${{ matrix.target }}
+          if-no-files-found: warn
+          retention-days: 14
