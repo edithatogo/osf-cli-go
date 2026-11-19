@@ -14,3 +14,12 @@
 
 - [x] Task: Run quality gates and anti-stub scan
 - [x] Task: Run `$conductor-review`, apply fixes, re-run review, and write phase review evidence
+
+## Phase 4: Bounded fuzzing campaigns (2026-11-20)
+
+- [x] Task: Extend the five existing fuzz targets with native-JSON preservation and resumption-token invariants; all inputs synthetic and bounded.
+- [x] Task: Move mutation campaigns to a path-scoped PR/scheduled/manual workflow with time, worker and memory budgets and retained reproducers.
+- [x] Task: Execute the seven targets, ordinary/race tests, vet and anti-stub checks and record the exact toolchain/results in `phase-4-review.md`.
+- [ ] Task: Verify hosted checks on the candidate head before admission.
+
+No live provider validation, credentials, release action or toolchain upgrade is part of this phase. PR #152 separately owns the Go security toolchain update.
